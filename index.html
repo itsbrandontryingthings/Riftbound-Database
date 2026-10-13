@@ -157,6 +157,9 @@ select{background:var(--panel);border:1px solid var(--line);border-radius:8px;pa
 .wrow .own.ok{color:var(--ok)}
 .wrow .rm{background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:13px}
 .wrow .rm:hover{color:var(--fury);border-color:var(--fury)}
+.tile .rm{background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:13px}
+.tile .rm:hover{color:var(--fury);border-color:var(--fury)}
+.tile .own{font-size:12px;color:var(--muted)} .tile .own.ok{color:var(--ok)}
 @media (max-width:640px){.wrow{grid-template-columns:44px minmax(0,1fr) auto}.wrow .wq{grid-column:2/4;justify-self:start;display:flex;gap:10px;align-items:center;flex-wrap:wrap}}
 /* list bar, pager, grid tiles, filters toggle, top button */
 .setbtn{min-width:0;overflow:hidden}
@@ -658,14 +661,22 @@ function renderWish(){
   const copies = ids.reduce((a, id) => a + wish[id], 0);
   const cost = ids.reduce((a, id) => a + wish[id] * (byId[id].price || 0), 0);
   const unpriced = ids.filter(id => byId[id].price == null).length;
+  const wv = st.wview === "grid" || st.wview === "list" ? st.wview : (st.view === "grid" ? "grid" : "list");
   $("wish-summary").innerHTML = `<h2>Wish List</h2>
     <div class="wsum">
       <div class="vbox"><span class="collect-k">Cards wanted</span><span class="vmid">${ids.length} <small class="meta">(${copies} cop${copies === 1 ? "y" : "ies"})</small></span></div>
       <div class="vbox"><span class="collect-k">Cost to buy</span><span class="vbig">${moneyHTML(cost)}</span></div>
     </div>
     <div class="frow"><span class="meta">${ids.length ? "TCGplayer market prices" + (unpriced ? ` · ${unpriced} card${unpriced === 1 ? " has" : "s have"} no price yet` : "") : "Tap ♡ Want on any card in Collection to add it here, even if it's not in one of your decks."}</span><span style="flex:1"></span>
-      ${ids.length ? `<button class="btn" id="wish-copy">Copy wish list</button>` : ""}${typeof openShare === "function" ? (wish._shared ? `<span class="tag ok">✓ Shared with friends</span><button class="btn" id="wish-unshare">Stop sharing</button>` : `<button class="btn" id="wish-share">Share with friends</button>`) : ""}</div>`;
+      ${ids.length ? `<div class="seg" role="group" aria-label="Wish list layout"><button id="wv-list" aria-pressed="${wv === "list"}">List</button><button id="wv-grid" aria-pressed="${wv === "grid"}">Grid</button></div><button class="btn" id="wish-copy">Copy wish list</button>` : ""}${typeof openShare === "function" ? (wish._shared ? `<span class="tag ok">✓ Shared with friends</span><button class="btn" id="wish-unshare">Stop sharing</button>` : `<button class="btn" id="wish-share">Share with friends</button>`) : ""}</div>`;
+  $("wish-list").className = wv === "grid" ? "list grid" + (st.size && st.size !== "s" ? " sz-" + st.size : "") : "wlist";
   $("wish-list").innerHTML = ids.map(id => { const c = byId[id], q = wish[id], have = counts[id] || 0;
+    if (wv === "grid") return `<div class="card tile" data-id="${esc(id)}">${thumbHTML(c, PHONE() && st.size === "s" ? 480 : 744)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
+      <a class="tname" href="${tcgURL(c)}" target="_blank" rel="noopener" title="Open ${esc(c.name)} on TCGplayer">${esc(c.name)}</a>
+      <div class="tsub"><span class="r-${c.rarity}">${esc(codeOf(c))}</span>${c.variant ? ` · ${esc(c.variant)}` : ""}</div>
+      <div class="tsub"><span class="own${have ? " ok" : ""}">${have ? `you own ${have}` : "you don't own it"}</span></div>
+      <div class="tfoot">${priceHTML(c, q)}<div class="step" role="group" aria-label="Copies of ${esc(c.name)} wanted"><button data-w="-1" aria-label="Want one fewer">−</button><output>${q}</output><button data-w="1" aria-label="Want one more">+</button></div>
+      <button class="rm" data-w="rm" aria-label="Remove ${esc(c.name)} from your wish list">Remove</button></div></div>`;
     return `<div class="wrow" data-id="${esc(id)}">${thumbHTML(c, 160)}
       <span class="info"><span class="name"><a href="${tcgURL(c)}" target="_blank" rel="noopener">${esc(c.name)}</a></span><span class="sub"><span class="r-${c.rarity}">${esc(codeOf(c))}</span>${c.variant ? `<span class="pill var">${esc(c.variant)}</span>` : ""}${banPill(c)}<span class="own${have ? " ok" : ""}">${have ? `you own ${have}` : "you don't own it"}</span></span></span>
       <span class="wq">${priceHTML(c, q)}<span class="step" role="group" aria-label="Copies of ${esc(c.name)} wanted"><button data-w="-1" aria-label="Want one fewer">−</button><output>${q}</output><button data-w="1" aria-label="Want one more">+</button></span></span>
@@ -676,11 +687,14 @@ function wishText(){
 }
 $("wish-list").addEventListener("click", e => {
   const b = e.target.closest("button[data-w]"); if (!b) return;
-  const id = b.closest(".wrow").dataset.id;
+  const id = b.closest("[data-id]").dataset.id;
   if (b.dataset.w === "rm") delete wish[id]; else { const q = (wish[id] || 0) + Number(b.dataset.w); if (q > 0) wish[id] = q; else delete wish[id]; }
   saveWish(); renderWish();
 });
+// the enlarged card view must not live inside a tab: opened from a hidden tab it was invisible but blocked every click
+document.body.appendChild($("lb"));
 $("wish-summary").addEventListener("click", e => {
+  if (e.target.id === "wv-list" || e.target.id === "wv-grid"){ st.wview = e.target.id === "wv-grid" ? "grid" : "list"; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); renderWish(); return; }
   if (e.target.id === "wish-copy"){ const ids = wishIds().filter(id => byId[id]); copy(wishText() + `\n\nTotal: ${money(ids.reduce((a, id) => a + wish[id] * (byId[id].price || 0), 0))}`, "wish list"); }
   if (e.target.id === "wish-share" && typeof openShare === "function") openShare("wish");
   if (e.target.id === "wish-unshare"){ delete wish._shared; saveWish(); renderWish(); }
