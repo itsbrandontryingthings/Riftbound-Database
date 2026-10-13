@@ -152,6 +152,8 @@ select{background:var(--panel);border:1px solid var(--line);border-radius:8px;pa
 .list.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .card.tile{display:flex;flex-direction:column;gap:5px;padding:6px;position:relative;align-items:stretch;min-width:0}
 .tile .thumb{width:100%}
+a.tname{color:var(--fg);text-decoration:none}
+a.tname:hover,a.tname:focus-visible{text-decoration:underline;text-decoration-color:var(--accent)}
 .tname{font-weight:600;font-size:13px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em;overflow-wrap:anywhere}
 .tsub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tfoot{display:flex;flex-direction:column;gap:5px;margin-top:auto}
@@ -497,12 +499,18 @@ function thumbHTML(c, w){
   if (!u) return `<span class="thumb none" title="No picture of this printing exists yet" aria-hidden="true">No<br>image</span>`;
   return `<button class="thumb" data-img="${esc(c.id)}" aria-label="Enlarge ${esc(c.name)}"${c.imgBase ? ' title="Regular printing\'s art; no image of this exact printing yet"' : ""}><img src="${u}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">${c.imgBase ? '<span class="bm">BASE ART</span>' : ""}</button>`;
 }
+let lbToken = 0;
 function openCard(c){
   if (!c) return;
   $("lb-name").textContent = c.name;
   const code = c.set + " " + c.id.split("-").slice(1).join("-").replace(/-\d+$/,"").replace("~metal","").toUpperCase();
   $("lb-sub").innerHTML = `<span>${esc(code)}</span><span class="r-${c.rarity}">${c.rarity}</span>${c.variant?`<span class="pill var">${esc(c.variant)}</span>`:""}${banPill(c)}`;
-  const im = $("lb-img"); im.src = imgURL(c, 744); im.alt = c.name; im.classList.toggle("land", c.type === "Battlefield");
+  // show the small picture (usually already loaded) at once, then swap in the full-size one;
+  // a newer click wins, so an earlier card's picture can never flash up
+  const im = $("lb-img"), token = ++lbToken, full = imgURL(c, 744), quick = imgURL(c, typeof st !== "undefined" && st.view === "grid" ? 240 : 160);
+  im.removeAttribute("src"); im.alt = c.name; im.classList.toggle("land", c.type === "Battlefield");
+  if (quick) im.src = quick;
+  if (full && full !== quick){ const pre = new Image(); pre.referrerPolicy = "no-referrer"; pre.onload = () => { if (token === lbToken) im.src = full; }; pre.src = full; }
   $("lb-note").textContent = c.imgBase ? "Regular printing's art. There's no image of this exact printing yet." : c.imgTcg ? "Image: TCGplayer" : "Image: Riot Games, via Riftcodex";
   $("lb-link").innerHTML = viewLink(c);
   try { $("lb").showModal(); } catch(e){ $("lb").setAttribute("open", ""); }
@@ -554,7 +562,7 @@ function tileHTML(c){
   const n = counts[c.id]||0;
   return `<div class="card tile${n?" got":""}" data-id="${esc(c.id)}">
     ${thumbHTML(c, 240)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
-    <div class="tname" title="${esc(c.name)}">${esc(c.name)}</div>
+    <a class="tname" href="${tcgURL(c)}" target="_blank" rel="noopener" title="Open ${esc(c.name)} on TCGplayer">${esc(c.name)}</a>
     <div class="tsub"><span class="r-${c.rarity}">${esc(codeOf(c))}</span>${c.variant ? ` · ${esc(c.variant)}` : ""}</div>
     <div class="tfoot">${priceHTML(c, n)}<div class="step" role="group" aria-label="Copies of ${esc(c.name)}">
       <button data-a="-1" aria-label="Remove one" ${n?"":"disabled"}>−</button><output>${n}</output><button data-a="1" aria-label="Add one">+</button>
