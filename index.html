@@ -140,6 +140,7 @@ select{background:var(--panel);border:1px solid var(--line);border-radius:8px;pa
 .howto{background:var(--row);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;display:grid;gap:6px}
 .howto ol{margin:0;padding-left:20px;display:grid;gap:3px}
 .howto b{color:var(--fg)}
+.howto.flash{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
 .howto code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:0 4px}
 .imp{display:flex;gap:8px;flex-wrap:wrap}
 .imp .search{flex:1 1 260px}
@@ -434,10 +435,10 @@ button.thumb:hover{border-color:var(--muted)}
     <details class="panel" id="deck-add">
       <summary id="dk-title">Add a Deck</summary>
       <div class="add-grid">
-        <div class="add-grid"><span class="meta"><b>Paste a deck link</b> from RiftDecks or another deck site, then tap Import to fill in the list.</span>
-          <div class="imp"><input class="search" id="dk-url" type="url" inputmode="url" placeholder="https://riftdecks.com/riftbound-metagame/deck-…" aria-label="Deck link"><button class="btn primary" id="dk-import" type="button">Import</button></div>
+        <div class="add-grid"><span class="meta"><b>Paste a deck link</b> from a deck site such as Piltover Archive, then tap Import to fill in the list. RiftDecks doesn't allow this, so for RiftDecks decks use the steps below.</span>
+          <div class="imp"><input class="search" id="dk-url" type="url" inputmode="url" placeholder="https://piltoverarchive.com/decks/view/…" aria-label="Deck link"><button class="btn primary" id="dk-import" type="button">Import</button></div>
           <span class="meta" id="dk-imp-msg" aria-live="polite"></span></div>
-        <div class="howto">
+        <div class="howto" id="dk-howto">
           <b>Copying a deck from RiftDecks.com</b>
           <ol>
             <li>Open the deck on riftdecks.com.</li>
@@ -945,6 +946,10 @@ async function importDeck(url){
   const msg = $("dk-imp-msg"), go = $("dk-import");
   url = (url || "").trim();
   if (!/^https?:\/\/\S+$/i.test(url)){ msg.textContent = "Paste the full link to the deck page, starting with https://"; msg.className = "meta err"; return; }
+  if (/(^|\/\/|\.)riftdecks\.com/i.test(url)){
+    msg.textContent = "RiftDecks doesn't let other websites read its decks. Copy the list instead, using the steps just below (Export this Deck → Export TXT).";
+    msg.className = "meta err"; $("dk-howto").scrollIntoView({behavior:"smooth", block:"center"}); $("dk-howto").classList.add("flash"); setTimeout(() => $("dk-howto").classList.remove("flash"), 1600); return;
+  }
   go.disabled = true; msg.textContent = "Reading the deck…"; msg.className = "meta";
   try {
     const r = await fetch("/api/import?url=" + encodeURIComponent(url));

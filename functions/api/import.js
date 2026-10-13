@@ -1,8 +1,9 @@
 // Cloudflare Pages Function: GET /api/import?url=<deck page link>
 // Opens a public deck page and returns its card list as plain text, ready for the deck checker:
 //   { name, text, source }   or   { error }
-// RiftDecks: uses the deck's own "Export TXT" list. Other sites: a text box on the page, or any
-// "3 Card Name" / "3x Card Name" lines found in the page.
+// Other sites: a text box on the page, a decklist embedded as JSON in the page (e.g. Piltover Archive),
+// or any "3 Card Name" / "3x Card Name" lines found in the page.
+// RiftDecks blocks requests from servers (HTTP 403), so its links get a message pointing to Export TXT instead.
 
 const MAX_BYTES = 2_000_000;
 const SECTION = /^(legend|champions?|main ?deck|deck|units?|spells?|gear|battlefields?|runes?|rune pool|sideboard|side ?deck|tokens?)\s*(\(\d+\))?\s*:?$/i;
@@ -24,11 +25,15 @@ export async function onRequestGet({ request }) {
       const m = page.match(/\/decks\/export\/([0-9a-f-]{36})/i);
       if (m) text = listFromTextarea(await get(new URL(`/decks/export/${m[1]}/txt`, target)));
     }
+    if (!text) text = listFromJson(page);
     if (!text) text = listFromLines(page);
     if (!text) return reply({ error: "Couldn't find a decklist on that page. Copy the list from the page and paste it into the Decklist box instead." }, 422);
     return reply({ name, text, source: host });
   } catch (e) {
-    return reply({ error: "Couldn't open that page. Check the link works in your browser, or copy the list and paste it instead.", detail: String(e && e.message || e).slice(0, 120) }, 502);
+    const why = String(e && e.message || e).slice(0, 120);
+    if (/(^|\.)riftdecks\.com$/.test(host) && /HTTP 40[13]/.test(why))
+      return reply({ error: "RiftDecks doesn't let other websites read its decks, so the list can't be imported from a link. Use the steps below instead: Export this Deck → Export TXT, then copy and paste the text.", detail: why }, 502);
+    return reply({ error: "Couldn't open that page. Check the link works in your browser, or copy the list and paste it instead.", detail: why }, 502);
   }
 }
 
@@ -90,6 +95,40 @@ function listFromLines(html) {
   }
   while (out.length && SECTION.test(out[out.length - 1])) out.pop();
   return out.filter(isCardLine).length >= 3 ? out.slice(0, 200).join("\n") : "";
+}
+
+// decklists embedded as JSON in the page (Next.js and similar sites): {"quantity":3,"card":{..."name":"Gust"...}}
+function listFromJson(html) {
+  const t = html.replace(/\\\\"/g, '"').replace(/\\"/g, '"');
+  const SECT = /"(legends?|champions?|mainDeck|main_deck|maindeck|mainboard|deck|units|spells|gear|battlefields?|runes?|runeDeck|sideboard|sideDeck|side_deck)"\s*:\s*\[/gi;
+  const marks = [];
+  for (const m of t.matchAll(SECT)) marks.push([m.index, m[1]]);
+  const label = k => {
+    k = k.toLowerCase();
+    if (k.startsWith("legend")) return "Legend";
+    if (k.startsWith("champion")) return "Champion";
+    if (k.startsWith("battlefield")) return "Battlefields";
+    if (k.startsWith("rune")) return "Runes";
+    if (k.startsWith("side")) return "Sideboard";
+    return "Main Deck";
+  };
+  const seen = new Set(), bySection = new Map();
+  for (const m of t.matchAll(/"(?:quantity|count|qty|copies)"\s*:\s*(\d{1,2})\b/g)) {
+    const q = +m[1]; if (q < 1 || q > 12) continue;
+    const after = t.slice(m.index, m.index + 600);
+    const nm = after.match(/"name"\s*:\s*"([^"]{2,60})"/); if (!nm) continue;
+    let sec = "Main Deck";
+    for (const [pos, key] of marks) { if (pos < m.index) sec = label(key); else break; }
+    const k = sec + "|" + nm[1];
+    if (seen.has(k)) continue; seen.add(k);
+    if (!bySection.has(sec)) bySection.set(sec, []);
+    bySection.get(sec).push(`${q} ${nm[1]}`);
+  }
+  const order = ["Legend", "Champion", "Main Deck", "Battlefields", "Runes", "Sideboard"];
+  const lines = [];
+  for (const s of order) if (bySection.has(s)) { lines.push(s + ":", ...bySection.get(s), ""); }
+  const count = [...bySection.values()].reduce((a, v) => a + v.length, 0);
+  return count >= 3 ? lines.join("\n").trim().slice(0, 8000) : "";
 }
 
 function reply(body, status = 200) {
