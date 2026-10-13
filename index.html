@@ -152,6 +152,19 @@ button.thumb:hover{border-color:var(--muted)}
 #lb .lbf{display:flex;gap:8px 12px;flex-wrap:wrap;align-items:center;margin-top:10px}
 .localnote{background:var(--row);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px;color:var(--muted)}
 .localnote b{color:var(--fg)}
+.acct{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap}
+.acct .who{font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.acct .who b{color:var(--fg);font-weight:600}
+#auth{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);padding:18px;max-width:min(400px,calc(100vw - 32px));width:100%}
+#auth::backdrop{background:rgb(5 6 10 / .78)}
+#auth form{display:grid;gap:12px}
+#auth h2{font-family:var(--display);font-size:19px;margin:0}
+#auth label{display:grid;gap:4px;font-size:14px;color:var(--muted)}
+#auth input{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:inherit;color:var(--fg)}
+#auth .msg{font-size:13.5px;min-height:1.2em}
+#auth .msg.err{color:var(--fury)} #auth .msg.ok{color:var(--ok)}
+#auth .switch{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:2px;font-size:14px;justify-self:start}
+#auth .row{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}
 .note{font-size:13px;color:var(--muted);max-width:80ch}
 .note a{color:var(--accent)}
 @media (max-width:520px){
@@ -167,6 +180,7 @@ button.thumb:hover{border-color:var(--muted)}
   <div class="top">
     <div class="eyebrow">Collection tracker <span class="tag" id="sync">Loading your collection…</span></div>
     <h1>Riftbound - Complete Database</h1>
+    <div class="acct" id="acct"><button class="btn primary" id="acct-in">Sign in or create an account</button><span class="who" id="acct-who"></span><button class="btn" id="acct-out" hidden>Sign out</button></div>
     <div class="collect-row">
       <span class="collect-k">Unique cards owned</span>
       <span class="collect-v"><b id="c-have">0</b> / <span id="c-tot">0</span></span>
@@ -179,7 +193,14 @@ button.thumb:hover{border-color:var(--muted)}
     </div>
     <div class="meta" id="c-updated"></div>
   </div>
-  <p class="localnote"><b>Your collection is private.</b> Cards and decks you enter save in this browser on this device, and nobody else who opens this site can see them. To move them to another phone or computer, use <b>Back up or move your collection</b> at the bottom of the page.</p>
+  <p class="localnote" id="acct-note"><b>Your collection is private.</b> Create a free account to save your cards and decks to it and use them on any phone or computer. Without an account they save in this browser only. Either way, nobody else who opens this site can see them.</p>
+  <dialog id="auth" aria-labelledby="auth-title"><form id="auth-form" novalidate>
+    <div class="row"><h2 id="auth-title">Sign in</h2><button type="button" class="btn" id="auth-x" aria-label="Close">×</button></div>
+    <label>Email <input id="auth-email" type="email" autocomplete="email" required></label>
+    <label>Password <input id="auth-pass" type="password" autocomplete="current-password" minlength="6" required></label>
+    <p class="msg" id="auth-msg" aria-live="polite"></p>
+    <div class="row"><button type="submit" class="btn primary" id="auth-go">Sign in</button><button type="button" class="switch" id="auth-switch">New here? Create an account</button></div>
+  </form></dialog>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button role="tab" id="t-collection" aria-selected="true" aria-controls="view-collection">Collection</button>
@@ -273,11 +294,12 @@ button.thumb:hover{border-color:var(--muted)}
   </details>
 
   <p class="note">🔒 Everything you enter is saved only in your own browser. Nobody else, including whoever shared this link with you, can see your cards or decks.</p>
-  <p class="note">Card list from the Riftcodex card database plus TCGplayer's listings, refreshed weekly so new sets and promos show up on their own. Prices are TCGplayer market prices in US dollars, refreshed weekly; for printings that only come in foil, the foil price is used. Your collection's value is copies × price for every card you've marked. Tap <b>+</b> or <b>−</b> to record how many copies you own; your counts save in this browser, so use the backup code to move them to another device. Each card name opens its TCGplayer page. Cards tagged <b>Banned</b> can't be played in competitive events (Riot's ban list as of September 18, 2026); <b>Banned in 2v2</b> cards are still legal in 1v1. Card images load from Riot's image server (found through the Riftcodex card database); tap a picture to enlarge it. A few promo printings Riftcodex doesn't list use TCGplayer's photo, or the regular printing's art marked <b>BASE ART</b>.</p>
+  <p class="note">Card list from the Riftcodex card database plus TCGplayer's listings, refreshed weekly so new sets and promos show up on their own. Prices are TCGplayer market prices in US dollars, refreshed weekly; for printings that only come in foil, the foil price is used. Your collection's value is copies × price for every card you've marked. Tap <b>+</b> or <b>−</b> to record how many copies you own; your counts save to your account when you're signed in, or in this browser when you're not. Each card name opens its TCGplayer page. Cards tagged <b>Banned</b> can't be played in competitive events (Riot's ban list as of September 18, 2026); <b>Banned in 2v2</b> cards are still legal in 1v1. Card images load from Riot's image server (found through the Riftcodex card database); tap a picture to enlarge it. A few promo printings Riftcodex doesn't list use TCGplayer's photo, or the regular printing's art marked <b>BASE ART</b>.</p>
   <p class="note">Riftbound Database is a free fan project. It isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc. Card data from <a href="https://riftcodex.com" target="_blank" rel="noopener">Riftcodex</a>; prices from TCGplayer.</p>
 </div>
 
 <script src="cards.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 (function(){
 const CARDS = window.RB_CARDS || [], META = window.RB_META || {sets:[]};
@@ -663,7 +685,7 @@ $("dk-save").addEventListener("click", () => {
   $("deck-summary").scrollIntoView({behavior:"smooth", block:"start"});
 });
 function saveDecks(){
-  LS.set("rb-decks", customDecks); LS.set("rb-deck", curDeck);
+  LS.set("rb-decks", customDecks); LS.set("rb-deck", curDeck); cloudSave();
   if (deckStore) deckStore.set({decks: customDecks, savedAt: new Date().toISOString()}).catch(() => {});
 }
 
@@ -684,7 +706,7 @@ $("bk-restore").addEventListener("click", () => {
 // ---- saving to the account
 function setSync(text, cls){ const s = $("sync"); s.textContent = text; s.className = "tag " + (cls||""); }
 function queueSave(){
-  LS.set("rb-counts", counts);
+  LS.set("rb-counts", counts); cloudSave();
   if (!store) return;
   setSync("Saving…");
   clearTimeout(saveTimer);
@@ -728,7 +750,91 @@ async function connect(){
     }, () => setSync("Couldn't reach your account — saving in this browser", "warn"));
   } catch(e){ setSync("Saved in this browser only", "warn"); }
 }
-syncControls(); render(); showTab(["collection","packs","decks"].includes(st.tab) ? st.tab : "collection"); connect();
+// ---- accounts (Supabase). Table "collections": one row per person, readable and writable only by its owner.
+const SB_URL = "https://unemhzpqaygxpdjmtvuh.supabase.co", SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZW1oenBxYXlneHBkam10dnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTU3NDUsImV4cCI6MjEwNzQ5MTc0NX0.ue0S-o1fLj2ZoP1v7zHmpwIXVbFPJlBI5eRT3njWpWo";
+let sb = null, cloudUser = null, cloudReady = false, cloudTimer = null, cloudDirty = false;
+function cloudSave(){
+  if (!sb || !cloudUser || !cloudReady) return;
+  cloudDirty = true; setSync("Saving…");
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(async () => {
+    cloudDirty = false;
+    const { error } = await sb.from("collections").upsert({ id: cloudUser.id, counts, decks: customDecks, updated_at: new Date().toISOString() });
+    if (error){ cloudDirty = true; setSync("Couldn't save to your account. Saved in this browser; it will retry on your next change.", "warn"); }
+    else if (!cloudDirty) setSync("✓ Saved to your account", "ok");
+  }, 800);
+}
+async function cloudLoad(){
+  if (!sb || !cloudUser) return;
+  setSync("Loading your collection…");
+  const { data, error } = await sb.from("collections").select("counts, decks").eq("id", cloudUser.id).maybeSingle();
+  if (error){ cloudReady = false; setSync("Couldn't reach your account. Saving in this browser for now.", "warn"); return; }
+  if (data){
+    counts = data.counts || {}; customDecks = Array.isArray(data.decks) ? data.decks : [];
+    LS.set("rb-counts", counts); LS.set("rb-decks", customDecks);
+    cloudReady = true; render(); setSync("✓ Saved to your account", "ok");
+  } else {
+    // first sign-in: whatever was entered in this browser becomes the start of the account
+    cloudReady = true; cloudSave(); render();
+  }
+}
+function showAcct(){
+  $("acct-in").hidden = !!cloudUser; $("acct-out").hidden = !cloudUser;
+  $("acct-who").innerHTML = cloudUser ? `Signed in as <b>${esc(cloudUser.email || "")}</b>` : "";
+  $("acct-note").hidden = !!cloudUser;
+}
+let authMode = "in";
+function setAuthMode(m){
+  authMode = m;
+  $("auth-title").textContent = m === "in" ? "Sign in" : "Create an account";
+  $("auth-go").textContent = m === "in" ? "Sign in" : "Create account";
+  $("auth-switch").textContent = m === "in" ? "New here? Create an account" : "Already have an account? Sign in";
+  $("auth-pass").autocomplete = m === "in" ? "current-password" : "new-password";
+  $("auth-msg").textContent = ""; $("auth-msg").className = "msg";
+}
+function authMsg(t, cls){ $("auth-msg").textContent = t; $("auth-msg").className = "msg " + (cls || ""); }
+$("acct-in").addEventListener("click", () => { setAuthMode("in"); try { $("auth").showModal(); } catch(e){ $("auth").setAttribute("open", ""); } $("auth-email").focus(); });
+$("auth-x").addEventListener("click", () => $("auth").close());
+$("auth-switch").addEventListener("click", () => setAuthMode(authMode === "in" ? "up" : "in"));
+$("auth-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!sb){ authMsg("Accounts aren't available right now. Check your connection and reload the page.", "err"); return; }
+  const email = $("auth-email").value.trim(), password = $("auth-pass").value;
+  if (!/^\S+@\S+\.\S+$/.test(email)){ authMsg("Enter your email address.", "err"); return; }
+  if (password.length < 6){ authMsg("Use a password of at least 6 characters.", "err"); return; }
+  $("auth-go").disabled = true; authMsg(authMode === "in" ? "Signing in…" : "Creating your account…");
+  try {
+    if (authMode === "in"){
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) authMsg(/invalid/i.test(error.message) ? "That email and password don't match an account. Check them, or create an account." : /confirm/i.test(error.message) ? "Confirm your email first: open the link we sent you, then sign in." : error.message, "err");
+      else { $("auth").close(); $("auth-pass").value = ""; }
+    } else {
+      const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } });
+      if (error) authMsg(/registered|exists/i.test(error.message) ? "There's already an account with that email. Sign in instead." : error.message, "err");
+      else if (data.session){ $("auth").close(); $("auth-pass").value = ""; }
+      else authMsg("Almost done: open the confirmation link we emailed you, then sign in here.", "ok");
+    }
+  } catch(err){ authMsg("Couldn't reach the account service. Check your connection and try again.", "err"); }
+  $("auth-go").disabled = false;
+});
+$("acct-out").addEventListener("click", async () => {
+  if (sb) await sb.auth.signOut();
+  // clear this browser so the next person on a shared device starts empty
+  counts = {}; customDecks = []; LS.set("rb-counts", counts); LS.set("rb-decks", customDecks);
+  render(); setSync("Signed out. Nothing is saved in this browser.", "ok");
+});
+document.addEventListener("visibilitychange", () => { if (!document.hidden && cloudUser && cloudReady && !cloudDirty) cloudLoad(); });
+function cloudInit(){
+  if (!window.supabase || !window.supabase.createClient){ return; }
+  sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  sb.auth.onAuthStateChange((event, session) => {
+    const u = session ? session.user : null, changed = (u && u.id) !== (cloudUser && cloudUser.id);
+    cloudUser = u; showAcct();
+    if (u && changed){ cloudReady = false; cloudLoad(); }
+    if (!u){ cloudReady = false; }
+  });
+}
+syncControls(); render(); showTab(["collection","packs","decks"].includes(st.tab) ? st.tab : "collection"); connect(); cloudInit(); showAcct();
 })();
 </script>
 
