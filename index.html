@@ -149,7 +149,12 @@ select{background:var(--panel);border:1px solid var(--line);border-radius:8px;pa
 .fpanel{display:grid;gap:8px}
 .fcount{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--accent);color:var(--bg);font-size:12px;font-weight:700}
 .fcount:empty{display:none}
-.list.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.list.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (min-width:1000px){.list.grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (min-width:1500px){.list.grid{grid-template-columns:repeat(8,minmax(0,1fr))}}
+@media (max-width:699px){.list.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}}
+body.gridview .wrap{max-width:1840px}
+@media (min-width:700px){.tname{font-size:14px}.tsub{font-size:12px}.tile .price b{font-size:15px}.tile .price small{font-size:12px}.card.tile{padding:8px;gap:6px}}
 .card.tile{display:flex;flex-direction:column;gap:5px;padding:6px;position:relative;align-items:stretch;min-width:0}
 .tile .thumb{width:100%}
 a.tname{color:var(--fg);text-decoration:none}
@@ -181,7 +186,6 @@ a.tname:hover,a.tname:focus-visible{text-decoration:underline;text-decoration-co
   .vmid{font-size:18px}
   #c-updated{font-size:11.5px;line-height:1.35}
   .localnote{font-size:13px;padding:8px 10px}
-  .list.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
   .sets{display:flex;overflow-x:auto;gap:8px;scroll-snap-type:x proximity;padding-bottom:4px}
   .setbtn{flex:0 0 150px;scroll-snap-align:start}
 }
@@ -192,10 +196,10 @@ button.thumb:hover{border-color:var(--muted)}
 .thumb.none{display:grid;place-items:center;text-align:center;color:var(--muted);font-size:10px;line-height:1.2;font-family:var(--display)}
 .thumb .bm{position:absolute;left:0;right:0;bottom:0;background:rgb(0 0 0 / .72);color:var(--warn);font-size:9px;line-height:13px;text-align:center;letter-spacing:.04em;white-space:nowrap}
 @media (max-width:520px){.thumb .bm{font-size:7px;letter-spacing:0;line-height:11px}}
-#lb{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);padding:14px;max-width:min(440px,calc(100vw - 32px));width:100%}
+#lb{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);padding:14px;max-width:min(640px,calc(100vw - 32px));width:auto;max-height:calc(100dvh - 24px);overflow:auto}
 #lb::backdrop{background:rgb(5 6 10 / .78)}
-#lb .lbimg{display:block;width:100%;height:auto;border-radius:10px;background:var(--bg);aspect-ratio:744/1039;object-fit:contain}
-#lb .lbimg.land{aspect-ratio:1039/744}
+#lb .lbimg{display:block;width:min(612px,calc(100vw - 60px),(100dvh - 150px) * 0.716);max-width:100%;height:auto;margin:0 auto;border-radius:10px;background:var(--bg);aspect-ratio:744/1039;object-fit:contain}
+#lb .lbimg.land{aspect-ratio:1039/744;width:min(612px,calc(100vw - 60px),(100dvh - 150px) * 1.396)}
 #lb .lbh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
 #lb h2{font-family:var(--display);font-size:17px;margin:0}
 #lb .lbx{background:none;border:1px solid var(--line);border-radius:6px;width:32px;height:32px;font-size:18px;line-height:1;color:var(--muted);flex:none}
@@ -558,10 +562,13 @@ function priceHTML(c, n){
   return `<span class="price" title="TCGplayer market price${c.foil ? " (this printing only comes in foil)" : ""}"><b>${esc(one)}</b>${lines.map(l => `<small>${esc(l)}</small>`).join("")}</span>`;
 }
 
+let gridCols = 0;
+// if the window is resized across a column breakpoint, redo the page so rows stay full
+addEventListener("resize", () => { clearTimeout(window.__rsz); window.__rsz = setTimeout(() => { if (st.view === "grid" && getComputedStyle($("list")).gridTemplateColumns.split(" ").filter(Boolean).length !== gridCols) renderList(); }, 200); });
 function tileHTML(c){
   const n = counts[c.id]||0;
   return `<div class="card tile${n?" got":""}" data-id="${esc(c.id)}">
-    ${thumbHTML(c, 240)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
+    ${thumbHTML(c, PHONE() ? 240 : 400)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
     <a class="tname" href="${tcgURL(c)}" target="_blank" rel="noopener" title="Open ${esc(c.name)} on TCGplayer">${esc(c.name)}</a>
     <div class="tsub"><span class="r-${c.rarity}">${esc(codeOf(c))}</span>${c.variant ? ` · ${esc(c.variant)}` : ""}</div>
     <div class="tfoot">${priceHTML(c, n)}<div class="step" role="group" aria-label="Copies of ${esc(c.name)}">
@@ -578,10 +585,13 @@ function renderList(){
   if (st.sort === "price") shown.sort((a,b) => (b.price ?? -1) - (a.price ?? -1));
   else if (st.sort === "value") shown.sort((a,b) => (counts[b.id]||0)*(b.price||0) - (counts[a.id]||0)*(a.price||0) || (b.price ?? -1) - (a.price ?? -1));
   else if (st.sort === "name") shown.sort((a,b) => a.name.localeCompare(b.name));
-  const PS = st.view === "grid" ? (PHONE() ? 30 : 60) : 50;
+  $("list").classList.toggle("grid", st.view === "grid"); document.body.classList.toggle("gridview", st.view === "grid");
+  // page size always divides evenly by the column count: 8, 6 or 4 across -> 48 a page; 3 across (phones) -> 30
+  const cols = st.view === "grid" ? (getComputedStyle($("list")).gridTemplateColumns.split(" ").filter(Boolean).length || 4) : 1;
+  gridCols = cols;
+  const PS = st.view === "grid" ? (cols === 3 ? 30 : 48) : 50;
   const pages = Math.max(1, Math.ceil(shown.length / PS)); st.page = Math.min(Math.max(0, st.page || 0), pages - 1);
   const slice = shown.slice(st.page * PS, st.page * PS + PS);
-  $("list").classList.toggle("grid", st.view === "grid");
   $("list").innerHTML = slice.length ? slice.map(st.view === "grid" ? tileHTML : cardHTML).join("")
     : `<div class="empty">${st.show==="have" && !Object.keys(counts).length ? "You haven't marked any cards yet. Switch to All and tap + on the cards you own." : "No cards match these filters. Try clearing the search or a filter."}</div>`;
   $("more").hidden = true; renderPager(pages);
