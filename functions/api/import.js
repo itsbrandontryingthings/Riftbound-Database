@@ -28,7 +28,7 @@ export async function onRequestGet({ request }) {
     if (!text) return reply({ error: "Couldn't find a decklist on that page. Copy the list from the page and paste it into the Decklist box instead." }, 422);
     return reply({ name, text, source: host });
   } catch (e) {
-    return reply({ error: "Couldn't open that page. Check the link works in your browser, or copy the list and paste it instead." }, 502);
+    return reply({ error: "Couldn't open that page. Check the link works in your browser, or copy the list and paste it instead.", detail: String(e && e.message || e).slice(0, 120) }, 502);
   }
 }
 
@@ -38,7 +38,11 @@ async function get(url) {
   try {
     const r = await fetch(url, {
       signal: ctrl.signal, redirect: "follow",
-      headers: { "user-agent": "Mozilla/5.0 (compatible; RiftboundDatabase/1.0; +https://rbdatabase.pages.dev)", "accept": "text/html,text/plain;q=0.9,*/*;q=0.5" },
+      headers: {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "accept-language": "en-US,en;q=0.9",
+      },
     });
     if (!r.ok) throw new Error("HTTP " + r.status);
     const t = await r.text();
