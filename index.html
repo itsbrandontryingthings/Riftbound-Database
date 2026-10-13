@@ -149,11 +149,25 @@ select{background:var(--panel);border:1px solid var(--line);border-radius:8px;pa
 .fpanel{display:grid;gap:8px}
 .fcount{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--accent);color:var(--bg);font-size:12px;font-weight:700}
 .fcount:empty{display:none}
-.list.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-@media (min-width:1000px){.list.grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
-@media (min-width:1500px){.list.grid{grid-template-columns:repeat(8,minmax(0,1fr))}}
-@media (max-width:699px){.list.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}}
-body.gridview .wrap{max-width:1840px}
+/* card size S / M / L: columns by screen width (page sizes divide evenly by every count) */
+.list.grid{--c:4;grid-template-columns:repeat(var(--c),minmax(0,1fr));gap:12px}
+@media (min-width:1000px){.list.grid{--c:6}}
+@media (min-width:1500px){.list.grid{--c:8}}
+@media (max-width:699px){.list.grid{--c:3;gap:8px}}
+.list.grid.sz-m{--c:3}
+@media (min-width:1000px){.list.grid.sz-m{--c:4}}
+@media (min-width:1500px){.list.grid.sz-m{--c:6}}
+@media (max-width:699px){.list.grid.sz-m{--c:2}}
+.list.grid.sz-l{--c:2}
+@media (min-width:1000px){.list.grid.sz-l{--c:3}}
+@media (min-width:1500px){.list.grid.sz-l{--c:4}}
+@media (max-width:699px){.list.grid.sz-l{--c:1}}
+body.gridview .wrap{max-width:none}
+.sizeseg[hidden]{display:none!important}
+.list.grid.sz-m .tname,.list.grid.sz-l .tname{font-size:15px}
+.list.grid.sz-l .tname{font-size:16px}
+.list.grid.sz-m .tile .price b,.list.grid.sz-l .tile .price b{font-size:16px}
+.list.grid.sz-l .tsub{font-size:13px}
 @media (min-width:700px){.tname{font-size:14px}.tsub{font-size:12px}.tile .price b{font-size:15px}.tile .price small{font-size:12px}.card.tile{padding:8px;gap:6px}}
 .card.tile{display:flex;flex-direction:column;gap:5px;padding:6px;position:relative;align-items:stretch;min-width:0}
 .tile .thumb{width:100%}
@@ -321,7 +335,7 @@ button.thumb:hover{border-color:var(--muted)}
     </div>
   </div>
 
-  <div class="listbar"><span class="meta" id="count2"></span><span class="grow"></span><div class="seg" role="group" aria-label="Layout"><button id="v-list" aria-pressed="false">List</button><button id="v-grid" aria-pressed="false">Grid</button></div></div>
+  <div class="listbar"><span class="meta" id="count2"></span><span class="grow"></span><div class="seg sizeseg" id="sizeseg" role="group" aria-label="Card size"><button id="sz-s" aria-pressed="false" title="Small cards">S</button><button id="sz-m" aria-pressed="false" title="Medium cards">M</button><button id="sz-l" aria-pressed="false" title="Large cards">L</button></div><div class="seg" role="group" aria-label="Layout"><button id="v-list" aria-pressed="false">List</button><button id="v-grid" aria-pressed="false">Grid</button></div></div>
   <nav class="pager" id="pager-top" aria-label="Pages"></nav>
   <div class="list" id="list" aria-live="polite"></div>
   <nav class="pager" id="pager-bot" aria-label="Pages"></nav>
@@ -494,7 +508,8 @@ function viewLink(c, label){ return `<a class="view" href="${tcgURL(c)}" target=
 const RC_IMG = "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/";
 function imgURL(c, w){
   if (!c) return "";
-  if (c.img) return `${RC_IMG}${c.img}?accountingTag=RB&w=${w}`;
+  // WebP keeps card text crisp at a fraction of the PNG size; 744 = the card's full resolution
+  if (c.img) return w >= 744 ? `${RC_IMG}${c.img}?accountingTag=RB&fm=webp&q=92` : `${RC_IMG}${c.img}?accountingTag=RB&w=${w}&fm=webp&q=90`;
   if (c.imgTcg && c.tcg) return w > 200 ? `https://tcgplayer-cdn.tcgplayer.com/product/${c.tcg}_in_1000x1000.jpg` : `https://tcgplayer-cdn.tcgplayer.com/product/${c.tcg}_200w.jpg`;
   return "";
 }
@@ -568,7 +583,7 @@ addEventListener("resize", () => { clearTimeout(window.__rsz); window.__rsz = se
 function tileHTML(c){
   const n = counts[c.id]||0;
   return `<div class="card tile${n?" got":""}" data-id="${esc(c.id)}">
-    ${thumbHTML(c, PHONE() ? 240 : 400)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
+    ${thumbHTML(c, PHONE() && st.size === "s" ? 480 : 744)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
     <a class="tname" href="${tcgURL(c)}" target="_blank" rel="noopener" title="Open ${esc(c.name)} on TCGplayer">${esc(c.name)}</a>
     <div class="tsub"><span class="r-${c.rarity}">${esc(codeOf(c))}</span>${c.variant ? ` · ${esc(c.variant)}` : ""}</div>
     <div class="tfoot">${priceHTML(c, n)}<div class="step" role="group" aria-label="Copies of ${esc(c.name)}">
@@ -585,11 +600,14 @@ function renderList(){
   if (st.sort === "price") shown.sort((a,b) => (b.price ?? -1) - (a.price ?? -1));
   else if (st.sort === "value") shown.sort((a,b) => (counts[b.id]||0)*(b.price||0) - (counts[a.id]||0)*(a.price||0) || (b.price ?? -1) - (a.price ?? -1));
   else if (st.sort === "name") shown.sort((a,b) => a.name.localeCompare(b.name));
+  if (!["s","m","l"].includes(st.size)) st.size = "m";
   $("list").classList.toggle("grid", st.view === "grid"); document.body.classList.toggle("gridview", st.view === "grid");
+  ["s","m","l"].forEach(z => { $("list").classList.toggle("sz-" + z, st.view === "grid" && st.size === z && z !== "s"); $("sz-" + z).setAttribute("aria-pressed", st.size === z); });
+  $("sizeseg").hidden = st.view !== "grid";
   // page size always divides evenly by the column count: 8, 6 or 4 across -> 48 a page; 3 across (phones) -> 30
   const cols = st.view === "grid" ? (getComputedStyle($("list")).gridTemplateColumns.split(" ").filter(Boolean).length || 4) : 1;
   gridCols = cols;
-  const PS = st.view === "grid" ? (cols === 3 ? 30 : 48) : 50;
+  const PS = st.view === "grid" ? ({1:10, 2:24, 3:30}[cols] || 48) : 50;
   const pages = Math.max(1, Math.ceil(shown.length / PS)); st.page = Math.min(Math.max(0, st.page || 0), pages - 1);
   const slice = shown.slice(st.page * PS, st.page * PS + PS);
   $("list").innerHTML = slice.length ? slice.map(st.view === "grid" ? tileHTML : cardHTML).join("")
@@ -620,6 +638,7 @@ $("more").addEventListener("click", () => { st.limit += PAGE; renderList(); });
 // count above the list mirrors the filter bar's count
 new MutationObserver(() => { $("count2").textContent = $("count").textContent; }).observe($("count"), {childList:true, characterData:true, subtree:true});
 ["list","grid"].forEach(v => $("v-"+v).addEventListener("click", () => { if (st.view === v) return; st.view = v; st.page = 0; render(); }));
+["s","m","l"].forEach(z => $("sz-"+z).addEventListener("click", () => { if (st.size === z) return; st.size = z; st.page = 0; render(); }));
 document.querySelectorAll(".pager").forEach(p => p.addEventListener("click", e => {
   const b = e.target.closest("button[data-pg]"); if (!b || b.disabled) return;
   st.page += Number(b.dataset.pg); render();
