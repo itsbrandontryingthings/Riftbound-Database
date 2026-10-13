@@ -135,6 +135,19 @@ select{background:var(--panel);border:1px solid var(--line);border-radius:8px;pa
 .card.got .step output{color:var(--ok)}
 .empty{background:var(--panel);border:1px dashed var(--line);border-radius:10px;padding:24px;text-align:center;color:var(--muted)}
 .more{justify-self:center}
+.wishbtn{background:none;border:1px solid var(--line);border-radius:4px;padding:0 7px;line-height:20px;font-size:12.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+.wishbtn:hover{color:var(--fg);border-color:var(--muted)}
+.wishbtn[aria-pressed="true"]{color:#ff7a90;border-color:color-mix(in srgb,#ff7a90 55%,var(--line));background:color-mix(in srgb,#ff7a90 12%,transparent)}
+.wishbtn.over{position:absolute;top:10px;right:10px;z-index:2;width:30px;height:30px;padding:0;border-radius:999px;font-size:16px;line-height:28px;background:rgb(10 12 18 / .72);border-color:transparent;color:#fff}
+.wishbtn.over[aria-pressed="true"]{color:#ff7a90;background:rgb(10 12 18 / .85)}
+.wsum{display:flex;gap:12px 32px;flex-wrap:wrap;align-items:flex-end}
+.wlist{display:grid;gap:4px}
+.wrow{display:grid;grid-template-columns:52px minmax(0,1fr) auto auto;gap:10px;align-items:center;background:var(--row);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.wrow .own{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.wrow .own.ok{color:var(--ok)}
+.wrow .rm{background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:13px}
+.wrow .rm:hover{color:var(--fury);border-color:var(--fury)}
+@media (max-width:640px){.wrow{grid-template-columns:44px minmax(0,1fr) auto}.wrow .wq{grid-column:2/4;justify-self:start;display:flex;gap:10px;align-items:center;flex-wrap:wrap}}
 /* list bar, pager, grid tiles, filters toggle, top button */
 .setbtn{min-width:0;overflow:hidden}
 .setbtn .sn{min-width:0;overflow-wrap:anywhere}
@@ -296,7 +309,8 @@ button.thumb:hover{border-color:var(--muted)}
     <button role="tab" id="t-collection" aria-selected="true" aria-controls="view-collection">Collection</button>
     <button role="tab" id="t-packs" aria-selected="false" aria-controls="view-packs">Open packs</button>
     <button role="tab" id="t-decks" aria-selected="false" aria-controls="view-decks">Deck checker</button>
-    <button role="tab" id="t-friends" aria-selected="false" aria-controls="view-friends">Friends' decks</button>
+    <button role="tab" id="t-wish" aria-selected="false" aria-controls="view-wish">Wish list</button>
+    <button role="tab" id="t-friends" aria-selected="false" aria-controls="view-friends">Friends</button>
   </nav>
 
   <section class="view" id="view-collection" role="tabpanel" aria-labelledby="t-collection">
@@ -370,9 +384,9 @@ button.thumb:hover{border-color:var(--muted)}
 
   <section class="view" id="view-friends" role="tabpanel" aria-labelledby="t-friends" hidden>
     <div class="panel frbar">
-      <h2>Friends' decks</h2>
-      <p class="meta">Decks other players have chosen to share. Search by deck name, player, or a card you're looking to trade for. Each deck shows how many of its cards you already own.</p>
-      <input class="search" id="fr-q" type="search" placeholder="Search decks, players or cards, e.g. Jinx" aria-label="Search shared decks" autocomplete="off">
+      <h2>Friends' decks and wish lists</h2>
+      <p class="meta">Decks and wish lists other players have chosen to share. Search by deck name, player, or a card you're looking to trade for. Decks show how many of their cards you own; wish lists show which wanted cards you could trade.</p>
+      <input class="search" id="fr-q" type="search" placeholder="Search decks, wish lists, players or cards, e.g. Jinx" aria-label="Search shared decks" autocomplete="off">
       <span class="meta" id="fr-count" aria-live="polite"></span>
     </div>
     <div class="frlist" id="fr-list"></div>
@@ -386,6 +400,11 @@ button.thumb:hover{border-color:var(--muted)}
     <p class="msg" id="share-msg" aria-live="polite"></p>
     <div class="frow"><button type="submit" class="btn primary" id="share-go">Share deck</button><button type="button" class="btn" id="share-x">Cancel</button></div>
   </form></dialog>
+
+  <section class="view" id="view-wish" role="tabpanel" aria-labelledby="t-wish" hidden>
+    <div class="panel" id="wish-summary"></div>
+    <div class="wlist" id="wish-list"></div>
+  </section>
 
   <section class="view" id="view-decks" role="tabpanel" aria-labelledby="t-decks" hidden>
     <div class="deck-tabs" id="deck-tabs" role="group" aria-label="Choose a deck"></div>
@@ -410,7 +429,7 @@ button.thumb:hover{border-color:var(--muted)}
     <div class="frow"><button class="btn" id="bk-restore">Restore from backup</button></div>
   </details>
 
-  <p class="note">🔒 Everything you enter is saved only in your own browser. Nobody else, including whoever shared this link with you, can see your cards or decks.</p>
+  <p class="note">🔒 Your cards, decks and wish list are private. They save to your account when you're signed in, or in this browser when you're not. Only decks and wish lists you choose to share are visible, and only to people signed in to this site.</p>
   <p class="note">Card list from the Riftcodex card database plus TCGplayer's listings, refreshed weekly so new sets and promos show up on their own. Prices are TCGplayer market prices in US dollars, refreshed weekly; for printings that only come in foil, the foil price is used. Your collection's value is copies × price for every card you've marked. Tap <b>+</b> or <b>−</b> to record how many copies you own; your counts save to your account when you're signed in, or in this browser when you're not. Each card name opens its TCGplayer page. Cards tagged <b>Banned</b> can't be played in competitive events (Riot's ban list as of September 18, 2026); <b>Banned in 2v2</b> cards are still legal in 1v1. Card images load from Riot's image server (found through the Riftcodex card database); tap a picture to enlarge it. A few promo printings Riftcodex doesn't list use TCGplayer's photo, or the regular printing's art marked <b>BASE ART</b>.</p>
   <p class="note">Riftbound Database is a free fan project. It isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc. Card data from <a href="https://riftcodex.com" target="_blank" rel="noopener">Riftcodex</a>; prices from TCGplayer.</p>
 </div>
@@ -441,6 +460,10 @@ let store = null, saveTimer = null, lastSaved = "";
 // ---- local fallback / remembered filters (per browser only)
 const LS = {get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 counts = LS.get("rb-counts") || {};
+let wish = LS.get("rb-wish") || {};          // card id -> copies wanted; wish._shared = shared with friends
+const wishIds = () => Object.keys(wish).filter(k => k[0] !== "_" && wish[k] > 0);
+function saveWish(){ LS.set("rb-wish", wish); if (typeof cloudSave === "function") cloudSave(); if (typeof syncShared === "function") syncShared(); }
+function wishBtn(c, over){ const on = !!wish[c.id]; return `<button class="wishbtn${over ? " over" : ""}" data-wish="${esc(c.id)}" aria-pressed="${on}" title="${on ? "On your wish list (tap to remove)" : "Add to your wish list"}" aria-label="${on ? "Remove " + esc(c.name) + " from" : "Add " + esc(c.name) + " to"} your wish list">${on ? "♥" : "♡"}${over ? "" : (on ? " Wanted" : " Want")}</button>`; }
 const savedF = LS.get("rb-filters"); if (savedF) { Object.assign(st, savedF, {doms:new Set(savedF.doms||[]), limit:PAGE}); }
 const PHONE = () => matchMedia("(max-width:640px)").matches;
 if (st.view !== "grid" && st.view !== "list") st.view = PHONE() ? "grid" : "list";
@@ -449,6 +472,7 @@ if (st.view !== "grid" && st.view !== "list") st.view = PHONE() ? "grid" : "list
 const setName = Object.fromEntries(META.sets.map(s => [s.code, s.name]));
 const types = [...new Set(CARDS.map(c => c.type))].sort();
 types.forEach(t => $("type").insertAdjacentHTML("beforeend", `<option value="${esc(t)}">${esc(t)}</option>`));
+$("type").insertAdjacentHTML("beforeend", `<option value="__token">Token</option>`);
 RAR.filter(r => CARDS.some(c => c.rarity === r)).forEach(r => $("rarity").insertAdjacentHTML("beforeend", `<option value="${r}">${r}</option>`));
 $("doms").innerHTML = DOMS.map(([d,v]) => `<button data-d="${d}" aria-pressed="false"><span class="dot" style="background:var(${v})"></span>${d}</button>`).join("") + `<button class="banchip" data-ban="1" aria-pressed="false" title="Show only cards banned from competitive play"><span class="dot"></span>Banned</button>`;
 if (META.updated) $("c-updated").textContent = `Card list updated ${META.updated} · ${CARDS.length.toLocaleString()} printings across ${META.sets.length} sets` + (META.pricesUpdated ? ` · Prices are TCGplayer market prices (USD), updated ${META.pricesUpdated}` : "") + (FX ? ` · CAD at the Bank of Canada rate of ${FX.toFixed(4)} (${META.fx.date})` : "");
@@ -464,7 +488,7 @@ const isVariant = c => !!c.variant || ["OPP","PR","JDG"].includes(c.set);
 function matches(c, ignoreSet){
   if (!ignoreSet && st.set && c.set !== st.set) return false;
   if (!st.variants && isVariant(c)) return false;
-  if (st.type && c.type !== st.type) return false;
+  if (st.type === "__token" ? !c.token : (st.type && c.type !== st.type)) return false;
   if (st.rarity && c.rarity !== st.rarity) return false;
   if (st.doms.size && !c.domains.some(d => st.doms.has(d))) return false;
   if (st.banned && !c.ban) return false;
@@ -562,7 +586,7 @@ function cardHTML(c){
     ${thumbHTML(c)}
     <div class="code"><b>${c.set}</b>${esc(num)}</div>
     <div class="info"><span class="name"><a href="${link}" target="_blank" rel="noopener">${esc(c.name)}</a></span>
-      <span class="sub">${dots}<span>${esc(kind)}</span><span class="r-${c.rarity}">${c.rarity}</span>${c.variant?`<span class="pill var">${esc(c.variant)}</span>`:""}${banPill(c)}${viewLink(c)}</span></div>
+      <span class="sub">${dots}<span>${esc(kind)}</span><span class="r-${c.rarity}">${c.rarity}</span>${c.variant?`<span class="pill var">${esc(c.variant)}</span>`:""}${banPill(c)}${viewLink(c)}${wishBtn(c)}</span></div>
     <div class="right">${priceHTML(c, n)}<div class="step" role="group" aria-label="Copies of ${esc(c.name)}">
       <button data-a="-1" aria-label="Remove one" ${n?"":"disabled"}>−</button><output>${n}</output><button data-a="1" aria-label="Add one">+</button>
     </div></div></div>`;
@@ -583,7 +607,7 @@ addEventListener("resize", () => { clearTimeout(window.__rsz); window.__rsz = se
 function tileHTML(c){
   const n = counts[c.id]||0;
   return `<div class="card tile${n?" got":""}" data-id="${esc(c.id)}">
-    ${thumbHTML(c, PHONE() && st.size === "s" ? 480 : 744)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
+    ${thumbHTML(c, PHONE() && st.size === "s" ? 480 : 744)}${wishBtn(c, true)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
     <a class="tname" href="${tcgURL(c)}" target="_blank" rel="noopener" title="Open ${esc(c.name)} on TCGplayer">${esc(c.name)}</a>
     <div class="tsub"><span class="r-${c.rarity}">${esc(codeOf(c))}</span>${c.variant ? ` · ${esc(c.variant)}` : ""}</div>
     <div class="tfoot">${priceHTML(c, n)}<div class="step" role="group" aria-label="Copies of ${esc(c.name)}">
@@ -594,6 +618,48 @@ function renderPager(pages){
   const html = pages <= 1 ? "" : `<button class="btn" data-pg="-1" ${st.page ? "" : "disabled"}>‹ Prev</button><span class="meta">Page ${st.page + 1} of ${pages}</span><button class="btn" data-pg="1" ${st.page < pages - 1 ? "" : "disabled"}>Next ›</button>`;
   $("pager-top").innerHTML = html; $("pager-bot").innerHTML = html;
 }
+function renderWish(){
+  const ids = wishIds().filter(id => byId[id]).sort((a, b) => CARDS.indexOf(byId[a]) - CARDS.indexOf(byId[b]));
+  const copies = ids.reduce((a, id) => a + wish[id], 0);
+  const cost = ids.reduce((a, id) => a + wish[id] * (byId[id].price || 0), 0);
+  const unpriced = ids.filter(id => byId[id].price == null).length;
+  $("wish-summary").innerHTML = `<h2>Wish list</h2>
+    <div class="wsum">
+      <div class="vbox"><span class="collect-k">Cards wanted</span><span class="vmid">${ids.length} <small class="meta">(${copies} cop${copies === 1 ? "y" : "ies"})</small></span></div>
+      <div class="vbox"><span class="collect-k">Cost to buy</span><span class="vbig">${moneyHTML(cost)}</span></div>
+    </div>
+    <div class="frow"><span class="meta">${ids.length ? "TCGplayer market prices" + (unpriced ? ` · ${unpriced} card${unpriced === 1 ? " has" : "s have"} no price yet` : "") : "Tap ♡ Want on any card in Collection to add it here, even if it's not in one of your decks."}</span><span style="flex:1"></span>
+      ${ids.length ? `<button class="btn" id="wish-copy">Copy wish list</button>` : ""}${typeof openShare === "function" ? (wish._shared ? `<span class="tag ok">✓ Shared with friends</span><button class="btn" id="wish-unshare">Stop sharing</button>` : `<button class="btn" id="wish-share">Share with friends</button>`) : ""}</div>`;
+  $("wish-list").innerHTML = ids.map(id => { const c = byId[id], q = wish[id], have = counts[id] || 0;
+    return `<div class="wrow" data-id="${esc(id)}">${thumbHTML(c, 160)}
+      <span class="info"><span class="name"><a href="${tcgURL(c)}" target="_blank" rel="noopener">${esc(c.name)}</a></span><span class="sub"><span class="r-${c.rarity}">${esc(codeOf(c))}</span>${c.variant ? `<span class="pill var">${esc(c.variant)}</span>` : ""}${banPill(c)}<span class="own${have ? " ok" : ""}">${have ? `you own ${have}` : "you don't own it"}</span></span></span>
+      <span class="wq">${priceHTML(c, q)}<span class="step" role="group" aria-label="Copies of ${esc(c.name)} wanted"><button data-w="-1" aria-label="Want one fewer">−</button><output>${q}</output><button data-w="1" aria-label="Want one more">+</button></span></span>
+      <button class="rm" data-w="rm" aria-label="Remove ${esc(c.name)} from your wish list">Remove</button></div>`; }).join("");
+}
+function wishText(){
+  return wishIds().filter(id => byId[id]).map(id => { const c = byId[id]; return `${wish[id]} ${c.name} [${codeOf(c)}${c.variant ? ` · ${c.variant}` : ""}]`; }).join("\n");
+}
+$("wish-list").addEventListener("click", e => {
+  const b = e.target.closest("button[data-w]"); if (!b) return;
+  const id = b.closest(".wrow").dataset.id;
+  if (b.dataset.w === "rm") delete wish[id]; else { const q = (wish[id] || 0) + Number(b.dataset.w); if (q > 0) wish[id] = q; else delete wish[id]; }
+  saveWish(); renderWish();
+});
+$("wish-summary").addEventListener("click", e => {
+  if (e.target.id === "wish-copy"){ const ids = wishIds().filter(id => byId[id]); copy(wishText() + `\n\nTotal: ${money(ids.reduce((a, id) => a + wish[id] * (byId[id].price || 0), 0))}`, "wish list"); }
+  if (e.target.id === "wish-share" && typeof openShare === "function") openShare("wish");
+  if (e.target.id === "wish-unshare"){ delete wish._shared; saveWish(); renderWish(); }
+});
+// ♡ / ♥ on any card
+document.addEventListener("click", e => {
+  const b = e.target.closest("button[data-wish]"); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const id = b.dataset.wish;
+  if (wish[id]) delete wish[id]; else wish[id] = 1;
+  saveWish();
+  document.querySelectorAll(`button[data-wish="${CSS.escape(id)}"]`).forEach(x => { x.outerHTML = wishBtn(byId[id], x.classList.contains("over")); });
+  if (st.tab === "wish") renderWish();
+}, true);
 let shown = [];
 function renderList(){
   shown = CARDS.filter(c => matches(c));
@@ -618,7 +684,7 @@ function renderList(){
   $("fcount").textContent = nf ? nf : "";
   $("count").textContent = `${shown.length.toLocaleString()} card${shown.length===1?"":"s"}` + (st.set ? ` in ${setName[st.set]}` : "");
 }
-function render(){ renderSummary(); renderList(); if (st.tab === "decks") renderDecks(); if (st.tab === "packs") renderPack(); LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); }
+function render(){ renderSummary(); renderList(); if (st.tab === "decks") renderDecks(); if (st.tab === "packs") renderPack(); if (st.tab === "wish") renderWish(); LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); }
 
 // ---- events
 $("list").addEventListener("click", e => {
@@ -684,14 +750,15 @@ function adjust(id, d){
 // ---- tabs
 function showTab(t){
   st.tab = t;
-  for (const k of ["collection","packs","decks","friends"]){ $("t-"+k).setAttribute("aria-selected", k===t); $("view-"+k).hidden = k!==t; }
+  for (const k of ["collection","packs","decks","friends","wish"]){ $("t-"+k).setAttribute("aria-selected", k===t); $("view-"+k).hidden = k!==t; }
   if (t === "collection") renderList();
   if (t === "packs"){ renderPack(); setTimeout(() => $("qa-q").focus(), 0); }
   if (t === "decks") renderDecks();
+  if (t === "wish") renderWish();
   if (t === "friends") renderFriends();
   LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined});
 }
-["collection","packs","decks","friends"].forEach(k => $("t-"+k).addEventListener("click", () => showTab(k)));
+["collection","packs","decks","friends","wish"].forEach(k => $("t-"+k).addEventListener("click", () => showTab(k)));
 
 // ---- open packs (quick add)
 META.sets.forEach(s => $("qa-set").insertAdjacentHTML("beforeend", `<option value="${s.code}">${esc(s.name)}</option>`));
@@ -823,7 +890,7 @@ $("deck-summary").addEventListener("click", e => {
     if (editingId) stopEditing();
     saveDecks(); renderDecks();
   }
-  if (e.target.id === "dk-share") openShare();
+  if (e.target.id === "dk-share") openShare("deck");
   if (e.target.id === "dk-unshare"){ const d = customDecks.find(x => x.id === curDeck); if (d){ d.shared = false; saveDecks(); renderDecks(); } }
   if (e.target.id === "dk-edit"){
     const d = allDecks().find(x => x.id === curDeck); if (!d) return;
@@ -862,7 +929,7 @@ function saveDecks(){
 
 // ---- backup / restore (lets browser-only users move their data between devices)
 let bkArm = false;
-$("bk-copy").addEventListener("click", () => copy(btoa(unescape(encodeURIComponent(JSON.stringify({v:1, counts, decks:customDecks})))), "backup code"));
+$("bk-copy").addEventListener("click", () => copy(btoa(unescape(encodeURIComponent(JSON.stringify({v:1, counts, decks:customDecks, wish})))), "backup code"));
 $("bk-restore").addEventListener("click", () => {
   let data; try { data = JSON.parse(decodeURIComponent(escape(atob($("bk-text").value.trim())))); } catch(e){ data = null; }
   if (!data || typeof data.counts !== "object"){ $("bk-msg").textContent = "That doesn't look like a backup code. Copy the whole code and try again."; return; }
@@ -870,6 +937,8 @@ $("bk-restore").addEventListener("click", () => {
   bkArm = false; $("bk-restore").textContent = "Restore from backup";
   counts = {}; for (const [k,v] of Object.entries(data.counts)) if (byId[k] && v > 0) counts[k] = Math.floor(v);
   customDecks = Array.isArray(data.decks) ? data.decks.filter(d => d && d.name && d.text) : [];
+  wish = {}; if (data.wish && typeof data.wish === "object") for (const [k, v] of Object.entries(data.wish)) if (byId[k] && v > 0) wish[k] = Math.floor(v);
+  LS.set("rb-wish", wish);
   $("bk-text").value = ""; $("bk-msg").textContent = `Restored ${Object.keys(counts).length} cards and ${customDecks.length} deck${customDecks.length===1?"":"s"}.`;
   saveDecks(); queueSave(); render();
 });
@@ -924,6 +993,8 @@ async function connect(){
 // ---- accounts (Supabase). Table "collections": one row per person, readable and writable only by its owner.
 const SB_URL = "https://unemhzpqaygxpdjmtvuh.supabase.co", SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZW1oenBxYXlneHBkam10dnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTU3NDUsImV4cCI6MjEwNzQ5MTc0NX0.ue0S-o1fLj2ZoP1v7zHmpwIXVbFPJlBI5eRT3njWpWo";
 let sb_onSignedIn = () => {};
+let noWishCol = false;
+const cloudRow = me => Object.assign({ id: me.id, counts, decks: customDecks, updated_at: new Date().toISOString() }, noWishCol ? {} : { wish });
 let sb = null, cloudUser = null, cloudReady = false, cloudTimer = null, cloudDirty = false;
 function cloudSave(){
   if (!sb || !cloudUser || !cloudReady) return;
@@ -932,7 +1003,8 @@ function cloudSave(){
   cloudTimer = setTimeout(async () => {
     cloudTimer = null; const me = cloudUser; if (!me) return;
     cloudDirty = false;
-    const { error } = await sb.from("collections").upsert({ id: me.id, counts, decks: customDecks, updated_at: new Date().toISOString() });
+    let { error } = await sb.from("collections").upsert(cloudRow(me));
+    if (error && !noWishCol && /wish/i.test(error.message || "")){ noWishCol = true; ({ error } = await sb.from("collections").upsert(cloudRow(me))); }
     if (error){ cloudDirty = true; setSync("Couldn't save to your account. Saved in this browser; it will retry on your next change.", "warn"); }
     else if (!cloudDirty) setSync("✓ Saved to your account", "ok");
   }, 800);
@@ -941,15 +1013,17 @@ function cloudSave(){
 async function cloudFlush(){
   if (!cloudTimer || !cloudUser || !cloudReady) return;
   clearTimeout(cloudTimer); cloudTimer = null; cloudDirty = false;
-  await sb.from("collections").upsert({ id: cloudUser.id, counts, decks: customDecks, updated_at: new Date().toISOString() });
+  await sb.from("collections").upsert(cloudRow(cloudUser));
 }
 async function cloudLoad(){
   if (!sb || !cloudUser) return;
   setSync("Loading your collection…");
-  const { data, error } = await sb.from("collections").select("counts, decks").eq("id", cloudUser.id).maybeSingle();
+  let { data, error } = await sb.from("collections").select(noWishCol ? "counts, decks" : "counts, decks, wish").eq("id", cloudUser.id).maybeSingle();
+  if (error && !noWishCol && /wish/i.test(error.message || "")){ noWishCol = true; ({ data, error } = await sb.from("collections").select("counts, decks").eq("id", cloudUser.id).maybeSingle()); }
   if (error){ cloudReady = false; setSync("Couldn't reach your account. Saving in this browser for now.", "warn"); return; }
   if (data){
     counts = data.counts || {}; customDecks = Array.isArray(data.decks) ? data.decks : [];
+    if (!noWishCol && data.wish && typeof data.wish === "object"){ wish = data.wish; LS.set("rb-wish", wish); }
     LS.set("rb-counts", counts); LS.set("rb-decks", customDecks);
     cloudReady = true; render(); setSync("✓ Saved to your account", "ok");
   } else {
@@ -999,7 +1073,7 @@ $("auth-form").addEventListener("submit", async e => {
 $("acct-out").addEventListener("click", async () => {
   if (sb){ try { await cloudFlush(); await flushShared(); } catch(e){} await sb.auth.signOut(); }
   // clear this browser so the next person on a shared device starts empty
-  counts = {}; customDecks = []; LS.set("rb-counts", counts); LS.set("rb-decks", customDecks);
+  counts = {}; customDecks = []; wish = {}; LS.set("rb-counts", counts); LS.set("rb-decks", customDecks); LS.set("rb-wish", wish);
   shareProfile = {name:"", contact:""}; LS.set("rb-share-profile", shareProfile); frCache = null; frOpen.clear();
   render(); setSync("Signed out. Nothing is saved in this browser.", "ok");
 });
@@ -1018,7 +1092,10 @@ function cloudInit(){
 // ---- deck sharing (table "shared_decks": everyone signed in can read; only the owner can change their rows)
 let shareProfile = LS.get("rb-share-profile") || {name:"", contact:""};
 let shareTimer = null, frCache = null, frLoadedAt = 0, frOpen = new Set();
-function openShare(){
+let shareTarget = "deck";
+function openShare(target){
+  shareTarget = target === "wish" ? "wish" : "deck";
+  $("share-title").textContent = shareTarget === "wish" ? "Share your wish list" : "Share this deck";
   if (!cloudUser){ $("acct-in").click(); return; }
   $("share-name").value = shareProfile.name || ""; $("share-contact").value = shareProfile.contact || ""; $("share-msg").textContent = "";
   try { $("share").showModal(); } catch(e){ $("share").setAttribute("open", ""); }
@@ -1030,6 +1107,7 @@ $("share-form").addEventListener("submit", e => {
   const name = $("share-name").value.trim(), contact = $("share-contact").value.trim();
   if (!name){ $("share-msg").textContent = "Add the name friends will see."; $("share-msg").className = "msg err"; return; }
   shareProfile = {name, contact}; LS.set("rb-share-profile", shareProfile);
+  if (shareTarget === "wish"){ wish._shared = true; $("share").close(); saveWish(); renderWish(); return; }
   const d = customDecks.find(x => x.id === curDeck); if (d) d.shared = true;
   $("share").close(); saveDecks(); renderDecks();
 });
@@ -1042,7 +1120,7 @@ async function flushShared(){ if (shareTimer){ clearTimeout(shareTimer); shareTi
 async function pushShared(){
   {
     const me = cloudUser; if (!me || !sb) return;
-    const mine = customDecks.filter(d => d.shared);
+    const mine = customDecks.filter(d => d.shared).concat(wish._shared && wishIds().length ? [{ id: "__wish__", name: "Wish list", text: wishText() }] : []);
     if (mine.length && shareProfile.name){
       const rows = mine.map(d => ({ owner: me.id, deck_id: d.id, owner_name: shareProfile.name.slice(0, 40), contact: (shareProfile.contact || "").slice(0, 80) || null, name: String(d.name).slice(0, 80), list: String(d.text).slice(0, 8000), updated_at: new Date().toISOString() }));
       const { error } = await sb.from("shared_decks").upsert(rows, { onConflict: "owner,deck_id" });
@@ -1085,10 +1163,22 @@ async function renderFriends(){
     const ok = !words.length || words.every(w => hay.includes(w));
     return { r, deck, secs, rows, hits, ok };
   }).filter(x => x.ok);
-  $("fr-count").textContent = frCache.length ? `${items.length} of ${frCache.length} shared deck${frCache.length===1?"":"s"}` : "";
+  $("fr-count").textContent = frCache.length ? `${items.length} of ${frCache.length} shared list${frCache.length===1?"":"s"}` : "";
   if (!frCache.length){ list.innerHTML = `<div class="empty">Nobody has shared a deck yet. Open Deck checker and tap <b>Share with friends</b> on one of yours to be the first.</div>`; return; }
   if (!items.length){ list.innerHTML = `<div class="empty">No shared decks match "${esc($("fr-q").value)}". Try a different card or player name.</div>`; return; }
   list.innerHTML = items.map(({ r, deck, secs, rows, hits }) => {
+    if (r.deck_id === "__wish__"){
+      const mine = r.owner === (cloudUser && cloudUser.id), open = frOpen.has(r.id);
+      const canGive = rows.filter(x => ownedOf(x.key) > 0);
+      const body = open ? `<div class="frbody">${rows.map(x => { const own = ownedOf(x.key); return `<div class="frrow"><span class="q">${x.q}×</span><span>${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${own ? "ok" : "no"}">${own ? `✓ you have ${own}` : "you don't have it"}</span></div>`; }).join("")}</div>` : "";
+      return `<article class="frdeck" data-id="${esc(r.id)}">
+        <div class="frhead"><div><h3>♥ ${esc(r.owner_name)}'s wish list</h3><span class="meta">${r.contact ? esc(r.contact) + " · " : ""}updated ${esc(fmtDate(String(r.updated_at).slice(0,10)))}</span></div>${mine ? '<span class="tag ok">Your wish list</span>' : ""}</div>
+        <div class="frstats"><span>Wants <b>${rows.length}</b> card${rows.length === 1 ? "" : "s"}</span><span>${canGive.length ? `You have <b>${canGive.length}</b> of them to trade` : "You don't have any of them yet"}</span></div>
+        ${hits.length ? `<div class="frmatch">Wants ${hits.slice(0, 4).map(x => `${x.q}× ${esc(x.name)}`).join(", ")}${hits.length > 4 ? "…" : ""}</div>` : ""}
+        <div class="frow"><button class="btn" data-act="toggle">${open ? "Hide list" : "Show list"}</button></div>
+        ${body}
+      </article>`;
+    }
     const s = deckStats(deck), mine = !!cloudUser && r.owner === cloudUser.id;
     const legendSec = secs.find(x => /legend/i.test(x.label)), legend = legendSec && legendSec.rows[0] ? legendSec.rows[0].name : "";
     const banned = new Set(rows.filter(x => (groups[x.key]||[]).some(c => c.ban === "std")).map(x => x.key)).size;
@@ -1115,7 +1205,7 @@ $("fr-list").addEventListener("click", e => {
   }
 });
 sb_onSignedIn = () => { loadShareProfile(); frCache = null; if (st.tab === "friends") renderFriends(); };
-syncControls(); render(); showTab(["collection","packs","decks","friends"].includes(st.tab) ? st.tab : "collection"); connect(); cloudInit(); showAcct();
+syncControls(); render(); showTab(["collection","packs","decks","friends","wish"].includes(st.tab) ? st.tab : "collection"); connect(); cloudInit(); showAcct();
 })();
 </script>
 
