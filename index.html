@@ -212,6 +212,28 @@ button.thumb:hover{border-color:var(--muted)}
 #auth .msg{font-size:13.5px;min-height:1.2em}
 #auth .msg.err{color:var(--fury)} #auth .msg.ok{color:var(--ok)}
 #auth .switch{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:2px;font-size:14px;justify-self:start}
+.frbar{display:grid;gap:8px}
+.frlist{display:grid;gap:10px}
+.frdeck{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:8px;min-width:0}
+.frdeck h3{font-family:var(--display);font-size:16px;margin:0;overflow-wrap:anywhere}
+.frhead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.frhead .meta b{color:var(--fg)}
+.frstats{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}
+.frstats b{color:var(--fg);font-variant-numeric:tabular-nums}
+.frmatch{font-size:13px;color:var(--accent)}
+.frbody{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:8px}
+.frbody h4{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:8px 0 2px}
+.frrow{display:flex;gap:8px;align-items:baseline;font-size:14px;flex-wrap:wrap}
+.frrow .q{font-family:var(--display);min-width:2.2em;font-variant-numeric:tabular-nums}
+.frrow .ok{color:var(--ok);font-size:12.5px} .frrow .no{color:var(--warn);font-size:12.5px}
+#share label{display:grid;gap:4px;font-size:14px;color:var(--muted)}
+#share input{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:inherit;color:var(--fg)}
+#share{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);padding:18px;max-width:min(420px,calc(100vw - 32px));width:100%}
+#share::backdrop{background:rgb(5 6 10 / .78)}
+#share form{display:grid;gap:12px}
+#share h2{font-family:var(--display);font-size:19px;margin:0}
+#share .msg{font-size:13.5px;min-height:1.2em}
+#share .msg.err{color:var(--fury)}
 #auth .row{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}
 .note{font-size:13px;color:var(--muted);max-width:80ch}
 .note a{color:var(--accent)}
@@ -254,6 +276,7 @@ button.thumb:hover{border-color:var(--muted)}
     <button role="tab" id="t-collection" aria-selected="true" aria-controls="view-collection">Collection</button>
     <button role="tab" id="t-packs" aria-selected="false" aria-controls="view-packs">Open packs</button>
     <button role="tab" id="t-decks" aria-selected="false" aria-controls="view-decks">Deck checker</button>
+    <button role="tab" id="t-friends" aria-selected="false" aria-controls="view-friends">Friends' decks</button>
   </nav>
 
   <section class="view" id="view-collection" role="tabpanel" aria-labelledby="t-collection">
@@ -324,6 +347,25 @@ button.thumb:hover{border-color:var(--muted)}
       <p class="meta" id="qa-hist"></p>
     </div>
   </section>
+
+  <section class="view" id="view-friends" role="tabpanel" aria-labelledby="t-friends" hidden>
+    <div class="panel frbar">
+      <h2>Friends' decks</h2>
+      <p class="meta">Decks other players have chosen to share. Search by deck name, player, or a card you're looking to trade for. Each deck shows how many of its cards you already own.</p>
+      <input class="search" id="fr-q" type="search" placeholder="Search decks, players or cards, e.g. Jinx" aria-label="Search shared decks" autocomplete="off">
+      <span class="meta" id="fr-count" aria-live="polite"></span>
+    </div>
+    <div class="frlist" id="fr-list"></div>
+  </section>
+
+  <dialog id="share" aria-labelledby="share-title"><form id="share-form" novalidate>
+    <h2 id="share-title">Share this deck</h2>
+    <p class="meta">Anyone signed in to this site can see a deck you share, under the name below. Your email is never shown.</p>
+    <label>Name friends will see <input id="share-name" maxlength="40" autocomplete="nickname" required></label>
+    <label>How to reach you for trades (optional) <input id="share-contact" maxlength="80" placeholder="e.g. Discord: brandon#1234"></label>
+    <p class="msg" id="share-msg" aria-live="polite"></p>
+    <div class="frow"><button type="submit" class="btn primary" id="share-go">Share deck</button><button type="button" class="btn" id="share-x">Cancel</button></div>
+  </form></dialog>
 
   <section class="view" id="view-decks" role="tabpanel" aria-labelledby="t-decks" hidden>
     <div class="deck-tabs" id="deck-tabs" role="group" aria-label="Choose a deck"></div>
@@ -605,13 +647,14 @@ function adjust(id, d){
 // ---- tabs
 function showTab(t){
   st.tab = t;
-  for (const k of ["collection","packs","decks"]){ $("t-"+k).setAttribute("aria-selected", k===t); $("view-"+k).hidden = k!==t; }
+  for (const k of ["collection","packs","decks","friends"]){ $("t-"+k).setAttribute("aria-selected", k===t); $("view-"+k).hidden = k!==t; }
   if (t === "collection") renderList();
   if (t === "packs"){ renderPack(); setTimeout(() => $("qa-q").focus(), 0); }
   if (t === "decks") renderDecks();
+  if (t === "friends") renderFriends();
   LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined});
 }
-["collection","packs","decks"].forEach(k => $("t-"+k).addEventListener("click", () => showTab(k)));
+["collection","packs","decks","friends"].forEach(k => $("t-"+k).addEventListener("click", () => showTab(k)));
 
 // ---- open packs (quick add)
 META.sets.forEach(s => $("qa-set").insertAdjacentHTML("beforeend", `<option value="${s.code}">${esc(s.name)}</option>`));
@@ -716,6 +759,7 @@ function renderDecks(){
       <span style="flex:1"></span>
       <button class="btn" id="dk-copy">Copy shopping list</button>
       <button class="btn" id="dk-edit">Edit deck</button>
+      ${d.shared ? `<span class="tag ok">✓ Shared with friends</span><button class="btn" id="dk-unshare">Stop sharing</button>` : `<button class="btn" id="dk-share">Share with friends</button>`}
       ${custom ? `<button class="btn danger" id="dk-del">${armDelete ? (isBuiltin ? "Tap again to restore the original list" : "Tap again to delete this deck") : (isBuiltin ? "Restore original list" : "Delete deck")}</button>` : ""}
     </div>
     <p class="meta">Counts come from your collection: any printing of a card counts toward the deck. "Cost to finish" uses the cheapest printing of each missing card.${s.unknown ? ` ${s.unknown} card name${s.unknown===1?" isn't":"s aren't"} in the database, marked below.` : ""}</p>`;
@@ -742,6 +786,8 @@ $("deck-summary").addEventListener("click", e => {
     if (editingId) stopEditing();
     saveDecks(); renderDecks();
   }
+  if (e.target.id === "dk-share") openShare();
+  if (e.target.id === "dk-unshare"){ const d = customDecks.find(x => x.id === curDeck); if (d){ d.shared = false; saveDecks(); renderDecks(); } }
   if (e.target.id === "dk-edit"){
     const d = allDecks().find(x => x.id === curDeck); if (!d) return;
     editingId = d.id;
@@ -761,7 +807,7 @@ $("dk-save").addEventListener("click", () => {
   const secs = parseDeck(text); if (!secs.length){ $("dk-msg").textContent = "No cards found. Each line needs a number and a card name, like 3 Tideturner."; return; }
   if (editingId){
     const old = allDecks().find(x => x.id === editingId) || {};
-    const d = {id:editingId, name, sub: old.sub || "Your deck", text};
+    const d = {id:editingId, name, sub: old.sub || "Your deck", text, shared: !!old.shared};
     const i = customDecks.findIndex(x => x.id === editingId);
     if (i >= 0) customDecks[i] = d; else customDecks.push(d);   // first edit of a built-in deck saves your version
     curDeck = editingId; stopEditing(); $("dk-msg").textContent = `Saved changes to ${name}.`;
@@ -773,7 +819,7 @@ $("dk-save").addEventListener("click", () => {
   $("deck-summary").scrollIntoView({behavior:"smooth", block:"start"});
 });
 function saveDecks(){
-  LS.set("rb-decks", customDecks); LS.set("rb-deck", curDeck); cloudSave();
+  LS.set("rb-decks", customDecks); LS.set("rb-deck", curDeck); cloudSave(); syncShared();
   if (deckStore) deckStore.set({decks: customDecks, savedAt: new Date().toISOString()}).catch(() => {});
 }
 
@@ -840,17 +886,25 @@ async function connect(){
 }
 // ---- accounts (Supabase). Table "collections": one row per person, readable and writable only by its owner.
 const SB_URL = "https://unemhzpqaygxpdjmtvuh.supabase.co", SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZW1oenBxYXlneHBkam10dnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTU3NDUsImV4cCI6MjEwNzQ5MTc0NX0.ue0S-o1fLj2ZoP1v7zHmpwIXVbFPJlBI5eRT3njWpWo";
+let sb_onSignedIn = () => {};
 let sb = null, cloudUser = null, cloudReady = false, cloudTimer = null, cloudDirty = false;
 function cloudSave(){
   if (!sb || !cloudUser || !cloudReady) return;
   cloudDirty = true; setSync("Saving…");
   clearTimeout(cloudTimer);
   cloudTimer = setTimeout(async () => {
+    cloudTimer = null; const me = cloudUser; if (!me) return;
     cloudDirty = false;
-    const { error } = await sb.from("collections").upsert({ id: cloudUser.id, counts, decks: customDecks, updated_at: new Date().toISOString() });
+    const { error } = await sb.from("collections").upsert({ id: me.id, counts, decks: customDecks, updated_at: new Date().toISOString() });
     if (error){ cloudDirty = true; setSync("Couldn't save to your account. Saved in this browser; it will retry on your next change.", "warn"); }
     else if (!cloudDirty) setSync("✓ Saved to your account", "ok");
   }, 800);
+}
+// send any change still waiting (used right before signing out)
+async function cloudFlush(){
+  if (!cloudTimer || !cloudUser || !cloudReady) return;
+  clearTimeout(cloudTimer); cloudTimer = null; cloudDirty = false;
+  await sb.from("collections").upsert({ id: cloudUser.id, counts, decks: customDecks, updated_at: new Date().toISOString() });
 }
 async function cloudLoad(){
   if (!sb || !cloudUser) return;
@@ -906,9 +960,10 @@ $("auth-form").addEventListener("submit", async e => {
   $("auth-go").disabled = false;
 });
 $("acct-out").addEventListener("click", async () => {
-  if (sb) await sb.auth.signOut();
+  if (sb){ try { await cloudFlush(); await flushShared(); } catch(e){} await sb.auth.signOut(); }
   // clear this browser so the next person on a shared device starts empty
   counts = {}; customDecks = []; LS.set("rb-counts", counts); LS.set("rb-decks", customDecks);
+  shareProfile = {name:"", contact:""}; LS.set("rb-share-profile", shareProfile); frCache = null; frOpen.clear();
   render(); setSync("Signed out. Nothing is saved in this browser.", "ok");
 });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && cloudUser && cloudReady && !cloudDirty) cloudLoad(); });
@@ -918,11 +973,112 @@ function cloudInit(){
   sb.auth.onAuthStateChange((event, session) => {
     const u = session ? session.user : null, changed = (u && u.id) !== (cloudUser && cloudUser.id);
     cloudUser = u; showAcct();
-    if (u && changed){ cloudReady = false; cloudLoad(); }
+    if (u && changed){ cloudReady = false; cloudLoad(); sb_onSignedIn(); }
+    if (!u && st.tab === "friends") renderFriends();
     if (!u){ cloudReady = false; }
   });
 }
-syncControls(); render(); showTab(["collection","packs","decks"].includes(st.tab) ? st.tab : "collection"); connect(); cloudInit(); showAcct();
+// ---- deck sharing (table "shared_decks": everyone signed in can read; only the owner can change their rows)
+let shareProfile = LS.get("rb-share-profile") || {name:"", contact:""};
+let shareTimer = null, frCache = null, frLoadedAt = 0, frOpen = new Set();
+function openShare(){
+  if (!cloudUser){ $("acct-in").click(); return; }
+  $("share-name").value = shareProfile.name || ""; $("share-contact").value = shareProfile.contact || ""; $("share-msg").textContent = "";
+  try { $("share").showModal(); } catch(e){ $("share").setAttribute("open", ""); }
+  $("share-name").focus();
+}
+$("share-x").addEventListener("click", () => $("share").close());
+$("share-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = $("share-name").value.trim(), contact = $("share-contact").value.trim();
+  if (!name){ $("share-msg").textContent = "Add the name friends will see."; $("share-msg").className = "msg err"; return; }
+  shareProfile = {name, contact}; LS.set("rb-share-profile", shareProfile);
+  const d = customDecks.find(x => x.id === curDeck); if (d) d.shared = true;
+  $("share").close(); saveDecks(); renderDecks();
+});
+function syncShared(){
+  if (!sb || !cloudUser) return;
+  clearTimeout(shareTimer);
+  shareTimer = setTimeout(() => { shareTimer = null; pushShared(); }, 900);
+}
+async function flushShared(){ if (shareTimer){ clearTimeout(shareTimer); shareTimer = null; await pushShared(); } }
+async function pushShared(){
+  {
+    const me = cloudUser; if (!me || !sb) return;
+    const mine = customDecks.filter(d => d.shared);
+    if (mine.length && shareProfile.name){
+      const rows = mine.map(d => ({ owner: me.id, deck_id: d.id, owner_name: shareProfile.name.slice(0, 40), contact: (shareProfile.contact || "").slice(0, 80) || null, name: String(d.name).slice(0, 80), list: String(d.text).slice(0, 8000), updated_at: new Date().toISOString() }));
+      const { error } = await sb.from("shared_decks").upsert(rows, { onConflict: "owner,deck_id" });
+      if (error) setSync("Couldn't update your shared decks. They'll retry on your next change.", "warn");
+    }
+    // remove anything you've stopped sharing or deleted
+    const { data } = await sb.from("shared_decks").select("deck_id").eq("owner", me.id);
+    const keep = new Set(mine.map(d => d.id)), gone = (data || []).map(r => r.deck_id).filter(id => !keep.has(id));
+    if (gone.length) await sb.from("shared_decks").delete().eq("owner", me.id).in("deck_id", gone);
+    frCache = null;
+  }
+}
+// when you sign in on a new device, pick up the sharing name you used before
+async function loadShareProfile(){
+  if (!sb || !cloudUser || shareProfile.name) return;
+  const me = cloudUser; if (!me) return;
+  const { data } = await sb.from("shared_decks").select("owner_name, contact").eq("owner", me.id).limit(1);
+  if (data && data[0]){ shareProfile = {name: data[0].owner_name, contact: data[0].contact || ""}; LS.set("rb-share-profile", shareProfile); }
+}
+async function renderFriends(){
+  const list = $("fr-list");
+  if (!cloudUser){
+    $("fr-count").textContent = "";
+    list.innerHTML = `<div class="empty">Sign in to see the decks your friends have shared, and to share your own.<br><br><button class="btn primary" id="fr-signin">Sign in or create an account</button></div>`;
+    return;
+  }
+  if (!frCache || Date.now() - frLoadedAt > 60000){
+    list.innerHTML = `<div class="empty">Loading shared decks…</div>`;
+    const { data, error } = await sb.from("shared_decks").select("id, owner, deck_id, owner_name, contact, name, list, updated_at").order("updated_at", { ascending: false }).limit(500);
+    if (error){ list.innerHTML = `<div class="empty">Couldn't load shared decks right now. Check your connection and open this tab again.</div>`; return; }
+    frCache = data || []; frLoadedAt = Date.now();
+  }
+  if (!cloudUser) return renderFriends();
+  const q = norm($("fr-q").value || ""), words = q ? q.split(" ") : [];
+  const items = frCache.map(r => {
+    const deck = { name: r.name, text: r.list };
+    const secs = parseDeck(r.list), rows = secs.flatMap(s => s.rows);
+    const hay = norm(r.name + " " + r.owner_name) + " " + rows.map(x => x.key).join(" | ");
+    const hits = words.length ? rows.filter(x => words.every(w => x.key.includes(w))) : [];
+    const ok = !words.length || words.every(w => hay.includes(w));
+    return { r, deck, secs, rows, hits, ok };
+  }).filter(x => x.ok);
+  $("fr-count").textContent = frCache.length ? `${items.length} of ${frCache.length} shared deck${frCache.length===1?"":"s"}` : "";
+  if (!frCache.length){ list.innerHTML = `<div class="empty">Nobody has shared a deck yet. Open Deck checker and tap <b>Share with friends</b> on one of yours to be the first.</div>`; return; }
+  if (!items.length){ list.innerHTML = `<div class="empty">No shared decks match "${esc($("fr-q").value)}". Try a different card or player name.</div>`; return; }
+  list.innerHTML = items.map(({ r, deck, secs, rows, hits }) => {
+    const s = deckStats(deck), mine = !!cloudUser && r.owner === cloudUser.id;
+    const legendSec = secs.find(x => /legend/i.test(x.label)), legend = legendSec && legendSec.rows[0] ? legendSec.rows[0].name : "";
+    const banned = new Set(rows.filter(x => (groups[x.key]||[]).some(c => c.ban === "std")).map(x => x.key)).size;
+    const open = frOpen.has(r.id);
+    const body = open ? `<div class="frbody">${s.secs.map(sec => `<h4>${esc(sec.label)}</h4>${sec.rows.map(x => `<div class="frrow"><span class="q">${x.q}×</span><span>${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${x.miss ? "no" : "ok"}">${x.miss ? `you have ${x.h}` : "✓ you have it"}</span></div>`).join("")}`).join("")}</div>` : "";
+    return `<article class="frdeck" data-id="${esc(r.id)}">
+      <div class="frhead"><div><h3>${esc(r.name)}</h3><span class="meta">by <b>${esc(r.owner_name)}</b>${r.contact ? ` · ${esc(r.contact)}` : ""} · updated ${esc(fmtDate(String(r.updated_at).slice(0,10)))}</span></div>${mine ? '<span class="tag ok">Your deck</span>' : ""}${banned ? `<span class="tag ban">⚠ ${banned} banned</span>` : ""}</div>
+      <div class="frstats">${legend ? `<span>Legend: <b>${esc(legend)}</b></span>` : ""}<span>You own <b>${s.have} / ${s.need}</b></span><span>${s.need - s.have ? `<b>${esc(money(s.cost))}</b> to finish` : "<b>You own every card</b>"}</span></div>
+      ${hits.length ? `<div class="frmatch">Includes ${hits.slice(0, 4).map(x => `${x.q}× ${esc(x.name)}`).join(", ")}${hits.length > 4 ? "…" : ""}</div>` : ""}
+      <div class="frow"><button class="btn" data-act="toggle">${open ? "Hide list" : "Show list"}</button>${mine ? "" : '<button class="btn" data-act="copy">Copy to my decks</button>'}<span class="meta" data-msg aria-live="polite"></span></div>
+      ${body}
+    </article>`;
+  }).join("");
+}
+let frT; $("fr-q").addEventListener("input", () => { clearTimeout(frT); frT = setTimeout(renderFriends, 150); });
+$("fr-list").addEventListener("click", e => {
+  if (e.target.id === "fr-signin"){ $("acct-in").click(); return; }
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const art = b.closest(".frdeck"), id = art.dataset.id, r = (frCache || []).find(x => x.id === id); if (!r) return;
+  if (b.dataset.act === "toggle"){ frOpen.has(id) ? frOpen.delete(id) : frOpen.add(id); renderFriends(); }
+  if (b.dataset.act === "copy"){
+    customDecks.push({ id: "d" + Date.now().toString(36), name: `${r.name} (${r.owner_name})`.slice(0, 80), sub: `Copied from ${r.owner_name}`, text: r.list });
+    saveDecks(); art.querySelector("[data-msg]").textContent = "Copied. It's in Deck checker now.";
+  }
+});
+sb_onSignedIn = () => { loadShareProfile(); frCache = null; if (st.tab === "friends") renderFriends(); };
+syncControls(); render(); showTab(["collection","packs","decks","friends"].includes(st.tab) ? st.tab : "collection"); connect(); cloudInit(); showAcct();
 })();
 </script>
 
