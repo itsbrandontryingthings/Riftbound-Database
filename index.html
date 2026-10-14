@@ -327,6 +327,55 @@ button.thumb:hover{border-color:var(--muted)}
 .lbwrap.foil.live .glare{opacity:1}
 .lbwrap.foil.live{transition:transform .08s linear}
 @media (prefers-reduced-motion:reduce){.thumb .sheen,.lbwrap .sheen{animation:none;background-position:50% 50%}}
+
+/* card info sheet */
+#lb{max-width:min(1060px,calc(100vw - 24px))}
+#lb .lbbody{display:grid;grid-template-columns:auto minmax(280px,1fr);gap:18px;align-items:start}
+#lb .lbleft{min-width:0}
+#lb .lbimg{width:min(420px,calc(100vw - 420px),(100dvh - 130px) * 0.716)}
+#lb .lbimg.land{width:min(560px,calc(100vw - 420px),(100dvh - 130px) * 1.396)}
+#lb .lbinfo{min-width:0;max-height:calc(100dvh - 120px);overflow:auto;padding-right:2px;font-size:14px;line-height:1.45}
+#lb .lgls{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+#lb .lgl{font-size:12px;font-weight:600;padding:2px 8px;border-radius:5px;color:var(--ok);border:1px solid color-mix(in srgb,var(--ok) 55%,var(--line));background:color-mix(in srgb,var(--ok) 12%,transparent)}
+#lb .lgl.no{color:var(--fury);border-color:color-mix(in srgb,var(--fury) 55%,var(--line));background:color-mix(in srgb,var(--fury) 12%,transparent)}
+#lb .iset{color:var(--muted);margin-bottom:10px}#lb .iset b{color:var(--fg)}#lb .iset span:not(.pill){color:var(--body)}
+#lb .istats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1px solid var(--line);padding:10px 0}
+#lb .st{display:flex;flex-direction:column;gap:2px;min-width:0}
+#lb .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#lb .st .v{font-family:var(--display);font-size:22px;font-weight:700;display:flex;align-items:center;gap:6px}
+#lb .st .v.sm{font-size:15px;font-weight:600;flex-wrap:wrap;gap:4px}
+#lb .isec{border-top:1px solid var(--line);padding:9px 0}
+#lb .isec .k{margin-bottom:4px}
+#lb .rules{font-size:15px;line-height:1.6}
+#lb .rem{color:var(--muted)}
+#lb .flav{font-style:italic;color:var(--muted)}
+.kw{display:inline-block;font-family:var(--display);font-weight:700;font-size:12.5px;line-height:1.5;padding:0 7px;border-radius:4px;color:#fff;background:#4a6fb5;vertical-align:1px;border:0}
+.kw.t{background:#2f9a55}.kw.d{background:#8d4bb8}
+button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter:brightness(1.15)}
+#lb .kws{display:flex;gap:6px;flex-wrap:wrap}
+#lb .tagc{border:1px solid var(--line);border-radius:12px;padding:0 9px;font-size:12.5px;color:var(--muted)}
+.sym{display:inline-grid;place-items:center;vertical-align:-3px;font-style:normal}
+.sym.en{width:19px;height:19px;border-radius:50%;background:#f1f1f1;color:#111;font:700 11.5px/1 var(--display)}
+.sym.en.big{display:none}
+.sym.mi{color:#e8c37a;font-size:15px}
+.sym.ex{width:18px;height:18px;border-radius:4px;background:#3b4153;color:#fff;font-size:12px}
+.sym.rn{width:13px;height:13px;border-radius:50%;border:1px solid rgb(255 255 255 / .35)}
+.sym.rn.any{background:conic-gradient(var(--fury),var(--order),var(--calm),var(--mind),var(--chaos),var(--body),var(--fury))}
+.sym.arr{color:var(--accent);font-size:13px;margin:0 2px}
+#lb .iboxes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+#lb .ibox{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);display:flex;flex-direction:column;gap:8px}
+#lb .ih{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#lb .ip{font-family:var(--display);font-size:22px;font-weight:700}#lb .ip small{display:block;font-size:12px;color:var(--muted);font-weight:500}
+#lb .ibuy{display:block;text-align:center;background:#e9973a;color:#1b1206;font-weight:700;border-radius:6px;padding:6px 8px;text-decoration:none}
+#lb .iown{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#lb .ibox .wishbtn{align-self:flex-start}
+@media (max-width:760px){
+  #lb .lbbody{grid-template-columns:1fr}
+  #lb .lbimg{width:min(360px,calc(100vw - 60px),(100dvh - 160px) * 0.716)}
+  #lb .lbimg.land{width:min(520px,calc(100vw - 60px))}
+  #lb .lbinfo{max-height:none;overflow:visible}
+  #lb .iboxes{grid-template-columns:1fr}
+}
 </style>
 
 <div class="wrap" id="app">
@@ -368,7 +417,7 @@ button.thumb:hover{border-color:var(--muted)}
 
   <div class="filters">
     <div class="frow">
-      <input class="search" id="q" type="search" placeholder="Search card name, e.g. Jinx, Gust, Grove" aria-label="Search cards" autocomplete="off">
+      <input class="search" id="q" type="search" placeholder="Search name, keyword or ability, e.g. Jinx, Deathknell, draw" aria-label="Search cards" autocomplete="off">
       <button class="btn ftoggle" id="ftoggle" aria-expanded="false" aria-controls="fpanel">Filters<span class="fcount" id="fcount"></span></button>
       <div class="seg showseg" role="group" aria-label="Which cards to show">
         <button id="s-all" aria-pressed="true">All</button>
@@ -381,6 +430,7 @@ button.thumb:hover{border-color:var(--muted)}
       <div class="dom" id="doms" role="group" aria-label="Filter by domain"></div>
       <select id="type" aria-label="Card type"><option value="">All types</option></select>
       <select id="rarity" aria-label="Rarity"><option value="">All rarities</option></select>
+      <select id="kw" aria-label="Keyword"><option value="">All keywords</option></select>
       <div class="seg" role="group" aria-label="Currency">
         <button id="c-both" aria-pressed="true">CAD + USD</button>
         <button id="c-cad" aria-pressed="false">CAD</button>
@@ -405,7 +455,7 @@ button.thumb:hover{border-color:var(--muted)}
   <nav class="pager" id="pager-bot" aria-label="Pages"></nav>
   <button class="btn totop" id="totop" hidden aria-label="Back to top">↑ Top</button>
   <button class="btn more" id="more" hidden>Show more</button>
-  <dialog id="lb" aria-labelledby="lb-name"><div class="lbh"><div><h2 id="lb-name"></h2><div class="sub" id="lb-sub"></div></div><button class="lbx" id="lb-x" aria-label="Close">×</button></div><div class="lbwrap" id="lb-fx"><img class="lbimg" id="lb-img" alt="" referrerpolicy="no-referrer"><span class="sheen" aria-hidden="true"></span><span class="glare" aria-hidden="true"></span></div><div class="lbf"><span class="meta" id="lb-note"></span><span style="flex:1"></span><span id="lb-link"></span></div></dialog>
+  <dialog id="lb" aria-labelledby="lb-name"><div class="lbh"><div><h2 id="lb-name"></h2><div class="sub" id="lb-sub"></div></div><button class="lbx" id="lb-x" aria-label="Close">×</button></div><div class="lbbody"><div class="lbleft"><div class="lbwrap" id="lb-fx"><img class="lbimg" id="lb-img" alt="" referrerpolicy="no-referrer"><span class="sheen" aria-hidden="true"></span><span class="glare" aria-hidden="true"></span></div><div class="lbf"><span class="meta" id="lb-note"></span><span id="lb-link" hidden></span></div></div><div class="lbinfo" id="lb-info"></div></div></dialog>
   </section>
 
   <section class="view" id="view-packs" role="tabpanel" aria-labelledby="t-packs" hidden>
@@ -510,6 +560,7 @@ button.thumb:hover{border-color:var(--muted)}
 </div>
 
 <script src="cards.js"></script>
+<script src="text.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 (function(){
@@ -543,17 +594,61 @@ const savedF = LS.get("rb-filters"); if (savedF) { Object.assign(st, savedF, {do
 const PHONE = () => matchMedia("(max-width:640px)").matches;
 if (st.view !== "grid" && st.view !== "list") st.view = PHONE() ? "grid" : "list";
 
+
+// ---- card text (text.js from Riftcodex): stats, rules text, keywords
+const RBT = window.RB_TEXT || {n:{}, a:{}};
+const TXNORM = n => n.replace(/\s*\((Alternate Art|Overnumbered|Signature|Metal|Starter|GG EZ|Launch Exclusive|Ultimate|Special)\)\s*$/, "").toLowerCase().replace(", ", " - ").replace(/[^a-z0-9]+/g, " ").trim();
+function txOf(c){
+  if (c._tx !== undefined) return c._tx;
+  const r = RBT.n[TXNORM(c.name)] || RBT.n[TXNORM(c.name.split(" // ")[0])];
+  const art = RBT.a[c.id.split("~")[0]] || (c.tcg && RBT.a["tcg:" + c.tcg]) || "";
+  return c._tx = r ? {e:r[0], m:r[1], p:r[2], text:r[3] || "", fl:r[4] || "", tags:r[5] ? r[5].split(",") : [], sup:r[6] || "", art} : (art ? {text:"", fl:"", tags:[], sup:"", art} : null);
+}
+const KW_SKIP = new Set(["Add", "ADD", ">", ">>", "NO TEXT"]);
+function kwOf(c){
+  if (c._kw) return c._kw;
+  const t = txOf(c), out = [];
+  if (t) for (const m of t.text.matchAll(/\[([A-Za-z][A-Za-z' -]*?)(?:\s+\d+)?\]/g)) { const k = m[1].trim(); if (!KW_SKIP.has(k) && !out.includes(k)) out.push(k); }
+  return c._kw = out;
+}
+function findOf(c){
+  if (c._find !== undefined) return c._find;
+  const t = txOf(c);
+  return c._find = t ? (t.text.replace(/:rb_[a-z0-9_]+:/g, " ").replace(/[\[\]]/g, "") + " " + t.tags.join(" ") + " " + t.sup).toLowerCase() : "";
+}
+const KW_TIMING = new Set(["Action", "Reaction", "Hidden", "Quick-Draw"]), KW_DEATH = new Set(["Temporary", "Deathknell"]);
+const kwClass = k => KW_TIMING.has(k) ? "kw t" : KW_DEATH.has(k) ? "kw d" : "kw";
+function rulesHTML(s){
+  // reminder text "(...)" is marked first, before symbols add their own markup
+  return esc(s).replace(/\(([^()]{3,})\)/g, "\u0001($1)\u0002")
+    .replace(/\[(&gt;)+\]/g, '<span class="sym arr" title="then">➜</span>')
+    .replace(/\[(Add|ADD)\]/g, "<b>Add</b>")
+    .replace(/\[([A-Za-z][A-Za-z' -]*?(?:\s+\d+)?)\]/g, (m, k) => `<span class="${kwClass(k.replace(/\s+\d+$/, ""))}">${k}</span>`)
+    .replace(/:rb_energy_(\d+):/g, '<span class="sym en" title="$1 Energy">$1</span>')
+    .replace(/:rb_might:/g, '<span class="sym mi" title="Might">⚔</span>')
+    .replace(/:rb_exhaust:/g, '<span class="sym ex" title="Exhaust">⟳</span>')
+    .replace(/:rb_rune_rainbow:/g, '<span class="sym rn any" title="Rune of any domain"></span>')
+    .replace(/:rb_rune_([a-z]+):/g, (m, d) => `<span class="sym rn" title="${d[0].toUpperCase() + d.slice(1)} rune" style="background:var(--${d})"></span>`)
+    .replace(/:rb_[a-z0-9_]+:/g, "")
+    .replace(/\u0001/g, '<i class="rem">').replace(/\u0002/g, "</i>")
+    .replace(/\n/g, "<br>");
+}
+
 // ---- static controls
 const setName = Object.fromEntries(META.sets.map(s => [s.code, s.name]));
 const types = [...new Set(CARDS.map(c => c.type))].sort();
 types.forEach(t => $("type").insertAdjacentHTML("beforeend", `<option value="${esc(t)}">${esc(t)}</option>`));
 $("type").insertAdjacentHTML("beforeend", `<option value="__token">Token</option>`);
+{ const kc = {}; CARDS.forEach(c => kwOf(c).forEach(k => kc[k] = (kc[k] || 0) + 1));
+  const ks = Object.keys(kc).sort((a, b) => a.localeCompare(b));
+  ks.forEach(k => $("kw").insertAdjacentHTML("beforeend", `<option value="${esc(k)}">${esc(k)} (${kc[k]})</option>`));
+  if (!ks.length) $("kw").hidden = true; }
 RAR.filter(r => CARDS.some(c => c.rarity === r)).forEach(r => $("rarity").insertAdjacentHTML("beforeend", `<option value="${r}">${r}</option>`));
 $("doms").innerHTML = DOMS.map(([d,v]) => `<button data-d="${d}" aria-pressed="false"><span class="dot" style="background:var(${v})"></span>${d}</button>`).join("") + `<button class="banchip" data-ban="1" aria-pressed="false" title="Show only cards banned from competitive play"><span class="dot"></span>Banned</button>`;
 if (META.updated) $("c-updated").textContent = `Card list updated ${META.updated} · ${CARDS.length.toLocaleString()} printings across ${META.sets.length} sets` + (META.pricesUpdated ? ` · Prices are TCGplayer market prices (USD), updated ${META.pricesUpdated}` : "") + (FX ? ` · CAD at the Bank of Canada rate of ${FX.toFixed(4)} (${META.fx.date})` : "");
 
 function syncControls(){
-  $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("variants").checked = st.variants; $("sort").value = st.sort || "set";
+  $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("kw").value = st.kw || ""; $("variants").checked = st.variants; $("sort").value = st.sort || "set";
   ["all","have","need"].forEach(k => $("s-"+k).setAttribute("aria-pressed", st.show===k));
   ["both","cad","usd"].forEach(k => $("c-"+k).setAttribute("aria-pressed", st.cur===k));
   document.querySelectorAll("#doms button").forEach(b => b.setAttribute("aria-pressed", b.dataset.ban ? !!st.banned : st.doms.has(b.dataset.d)));
@@ -565,9 +660,10 @@ function matches(c, ignoreSet){
   if (!st.variants && isVariant(c)) return false;
   if (st.type === "__token" ? !c.token : (st.type && c.type !== st.type)) return false;
   if (st.rarity && c.rarity !== st.rarity) return false;
+  if (st.kw && !kwOf(c).includes(st.kw)) return false;
   if (st.doms.size && !c.domains.some(d => st.doms.has(d))) return false;
   if (st.banned && !c.ban) return false;
-  if (st.q){ const q = st.q.toLowerCase(); if (!(c.name.toLowerCase().includes(q) || c.id.includes(q))) return false; }
+  if (st.q){ const q = st.q.toLowerCase(); if (!(c.name.toLowerCase().includes(q) || c.id.includes(q) || findOf(c).includes(q))) return false; }
   const n = counts[c.id]||0;
   if (st.show==="have" && !n) return false;
   if (st.show==="need" && n) return false;
@@ -631,9 +727,47 @@ function openCard(c){
   if (full && full !== quick){ const pre = new Image(); pre.referrerPolicy = "no-referrer"; pre.onload = () => { if (token === lbToken) im.src = full; }; pre.src = full; }
   $("lb-note").textContent = c.imgBase ? "Regular printing's art. There's no image of this exact printing yet." : c.imgTcg ? "Image: TCGplayer" : "Image: Riot Games, via Riftcodex";
   $("lb-link").innerHTML = viewLink(c);
+  renderInfo(c); $("lb-info").scrollTop = 0;
   $("lb-fx").classList.toggle("foil", !!c.foil); $("lb-fx").style.transform = ""; $("lb-fx").classList.remove("live");
   try { $("lb").showModal(); } catch(e){ $("lb").setAttribute("open", ""); }
 }
+
+// ---- info sheet beside the enlarged card
+let lbCard = null;
+function renderInfo(c){
+  lbCard = c;
+  const t = txOf(c) || {text:"", fl:"", tags:[], sup:"", art:""}, n = counts[c.id] || 0;
+  $("lb-sub").innerHTML = esc(c.type + (t.sup ? " · " + t.sup : "") + (c.token ? " · Token" : ""));
+  const legal = (fmt, banned) => `<span class="lgl${banned ? " no" : ""}">${fmt}: ${banned ? "Banned" : "Legal"}</span>`;
+  const legality = c.token || c.type === "Token" ? "" : legal("Standard", c.ban === "std") + legal("2v2", !!c.ban);
+  const stat = (k, v, icon) => v == null ? "" : `<div class="st"><span class="k">${k}</span><span class="v">${icon}${esc(String(v))}</span></div>`;
+  const dom = c.domains.length ? c.domains.map(d => `<span class="dot" style="background:var(--${d.toLowerCase()})"></span>${esc(d)}`).join(" ") : "Colorless";
+  const stats = stat("Energy", t.e, '<span class="sym en big"></span>') + stat("Might", t.m, '<span class="sym mi">⚔</span>') + stat("Power", t.p, '<span class="sym rn' + (c.domains.length === 1 ? '" style="background:var(--' + c.domains[0].toLowerCase() + ')"' : ' any"') + '></span>');
+  const kws = kwOf(c);
+  const priceBox = `<div class="ibox"><div class="ih"><span>Market</span><span>TCGplayer</span></div>
+      ${c.price != null ? `<div class="ip">${moneyHTML(c.price)}</div>${c.foil ? '<div class="meta">This printing only comes in foil</div>' : ""}` : '<div class="meta">No recent sales yet</div>'}
+      <a class="ibuy" href="${tcgURL(c)}" target="_blank" rel="noopener">View on TCGplayer ↗</a></div>`;
+  const mine = `<div class="ibox"><div class="ih"><span>My Collection</span></div>
+      <div class="iown"><span>You own <b id="lb-n">${n}</b></span><div class="step" role="group" aria-label="Copies of ${esc(c.name)}"><button data-lbadj="-1" aria-label="Remove one" ${n ? "" : "disabled"}>−</button><output>${n}</output><button data-lbadj="1" aria-label="Add one">+</button></div></div>
+      ${wishBtn(c)}</div>`;
+  $("lb-info").innerHTML = `
+    ${legality ? `<div class="lgls">${legality}</div>` : ""}
+    <div class="iset"><b>${esc(codeOf(c))}</b> · <span>${esc(c.set)} – ${esc(setName[c.set] || c.set)}</span>${c.variant ? ` <span class="pill var">${esc(c.variant)}</span>` : ""}</div>
+    ${stats ? `<div class="istats">${stats}</div>` : ""}
+    <div class="istats three"><div class="st"><span class="k">Domain</span><span class="v sm">${dom}</span></div><div class="st"><span class="k">Type</span><span class="v sm">${esc(c.type)}</span></div><div class="st"><span class="k">Rarity</span><span class="v sm r-${c.rarity}">${esc(c.rarity)}</span></div></div>
+    ${t.text ? `<div class="isec"><div class="k">Effect</div><div class="rules">${rulesHTML(t.text)}</div></div>` : (RBT.updated ? "" : `<div class="isec meta">Card text isn't loaded yet.</div>`)}
+    ${t.fl ? `<div class="isec"><div class="k">Flavor</div><div class="flav">“${esc(t.fl)}”</div></div>` : ""}
+    ${kws.length ? `<div class="isec"><div class="k">Keywords</div><div class="kws">${kws.map(k => `<button class="${kwClass(k)}" data-kwf="${esc(k)}" title="Show every card with ${esc(k)}">${esc(k)}</button>`).join("")}</div></div>` : ""}
+    ${t.tags.length ? `<div class="isec"><div class="k">Tags</div><div class="kws">${t.tags.map(g => `<span class="tagc">${esc(g)}</span>`).join("")}</div></div>` : ""}
+    ${t.art ? `<div class="isec"><div class="k">Artist</div><div>${esc(t.art)}</div></div>` : ""}
+    <div class="iboxes">${priceBox}${mine}</div>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-lbadj]");
+  if (b && lbCard){ const n = adjust(lbCard.id, Number(b.dataset.lbadj)); const box = b.closest(".iown"); box.querySelector("output").textContent = n; box.querySelector("#lb-n").textContent = n; box.querySelector('[data-lbadj="-1"]').disabled = !n; if (st.tab === "wish") renderWish(); return; }
+  const k = e.target.closest("[data-kwf]");
+  if (k){ st.kw = k.dataset.kwf; st.q = ""; st.limit = PAGE; st.page = 0; $("lb").close(); if (st.tab !== "collection" && typeof showTab === "function") showTab("collection"); syncControls(); render(); $("list").scrollIntoView({behavior: "smooth", block: "start"}); }
+});
 document.addEventListener("click", e => { const t = e.target.closest("button.thumb[data-img]"); if (t){ e.preventDefault(); e.stopPropagation(); openCard(CARDS.find(x => x.id === t.dataset.img)); } }, true);
 $("lb-x").addEventListener("click", () => $("lb").close());
 // foil preview: the light moves with the mouse or finger, and the card tilts slightly toward it
@@ -641,7 +775,6 @@ $("lb-x").addEventListener("click", () => $("lb").close());
   const fx = $("lb-fx"); if (!fx) return;
   const calm = matchMedia("(prefers-reduced-motion: reduce)");
   function move(e){
-    if (!fx.classList.contains("foil")) return;
     const r = fx.getBoundingClientRect();
     const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
     fx.classList.add("live");
@@ -787,7 +920,7 @@ function renderList(){
     : `<div class="empty">${st.show==="have" && !Object.keys(counts).length ? "You haven't marked any cards yet. Switch to All and tap + on the cards you own." : "No cards match these filters. Try clearing the search or a filter."}</div>`;
   $("more").hidden = true; renderPager(pages);
   $("v-list").setAttribute("aria-pressed", st.view === "list"); $("v-grid").setAttribute("aria-pressed", st.view === "grid");
-  const nf = st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1);
+  const nf = st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1);
   $("fcount").textContent = nf ? nf : "";
   $("count").textContent = `${shown.length.toLocaleString()} card${shown.length===1?"":"s"}` + (st.set ? ` in ${setName[st.set]}` : "");
 }
@@ -803,6 +936,7 @@ $("doms").addEventListener("click", e => { const b = e.target.closest("button");
 let qT; $("q").addEventListener("input", e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); st.limit = PAGE; st.page = 0; render(); }, 120); });
 ["all","have","need"].forEach(k => $("s-"+k).addEventListener("click", () => { st.show = k; st.limit = PAGE; st.page = 0; syncControls(); render(); }));
 $("type").addEventListener("change", e => { st.type = e.target.value; st.limit = PAGE; st.page = 0; render(); });
+$("kw").addEventListener("change", e => { st.kw = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("rarity").addEventListener("change", e => { st.rarity = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("variants").addEventListener("change", e => { st.variants = e.target.checked; st.limit = PAGE; st.page = 0; render(); });
 ["both","cad","usd"].forEach(k => $("c-"+k).addEventListener("click", () => { st.cur = k; syncControls(); render(); }));
