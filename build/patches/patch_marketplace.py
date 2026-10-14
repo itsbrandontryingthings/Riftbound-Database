@@ -34,6 +34,8 @@
   the trade chips' pictures are bigger. "Your offers on this list" shows "Cards you're giving them" with pictures, and
   "You offered" lists the cards you'd trade inline as card names (cardRef): hover for a preview (#card-pop: picture,
   set, type, stats, abilities, price), tap / click for the full card.
+- "Cards you'd want" beside "Cards you'd trade" (a straight swap): kept in the offer's trade list with id "want:<id>"
+  (no database change); shown as "In return, you'd like" / "In return, they'd like".
 Usage: patch_marketplace.py in.html out.html"""
 import sys
 
@@ -671,7 +673,7 @@ rep('''<span class="of-sum">${n} card${n === 1 ? "" : "s"}: ${esc((o.items || []
 # preview (picture, set, type, stats, abilities, price) or tapped / clicked for the full card. The separate
 # "Cards you'd trade" rows under it are gone.
 rep('''      ${o.offer ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${esc(o.offer)}</span></div>` : ""}''',
-    '''      ${o.offer || o.trade.length ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${o.offer ? esc(o.offer) : ""}${o.offer && o.trade.length ? " <span class=\\"of-plus\\">+</span> " : ""}${o.trade.map(i => cardRef(i.id && byId[i.id] ? byId[i.id] : frCard(norm(i.name)), +i.q || 0, i.name)).join(", ")}</span></div>` : ""}''')
+    '''      ${o.offer || o.trade.length ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${o.offer ? esc(o.offer) : ""}${o.offer && tradeGive(o.trade).length ? " <span class=\\"of-plus\\">+</span> " : ""}${cardRefs(tradeGive(o.trade))}${!o.offer && !tradeGive(o.trade).length ? "<span class=\\"meta\\">a straight swap</span>" : ""}</span>${tradeWant(o.trade).length ? `<span class="collect-k of-wantk">In return, you'd like</span><span class="of-text">${cardRefs(tradeWant(o.trade))}</span>` : ""}</div>` : ""}''')
 rep('''      ${o.trade.length ? `<span class="collect-k">Cards you'd trade</span>${tradeRows(o.trade)}` : ""}\n''', '')
 rep('''// ---- Marketplace: each incoming offer folds by tapping the sender's name''', '''// ---- card names you can hover for a preview, or tap / click for the full card
 function cardRef(c, q, name){
@@ -737,6 +739,56 @@ rep('''      <div class="seg" role="group" aria-label="Currency">
 rep('''<span class="uisize"><span>Page size</span>''', '''<span class="uisize curpick"><span>Currency</span><span class="seg" role="group" aria-label="Currency"><button id="c-both" aria-pressed="true">CAD + USD</button><button id="c-cad" aria-pressed="false">CAD</button><button id="c-usd" aria-pressed="false">USD</button></span></span><span class="uisize"><span>Page size</span>''')
 rep('</style>\n\n<div class="wrap" id="app">', '''.uisize.curpick + .uisize{margin-left:14px}
 @media (max-width:520px){.uisize.curpick{margin-left:0}.uisize.curpick + .uisize{margin-left:auto}}
+</style>
+
+<div class="wrap" id="app">''')
+
+# ---------- "Cards you'd want": in an offer you can also ask for cards back (a straight swap). They're kept in the same
+# trade list as the cards you'd trade, with the card id written "want:<id>" (the database keeps name / q / id as-is, so no
+# database change is needed). Offer form: a second picker beside "Cards you'd trade"; both offer views show them.
+rep('''// ---- cards you'd trade (offer form)''', '''// ---- cards you'd trade / want (offer form). Wanted cards sit in S.trade as "want:<card id>".
+const isWantKey = k => String(k || "").startsWith("want:"), realId = k => String(k || "").replace(/^want:/, "");
+const tradeGive = list => (list || []).filter(i => !isWantKey(i.id));
+const tradeWant = list => (list || []).filter(i => isWantKey(i.id)).map(i => ({...i, id: realId(i.id)}));
+const cardRefs = list => list.map(i => cardRef(i.id && byId[i.id] ? byId[i.id] : frCard(norm(i.name)), +i.q || 0, i.name)).join(", ");''')
+# the picker scores your own cards first for trading, and cards you don't have first for wanting
+rep('''      .map(c => ({c, s: (counts[c.id] ? -20 : 0) + (norm(c.name) === q ? -5 : 0)''', '''      .map(c => ({c, s: (input.dataset.of === "wq" ? (counts[c.id] ? 20 : 0) : (counts[c.id] ? -20 : 0)) + (norm(c.name) === q ? -5 : 0)''')
+rep('''  S.trade ||= {}; S.trade[c.id] = Math.min(99, (S.trade[c.id] || 0) + 1); S.tsug = []; S.msg = ""; S.ok = false;
+  await renderFriends();
+  const again = document.querySelector(`.of-body[data-tok="${CSS.escape(tok)}"] [data-of="tq"]`); if (again) again.focus();''',
+    '''  const k = (input.dataset.of === "wq" ? "want:" : "") + c.id, kind = input.dataset.of;
+  S.trade ||= {}; S.trade[k] = Math.min(99, (S.trade[k] || 0) + 1); S.tsug = []; S.msg = ""; S.ok = false;
+  await renderFriends();
+  const again = document.querySelector(`.of-body[data-tok="${CSS.escape(tok)}"] [data-of="${kind}"]`); if (again) again.focus();''')
+rep('''frListen("input", e => { if (e.target.dataset.of === "tq") tradeSuggest(e.target); });''', '''frListen("input", e => { if (e.target.dataset.of === "tq" || e.target.dataset.of === "wq") tradeSuggest(e.target); });''')
+rep('''  if (e.target.dataset.of !== "tq") return;
+  const S = offerOf(e.target.closest(".of-body").dataset.tok), n = (S.tsug || []).length;''', '''  if (e.target.dataset.of !== "tq" && e.target.dataset.of !== "wq") return;
+  const S = offerOf(e.target.closest(".of-body").dataset.tok), n = (S.tsug || []).length;''')
+rep('''tradeAdd(li.closest(".of-trade").querySelector('[data-of="tq"]'), +li.dataset.i);''', '''tradeAdd(li.closest(".of-trade").querySelector('[data-of="tq"],[data-of="wq"]'), +li.dataset.i);''')
+rep('''function tradeChips(S){
+  const ids = Object.keys(S.trade || {}).filter(id => byId[id]);
+  return ids.length ? `<div class="of-chips">${ids.map(id => { const c = byId[id];''', '''function tradeChips(S, want){
+  const ids = Object.keys(S.trade || {}).filter(id => isWantKey(id) === !!want && byId[realId(id)]);
+  return ids.length ? `<div class="of-chips">${ids.map(id => { const c = byId[realId(id)];''')
+rep('''          ${tradeChips(S)}</div>''', '''          ${tradeChips(S)}</div>
+        <div class="of-trade of-want"><span class="of-lab">Cards you'd want <small>(optional, ask for cards back for a straight swap)</small></span>
+          <div class="qa-box"><input class="search" data-of="wq" placeholder="Add a card you'd want from them, e.g. Teemo…" aria-label="Add a card you'd want from them" autocomplete="off" role="combobox" aria-expanded="false"><ul class="sug" role="listbox" aria-label="Matching cards"></ul></div>
+          ${tradeChips(S, true)}</div>''')
+rep('''  const trade = Object.entries(S.trade || {}).filter(([id]) => byId[id]).map(([id, q]) => ({c: byId[id], q}));
+  if (!give.length && !trade.length) return "";''', '''  const trade = Object.entries(S.trade || {}).filter(([id]) => !isWantKey(id) && byId[id]).map(([id, q]) => ({c: byId[id], q}));
+  const want = Object.entries(S.trade || {}).filter(([id]) => isWantKey(id) && byId[realId(id)]).map(([id, q]) => ({c: byId[realId(id)], q}));
+  if (!give.length && !trade.length && !want.length) return "";''')
+rep('''${trade.length ? `<span class="collect-k">Cards you'd trade them</span>${tiles(trade)}` : ""}</div>`;''', '''${trade.length ? `<span class="collect-k">Cards you'd trade them</span>${tiles(trade)}` : ""}${want.length ? `<span class="collect-k">Cards you'd want from them</span>${tiles(want)}` : ""}</div>`;''')
+rep('''  const trade = Object.entries(S.trade || {}).filter(([id]) => byId[id]).map(([id, q]) => ({ name: byId[id].name, q, id }));''',
+    '''  const trade = Object.entries(S.trade || {}).filter(([id]) => byId[realId(id)]).map(([id, q]) => ({ name: byId[realId(id)].name, q, id }));''')
+# the list owner sees what they'd get and what they're asked for
+rep('''    ${o.trade.length ? `<div class="of-trade-in"><span class="collect-k">They'd also trade you</span>${tradeRows(o.trade)}</div>` : ""}''',
+    '''    ${tradeGive(o.trade).length ? `<div class="of-trade-in"><span class="collect-k">They'd also trade you</span>${tradeRows(tradeGive(o.trade))}</div>` : ""}
+    ${tradeWant(o.trade).length ? `<div class="of-trade-in of-want-in"><span class="collect-k">In return, they'd like</span>${tradeRows(tradeWant(o.trade))}</div>` : ""}''')
+rep('</style>\n\n<div class="wrap" id="app">', '''.of-want .of-lab{color:#f0b35a}
+.of-want .of-chip{border-color:color-mix(in srgb,#f0b35a 45%,var(--line))}
+.of-said .of-wantk{margin-top:6px;color:#f0b35a}
+.of-want-in .collect-k{color:#f0b35a}
 </style>
 
 <div class="wrap" id="app">''')

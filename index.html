@@ -667,6 +667,10 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 #card-pop .cp-rules{font-size:12.5px;max-height:190px;overflow:hidden}
 .uisize.curpick + .uisize{margin-left:14px}
 @media (max-width:520px){.uisize.curpick{margin-left:0}.uisize.curpick + .uisize{margin-left:auto}}
+.of-want .of-lab{color:#f0b35a}
+.of-want .of-chip{border-color:color-mix(in srgb,#f0b35a 45%,var(--line))}
+.of-said .of-wantk{margin-top:6px;color:#f0b35a}
+.of-want-in .collect-k{color:#f0b35a}
 </style>
 
 <div class="wrap" id="app">
@@ -2013,7 +2017,8 @@ function offerHTML(o){
   return `<article class="of-card${offFold.has(o.id) ? " folded" : ""}" data-offer="${esc(o.id)}">
     <div class="of-top"><div>${offersNew.has(o.id) ? '<span class="of-new">New</span>' : ""}${threadsOff ? "" : statusPill(o, true)}<button type="button" class="mk-fold" data-offold="${esc(o.id)}" aria-expanded="${!offFold.has(o.id)}" title="Show or hide this offer"><span class="mk-car" aria-hidden="true"></span><b class="of-from">${esc(o.from_name)}</b></button> <span class="meta">sent ${esc(fmtDate(String(o.created_at).slice(0, 10)))}</span></div><span class="of-sum">${n} card${n === 1 ? "" : "s"}${worth ? ` · market ${esc(money(worth))}` : ""}</span></div>
     ${o.offer ? `<div class="of-said"><span class="collect-k">Their offer</span><span class="of-text">${esc(o.offer)}</span></div>` : ""}
-    ${o.trade.length ? `<div class="of-trade-in"><span class="collect-k">They'd also trade you</span>${tradeRows(o.trade)}</div>` : ""}
+    ${tradeGive(o.trade).length ? `<div class="of-trade-in"><span class="collect-k">They'd also trade you</span>${tradeRows(tradeGive(o.trade))}</div>` : ""}
+    ${tradeWant(o.trade).length ? `<div class="of-trade-in of-want-in"><span class="collect-k">In return, they'd like</span>${tradeRows(tradeWant(o.trade))}</div>` : ""}
     <span class="collect-k">Cards they have for you</span>
     <div class="of-items">${items.map(i => { const key = norm(i.name), c = frCard(key);
       return `<div class="frrow"${c ? ` data-card="${esc(c.id)}"` : ""}>${frThumb(key)}<span class="q">${+i.q || 0}×</span><span class="frn">${esc(i.name)}${cardSub(key)}</span></div>`; }).join("")}</div>
@@ -2124,7 +2129,7 @@ function myOffersHTML(listTok){
     const n = (o.items || []).reduce((a, i) => a + (+i.q || 0), 0), last = (o.thread[o.thread.length - 1] || {}).by, open = o.status === "open";
     return `<div class="mo-card" data-reply="${esc(o.reply_token)}">
       <div class="of-top"><div>${moNew.has(o.reply_token) ? '<span class="of-new">New</span>' : ""}${statusPill(o, false)}<span class="meta">sent ${esc(fmtWhen(o.created_at))}</span></div><span class="of-sum">Giving them ${n} card${n === 1 ? "" : "s"}</span></div>
-      ${o.offer || o.trade.length ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${o.offer ? esc(o.offer) : ""}${o.offer && o.trade.length ? " <span class=\"of-plus\">+</span> " : ""}${o.trade.map(i => cardRef(i.id && byId[i.id] ? byId[i.id] : frCard(norm(i.name)), +i.q || 0, i.name)).join(", ")}</span></div>` : ""}
+      ${o.offer || o.trade.length ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${o.offer ? esc(o.offer) : ""}${o.offer && tradeGive(o.trade).length ? " <span class=\"of-plus\">+</span> " : ""}${cardRefs(tradeGive(o.trade))}${!o.offer && !tradeGive(o.trade).length ? "<span class=\"meta\">a straight swap</span>" : ""}</span>${tradeWant(o.trade).length ? `<span class="collect-k of-wantk">In return, you'd like</span><span class="of-text">${cardRefs(tradeWant(o.trade))}</span>` : ""}</div>` : ""}
       ${(o.items || []).length ? `<span class="collect-k">Cards you're giving them</span>${tradeRows(o.items)}` : ""}
       ${threadHTML(o.thread, false)}
       ${open ? `<div class="of-reply"><input data-mo="text" maxlength="200" value="${esc(moDraft[o.reply_token] || "")}" placeholder="${last === "owner" ? "Reply to their counter offer…" : "Add a message…"}" aria-label="Your reply"><button class="btn" data-mo="reply">Send reply</button>${last === "owner" ? '<button class="btn ok" data-mo="accept">Accept their counter</button>' : ""}<button class="btn" data-mo="withdraw">${moArm === o.reply_token ? "Tap again to withdraw" : "Withdraw"}</button></div><p class="msg" data-mo-msg aria-live="polite"></p>` : ""}
@@ -2145,14 +2150,18 @@ frListen("click", async e => {
   delete moDraft[code]; moNew.delete(code); await loadMyOffers(true); renderFriends();
 });
 
-// ---- cards you'd trade (offer form)
+// ---- cards you'd trade / want (offer form). Wanted cards sit in S.trade as "want:<card id>".
+const isWantKey = k => String(k || "").startsWith("want:"), realId = k => String(k || "").replace(/^want:/, "");
+const tradeGive = list => (list || []).filter(i => !isWantKey(i.id));
+const tradeWant = list => (list || []).filter(i => isWantKey(i.id)).map(i => ({...i, id: realId(i.id)}));
+const cardRefs = list => list.map(i => cardRef(i.id && byId[i.id] ? byId[i.id] : frCard(norm(i.name)), +i.q || 0, i.name)).join(", ");
 function tradeSuggest(input){
   const S = offerOf(input.closest(".of-body").dataset.tok), q = norm(input.value), ul = input.parentElement.querySelector(".sug");
   if (!q) S.tsug = [];
   else {
     const words = q.split(" ");
     S.tsug = CARDS.filter(c => !c.token && words.every(w => norm(c.name).includes(w)))
-      .map(c => ({c, s: (counts[c.id] ? -20 : 0) + (norm(c.name) === q ? -5 : 0) + (norm(c.name).startsWith(q) ? 0 : 10) + (c.variant ? 3 : 0) + META.sets.findIndex(x => x.code === c.set) * 0.1}))
+      .map(c => ({c, s: (input.dataset.of === "wq" ? (counts[c.id] ? 20 : 0) : (counts[c.id] ? -20 : 0)) + (norm(c.name) === q ? -5 : 0) + (norm(c.name).startsWith(q) ? 0 : 10) + (c.variant ? 3 : 0) + META.sets.findIndex(x => x.code === c.set) * 0.1}))
       .sort((a, b) => a.s - b.s || a.c.name.localeCompare(b.c.name)).slice(0, 8).map(x => x.c);
   }
   S.tsel = 0; tradeDraw(input);
@@ -2168,20 +2177,21 @@ function tradeDraw(input){
 }
 async function tradeAdd(input, i){
   const body = input.closest(".of-body"), tok = body.dataset.tok, S = offerOf(tok), c = (S.tsug || [])[i]; if (!c) return;
-  S.trade ||= {}; S.trade[c.id] = Math.min(99, (S.trade[c.id] || 0) + 1); S.tsug = []; S.msg = ""; S.ok = false;
+  const k = (input.dataset.of === "wq" ? "want:" : "") + c.id, kind = input.dataset.of;
+  S.trade ||= {}; S.trade[k] = Math.min(99, (S.trade[k] || 0) + 1); S.tsug = []; S.msg = ""; S.ok = false;
   await renderFriends();
-  const again = document.querySelector(`.of-body[data-tok="${CSS.escape(tok)}"] [data-of="tq"]`); if (again) again.focus();
+  const again = document.querySelector(`.of-body[data-tok="${CSS.escape(tok)}"] [data-of="${kind}"]`); if (again) again.focus();
 }
-frListen("input", e => { if (e.target.dataset.of === "tq") tradeSuggest(e.target); });
+frListen("input", e => { if (e.target.dataset.of === "tq" || e.target.dataset.of === "wq") tradeSuggest(e.target); });
 frListen("keydown", e => {
-  if (e.target.dataset.of !== "tq") return;
+  if (e.target.dataset.of !== "tq" && e.target.dataset.of !== "wq") return;
   const S = offerOf(e.target.closest(".of-body").dataset.tok), n = (S.tsug || []).length;
   if (e.key === "ArrowDown" && n){ S.tsel = (S.tsel + 1) % n; tradeDraw(e.target); e.preventDefault(); }
   else if (e.key === "ArrowUp" && n){ S.tsel = (S.tsel - 1 + n) % n; tradeDraw(e.target); e.preventDefault(); }
   else if (e.key === "Enter"){ e.preventDefault(); tradeAdd(e.target, S.tsel || 0); }
   else if (e.key === "Escape"){ e.target.value = ""; S.tsug = []; tradeDraw(e.target); }
 });
-frListen("mousedown", e => { const li = e.target.closest(".of-trade .sug li"); if (li){ e.preventDefault(); tradeAdd(li.closest(".of-trade").querySelector('[data-of="tq"]'), +li.dataset.i); } });
+frListen("mousedown", e => { const li = e.target.closest(".of-trade .sug li"); if (li){ e.preventDefault(); tradeAdd(li.closest(".of-trade").querySelector('[data-of="tq"],[data-of="wq"]'), +li.dataset.i); } });
 frListen("click", e => {
   const b = e.target.closest("button[data-tx]"); if (!b) return;
   const S = offerOf(b.closest(".of-body").dataset.tok), id = b.dataset.tx;
@@ -2192,14 +2202,15 @@ frListen("click", e => {
 // the cards in your offer, as pictures: the ones you ticked (a printing you own, if you have one) and the ones you'd trade
 function offerPreview(S){
   const give = Object.entries(S.sel || {}).map(([key, p]) => ({c: (groups[key] || []).find(c => counts[c.id]) || frCard(key), q: p.q})).filter(x => x.c);
-  const trade = Object.entries(S.trade || {}).filter(([id]) => byId[id]).map(([id, q]) => ({c: byId[id], q}));
-  if (!give.length && !trade.length) return "";
+  const trade = Object.entries(S.trade || {}).filter(([id]) => !isWantKey(id) && byId[id]).map(([id, q]) => ({c: byId[id], q}));
+  const want = Object.entries(S.trade || {}).filter(([id]) => isWantKey(id) && byId[realId(id)]).map(([id, q]) => ({c: byId[realId(id)], q}));
+  if (!give.length && !trade.length && !want.length) return "";
   const tiles = list => `<div class="of-pv">${list.map(x => `<span class="of-pvc">${thumbHTML(x.c, 480)}<span class="of-pvq">${x.q}×</span><small>${esc(x.c.name)}</small></span>`).join("")}</div>`;
-  return `<div class="of-preview"><span class="of-lab">Your Offer Preview <small>(tap a card to see it bigger)</small></span>${give.length ? `<span class="collect-k">Cards you're giving them</span>${tiles(give)}` : ""}${trade.length ? `<span class="collect-k">Cards you'd trade them</span>${tiles(trade)}` : ""}</div>`;
+  return `<div class="of-preview"><span class="of-lab">Your Offer Preview <small>(tap a card to see it bigger)</small></span>${give.length ? `<span class="collect-k">Cards you're giving them</span>${tiles(give)}` : ""}${trade.length ? `<span class="collect-k">Cards you'd trade them</span>${tiles(trade)}` : ""}${want.length ? `<span class="collect-k">Cards you'd want from them</span>${tiles(want)}` : ""}</div>`;
 }
-function tradeChips(S){
-  const ids = Object.keys(S.trade || {}).filter(id => byId[id]);
-  return ids.length ? `<div class="of-chips">${ids.map(id => { const c = byId[id];
+function tradeChips(S, want){
+  const ids = Object.keys(S.trade || {}).filter(id => isWantKey(id) === !!want && byId[realId(id)]);
+  return ids.length ? `<div class="of-chips">${ids.map(id => { const c = byId[realId(id)];
     return `<span class="of-chip">${thumbHTML(c, 100)}<span class="of-chn">${esc(c.name)}<small>${esc(codeOf(c))}${c.price != null ? ` · ${esc(money(c.price))}` : ""}</small></span><span class="step"><button type="button" data-tx="${esc(id)}" data-d="-1" aria-label="One fewer">−</button><output>${S.trade[id]}</output><button type="button" data-tx="${esc(id)}" data-d="1" aria-label="One more">+</button></span><button type="button" class="dk-rm" data-tx="${esc(id)}" data-d="x" aria-label="Remove ${esc(c.name)}">✕</button></span>`; }).join("")}</div>` : "";
 }
 
@@ -2219,6 +2230,9 @@ function frShopBody(r, rows, mine){
     : `<div class="of-foot"><div class="of-trade"><span class="of-lab">Cards you'd trade <small>(optional, your cards come up first)</small></span>
           <div class="qa-box"><input class="search" data-of="tq" placeholder="Add a card you'd trade, e.g. Jinx…" aria-label="Add a card you'd trade" autocomplete="off" role="combobox" aria-expanded="false"><ul class="sug" role="listbox" aria-label="Matching cards"></ul></div>
           ${tradeChips(S)}</div>
+        <div class="of-trade of-want"><span class="of-lab">Cards you'd want <small>(optional, ask for cards back for a straight swap)</small></span>
+          <div class="qa-box"><input class="search" data-of="wq" placeholder="Add a card you'd want from them, e.g. Teemo…" aria-label="Add a card you'd want from them" autocomplete="off" role="combobox" aria-expanded="false"><ul class="sug" role="listbox" aria-label="Matching cards"></ul></div>
+          ${tradeChips(S, true)}</div>
         ${offerPreview(S)}
         <label class="of-offer">Your offer <input data-of="offer" maxlength="200" value="${esc(S.offer)}" autocomplete="off" placeholder="${Object.keys(S.trade || {}).length ? "Optional: add money or a note" : "Anything: $20, a trade, a McChicken…"}"></label>
         <label class="of-name">Your name <input data-of="name" maxlength="40" value="${esc(S.name)}" autocomplete="nickname" placeholder="So they know who it's from"></label>
@@ -2246,7 +2260,7 @@ frListen("click", async e => {
   const name = S.name.trim(), msg = body.querySelector("[data-of-msg]"), say = (t, ok) => { S.msg = t; S.ok = !!ok; msg.textContent = t; msg.className = "msg" + (ok ? " ok" : " err"); };
   const items = Object.entries(S.sel).map(([key, p]) => ({ name: (groups[key] || [])[0] ? groups[key][0].name : key, q: p.q })), offer = S.offer.trim();
   if (!items.length){ say("Tick at least one card you have."); return; }
-  const trade = Object.entries(S.trade || {}).filter(([id]) => byId[id]).map(([id, q]) => ({ name: byId[id].name, q, id }));
+  const trade = Object.entries(S.trade || {}).filter(([id]) => byId[realId(id)]).map(([id, q]) => ({ name: byId[realId(id)].name, q, id }));
   if (!offer && !trade.length){ say("Write your offer (money, anything) or add cards you'd trade."); body.querySelector('[data-of="offer"]').focus(); return; }
   if (!name){ say("Add your name so they know who the offer is from."); body.querySelector('[data-of="name"]').focus(); return; }
   if (badWords(name) || badWords(offer)){ say("Please keep it friendly: your name or offer has a word we don't allow."); return; }
