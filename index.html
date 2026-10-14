@@ -2,6 +2,9 @@
 .pgin{width:3.6em;padding:4px 6px;text-align:center;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;-moz-appearance:textfield}
 .pgin:focus{outline:2px solid var(--accent);outline-offset:1px}
 .pgin::-webkit-outer-spin-button,.pgin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.btn.reset{border-color:color-mix(in srgb,var(--fury) 45%,var(--line));color:var(--fg)}
+.btn.reset:not(:disabled):hover{background:color-mix(in srgb,var(--fury) 14%,transparent)}
+.btn.reset:disabled{opacity:.4;cursor:default;border-color:var(--line)}
 </style></head><body>
 <title>Riftbound Database</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -446,6 +449,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
       </div>
       <select id="sort" aria-label="Sort cards"><option value="set">Sort: set order</option><option value="price">Sort: price, high to low</option><option value="value">Sort: my value, high to low</option><option value="name">Sort: name</option></select>
       <label class="chk"><input type="checkbox" id="variants" checked> Show alt arts, overnumbered and promos</label>
+      <button class="btn reset" id="freset" type="button" disabled>Reset filters</button>
     </div>
     <div class="frow">
       <span class="meta" id="count"></span>
@@ -938,7 +942,7 @@ function renderList(){
   $("more").hidden = true; renderPager(pages);
   $("v-list").setAttribute("aria-pressed", st.view === "list"); $("v-grid").setAttribute("aria-pressed", st.view === "grid");
   const nf = st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1);
-  $("fcount").textContent = nf ? nf : "";
+  $("fcount").textContent = nf ? nf : ""; syncReset();
   $("count").textContent = `${shown.length.toLocaleString()} card${shown.length===1?"":"s"}` + (st.set ? ` in ${setName[st.set]}` : "");
 }
 function render(){ renderSummary(); renderList(); if (st.tab === "decks") renderDecks(); if (st.tab === "packs") renderPack(); if (st.tab === "wish") renderWish(); LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); }
@@ -950,6 +954,14 @@ $("list").addEventListener("click", e => {
 });
 $("sets").addEventListener("click", e => { const b = e.target.closest(".setbtn"); if (!b) return; st.set = b.dataset.set; st.limit = PAGE; st.page = 0; render(); });
 $("doms").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.ban){ st.banned = !st.banned; st.limit = PAGE; st.page = 0; syncControls(); render(); return; } const d = b.dataset.d; st.doms.has(d) ? st.doms.delete(d) : st.doms.add(d); st.limit = PAGE; st.page = 0; syncControls(); render(); });
+
+// ---- reset filters: search, set, domains, banned, type, rarity, keyword, tag, All/I have/Missing, alt arts
+function activeFilters(){ return (st.q ? 1 : 0) + (st.set ? 1 : 0) + st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1); }
+function syncReset(){ const n = activeFilters(), b = $("freset"); if (!b) return; b.disabled = !n; b.textContent = n ? `Reset filters (${n})` : "Reset filters"; }
+$("freset").addEventListener("click", () => {
+  Object.assign(st, {q:"", set:"", doms:new Set(), banned:false, type:"", rarity:"", kw:"", tg:"", show:"all", variants:true, limit:PAGE, page:0});
+  syncControls(); render();
+});
 let qT; $("q").addEventListener("input", e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); st.limit = PAGE; st.page = 0; render(); }, 120); });
 ["all","have","need"].forEach(k => $("s-"+k).addEventListener("click", () => { st.show = k; st.limit = PAGE; st.page = 0; syncControls(); render(); }));
 $("type").addEventListener("change", e => { st.type = e.target.value; st.limit = PAGE; st.page = 0; render(); });
