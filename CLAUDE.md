@@ -68,10 +68,9 @@ with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` he
 
 ## Pending / known gaps
 
-- **Brandon must run `build/sql/supabase_offer_revise.sql`** (RPCs `offer_revise`, `offer_delete_msg`,
-  `owner_delete_msg`) for "Revise offer" and deleting messages; until then the site says they need a database update. Offers made earlier keep working.
-- `supabase_links.sql` has been run (Oct 14, 2026). `supabase_offers.sql` has been run too. **Brandon must run `build/sql/supabase_offer_threads.sql`** for counter offers,
-  trade cards and the server-side bad-word check; until then offers stay one-way and trade cards are refused.
+- All SQL files have been run in Supabase as of Oct 14, 2026: `supabase_links.sql`, `supabase_offers.sql`,
+  `supabase_offer_threads.sql` and `supabase_offer_revise.sql` (revise offers, delete messages). A new SQL file is
+  something Brandon runs himself in Supabase → SQL Editor; note it here until he confirms "Success".
 - 26 printings have no text in `text.js` (Kennen – Heart of the Tempest, double-sided tokens like "Bird // Buff").
 - The site is tested with a fake Supabase; real-database behaviour should be checked after SQL changes
   (share a deck, open its link in a private window).
