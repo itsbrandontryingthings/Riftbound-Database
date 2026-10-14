@@ -402,7 +402,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .dk-prog{display:flex;gap:6px 12px;align-items:baseline;flex-wrap:wrap}
 .dk-big{font-family:var(--display);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums}
 .dk-big b{color:var(--ok)}
-.dk-tools{gap:8px}
+.dk-tools{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:14px 0 4px}
 .dk-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 @media (max-width:900px){.dk-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .dk-stat{background:var(--row);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:2px;align-content:start;min-width:0}
@@ -1327,12 +1327,6 @@ function renderDecks(){
     <input class="dk-title" id="dk-rename" value="${esc(d.name)}" maxlength="80" aria-label="Deck name (tap to rename)" title="Tap to rename this deck">
     <div class="dk-prog"><span class="collect-k">Cards collected</span><span class="dk-big"><b>${S.have}</b> / ${S.need}</span><span class="meta">${S.need - S.have ? `${S.need - S.have} to go` : "complete"}${checks ? ` · main deck ${mainHave}/${checks.mainN}` : ""}</span></div>
     <div class="bar" role="progressbar" aria-label="Deck completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><i style="width:${pct}%"></i></div>
-    <div class="frow dk-tools">
-      <div class="seg" role="group" aria-label="Which cards to show"><button id="dk-all" aria-pressed="${!hide}">Show all cards</button><button id="dk-hide" aria-pressed="${hide}">Hide cards I have</button></div>
-      <div class="seg sizeseg" role="group" aria-label="Card size"><button id="dks-s" aria-pressed="${size==="s"}" title="Small cards">S</button><button id="dks-m" aria-pressed="${size==="m"}" title="Medium cards">M</button><button id="dks-l" aria-pressed="${size==="l"}" title="Large cards">L</button></div>
-      <div class="seg" role="group" aria-label="Layout"><button id="dkv-list" aria-pressed="${view==="list"}">List</button><button id="dkv-grid" aria-pressed="${view==="grid"}">Grid</button></div>
-      <label class="chk"><input type="checkbox" id="dk-side" ${withSide?"checked":""}> Include sideboard</label>
-    </div>
     <div class="dk-tiles">
       <div class="dk-stat"><span class="collect-k">Full deck value</span><span class="v">${moneyHTML(S.value)}</span><small>Every card at its cheapest printing</small></div>
       <div class="dk-stat"><span class="collect-k">Cost to finish</span><span class="v${S.cost ? " warn" : ""}">${moneyHTML(S.cost)}</span><small>You have ${S.have} of ${S.need} cards</small></div>
@@ -1351,7 +1345,13 @@ function renderDecks(){
     <p class="meta">"I have" is your collection: any printing of a card counts, and tapping a number adds or removes copies in Collection too. New copies are added as the printing shown on the card. "Cost to finish" uses the cheapest printing of each missing card.${S.unknown ? ` ${S.unknown} card name${S.unknown===1?" isn't":"s aren't"} in the database, marked below.` : ""}</p>`;
   const gridCls = `list grid dkg${size !== "s" ? " sz-" + size : ""}`;
   const secOpts = S.secs.map(s => `<option value="${s.si}">${esc(s.label)}</option>`).join("");
-  $("deck-body").innerHTML = S.counted.map(sec => {
+  const tools = `<div class="dk-tools" role="toolbar" aria-label="How to show this deck's cards">
+      <div class="seg" role="group" aria-label="Which cards to show"><button id="dk-all" aria-pressed="${!hide}">Show all cards</button><button id="dk-hide" aria-pressed="${hide}">Hide cards I have</button></div>
+      <div class="seg sizeseg" role="group" aria-label="Card size"><button id="dks-s" aria-pressed="${size==="s"}" title="Small cards">S</button><button id="dks-m" aria-pressed="${size==="m"}" title="Medium cards">M</button><button id="dks-l" aria-pressed="${size==="l"}" title="Large cards">L</button></div>
+      <div class="seg" role="group" aria-label="Layout"><button id="dkv-list" aria-pressed="${view==="list"}">List</button><button id="dkv-grid" aria-pressed="${view==="grid"}">Grid</button></div>
+      <label class="chk"><input type="checkbox" id="dk-side" ${withSide?"checked":""}> Include sideboard</label>
+    </div>`;
+  $("deck-body").innerHTML = tools + S.counted.map(sec => {
     const sh = sec.rows.reduce((a, r) => a + r.h, 0), sn = sec.rows.reduce((a, r) => a + r.q, 0), rows = hide ? sec.rows.filter(r => r.miss || !r.known) : sec.rows;
     return `<section class="dk-sec"><div class="dk-sh"><h3>${esc(sec.label)}</h3><span class="dk-cnt${sh === sn ? " ok" : ""}" title="Copies you have / copies in this section">${sh}/${sn}</span></div>
       ${rows.length ? `<div class="${view === "grid" ? gridCls : "dkl dkl-" + size}">${rows.map(r => dkRowHTML(r, view, size)).join("")}</div>` : `<p class="meta dk-alldone">✓ You have ${sn === 1 ? "the 1 card" : `all ${sn} cards`} in this section.</p>`}</section>`;
@@ -1372,9 +1372,6 @@ $("deck-summary").addEventListener("change", e => {
 $("deck-summary").addEventListener("keydown", e => { if (e.target.id === "dk-rename" && e.key === "Enter") e.target.blur(); });
 $("deck-summary").addEventListener("click", e => {
   const id = e.target.id;
-  if (id === "dk-all" || id === "dk-hide"){ st.dhide = id === "dk-hide"; saveDeckView(); return; }
-  if (/^dks-[sml]$/.test(id)){ st.size = id.slice(4); saveDeckView(); return; }
-  if (id === "dkv-list" || id === "dkv-grid"){ st.dview = id === "dkv-grid" ? "grid" : "list"; saveDeckView(); return; }
   const d = allDecks().find(x => x.id === curDeck); if (!d) return;
   if (id === "dk-copylist") copy(d.text, "decklist");
 });
@@ -1392,6 +1389,10 @@ function collectionChange(row, delta){
   renderDecks();
 }
 $("deck-body").addEventListener("click", e => {
+  const id = e.target.id;
+  if (id === "dk-all" || id === "dk-hide"){ st.dhide = id === "dk-hide"; saveDeckView(); return; }
+  if (/^dks-[sml]$/.test(id)){ st.size = id.slice(4); saveDeckView(); return; }
+  if (id === "dkv-list" || id === "dkv-grid"){ st.dview = id === "dkv-grid" ? "grid" : "list"; saveDeckView(); return; }
   const b = e.target.closest("button[data-act]"); if (!b) return;
   const el = b.closest("[data-s]"), d = el && editableDeck(); if (!d) return;
   const si = +el.dataset.s, ri = +el.dataset.r, secs = parseDeck(d.text), sec = secs[si], r = sec && sec.rows[ri]; if (!r) return;
@@ -1407,6 +1408,7 @@ $("deck-body").addEventListener("click", e => {
   }
   saveDecks(); renderDecks();
 });
+$("deck-body").addEventListener("change", e => { if (e.target.id === "dk-side"){ withSide = e.target.checked; LS.set("rb-side", withSide); renderDecks(); } });
 $("deck-body").addEventListener("submit", e => {
   if (e.target.id !== "dk-addc") return;
   e.preventDefault();
