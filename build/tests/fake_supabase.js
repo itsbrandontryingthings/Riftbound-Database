@@ -47,6 +47,17 @@ window.supabase = { createClient(){ let session = L("__sess"); const subs=[]; co
         else if(a==="decline"){ o.status="declined"; o.thread.push({by,text:text||"Declined your offer.",at}); }
         else if(a==="withdraw"){ o.status="withdrawn"; o.thread.push({by,text:"Withdrew the offer.",at}); }
         o.updated_at=at; P("__db",d); return {data:o.status,error:null}; }
+      if(fn==="offer_revise"){ const d=db(), o=d.shop_offers.find(x=>x.reply_token===args.p_reply);
+        if(!o) return {data:null,error:{message:"link"}}; if((o.status||"open")!=="open") return {data:null,error:{message:"closed"}};
+        if(!Array.isArray(args.p_items)||!args.p_items.length) return {data:null,error:{message:"item"}};
+        if(!String(args.p_offer||"").trim()&&!(args.p_trade||[]).length) return {data:null,error:{message:"offer"}};
+        const at=new Date().toISOString(); o.thread=o.thread||[];
+        o.thread.push({by:"them",text:String(args.p_text||"").trim()||"Revised the offer.",revised:true,was:{items:o.items,offer:o.offer,trade:o.trade||[]},at});
+        o.items=args.p_items.map(i=>({name:i.name,q:i.q})); o.offer=String(args.p_offer||"").trim(); o.trade=(args.p_trade||[]).map(i=>({name:i.name,q:i.q,id:i.id})); o.updated_at=at; P("__db",d); return {data:"open",error:null}; }
+      if(fn==="offer_delete_msg"||fn==="owner_delete_msg"){ const d=db(), uid=session&&session.user.id, mine=fn==="offer_delete_msg";
+        const o=mine?d.shop_offers.find(x=>x.reply_token===args.p_reply):d.shop_offers.find(x=>x.id===args.p_id&&x.owner===uid);
+        if(!o) return {data:null,error:{message:"link"}}; if((o.status||"open")!=="open") return {data:null,error:{message:"closed"}};
+        o.thread=(o.thread||[]).filter(m=>!(m.by===(mine?"them":"owner")&&m.at===args.p_at&&!m.revised)); o.updated_at=new Date().toISOString(); P("__db",d); return {data:"open",error:null}; }
       if(fn!=="get_shared") return {error:{message:"no function"}}; const uid=session&&session.user.id; window.__rpcCalls=(window.__rpcCalls||0)+1;
       const rows=db().shared_decks.filter(r=>args.p_tokens.includes(r.share_token)).map(({owner,...r})=>({...r,is_mine:owner===uid})); return {data:rows,error:null}; },
     auth:{ onAuthStateChange(f){subs.push(f); setTimeout(()=>f("INITIAL_SESSION",session),0); return {data:{subscription:{unsubscribe(){}}}}},

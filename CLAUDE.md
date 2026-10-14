@@ -16,7 +16,7 @@ and keep the site working on phones.
 | `build/patches/` | The build: `patch_*.py` scripts, each a string-replace transform that **asserts its anchor text exists** (fails loudly if an earlier change moved it). `build.py` makes `cards.js` from raw Riftcodex rows + `build/tcg/*`. |
 | `build/base/shared.html` | The original base page every website build starts from. |
 | `build/tcg/` | Inputs for `build.py`: `prices.txt` (`productId:price[f]`, f = foil-only), `fx.txt` (USD→CAD `rate|date`, Bank of Canada), `extras.txt` (TCGplayer-only printings), `ven_map.txt`, `images.txt` (Riftcodex image file per card), `tcg_photos.txt`, `bans.txt` (`name|std or 2v2|since`). The weekly task's working copies live in Brandon's claude.ai Project "Personal" under `claude/riftbound-collection/`; keep them in sync if you change one. |
-| `build/sql/` | Supabase SQL, run by Brandon in Supabase → SQL Editor: `supabase_setup.sql` (collections table), `supabase_sharing.sql` (shared_decks), `supabase_wishlist.sql` (wish column), `supabase_links.sql` (private share links), `supabase_offers.sql` (offers on shopping lists), `supabase_offer_threads.sql` (counter offers, trade cards, bad-word filter — see "Pending"). |
+| `build/sql/` | Supabase SQL, run by Brandon in Supabase → SQL Editor: `supabase_setup.sql` (collections table), `supabase_sharing.sql` (shared_decks), `supabase_wishlist.sql` (wish column), `supabase_links.sql` (private share links), `supabase_offers.sql` (offers on shopping lists), `supabase_offer_threads.sql` (counter offers, trade cards, bad-word filter — see "Pending"), `supabase_offer_revise.sql` (revising an offer you made). |
 | `build/tests/` | `smoke.py` (loads the built site with stand-in images + fake Supabase; checks no JS errors, filters, info sheet), `links_test.py` (end-to-end private links), `fake_supabase.js` (in-browser stand-in that enforces the same rules as the real database). |
 | `build/make.sh` | Rebuilds `index.html`; `--local` also builds the local Desktop copy. |
 
@@ -68,6 +68,8 @@ with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` he
 
 ## Pending / known gaps
 
+- **Brandon must run `build/sql/supabase_offer_revise.sql`** (RPCs `offer_revise`, `offer_delete_msg`,
+  `owner_delete_msg`) for "Revise offer" and deleting messages; until then the site says they need a database update. Offers made earlier keep working.
 - `supabase_links.sql` has been run (Oct 14, 2026). `supabase_offers.sql` has been run too. **Brandon must run `build/sql/supabase_offer_threads.sql`** for counter offers,
   trade cards and the server-side bad-word check; until then offers stay one-way and trade cards are refused.
 - 26 printings have no text in `text.js` (Kennen – Heart of the Tempest, double-sided tokens like "Bird // Buff").

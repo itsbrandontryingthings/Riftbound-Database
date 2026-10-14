@@ -36,6 +36,14 @@
   set, type, stats, abilities, price), tap / click for the full card.
 - "Cards you'd want" beside "Cards you'd trade" (a straight swap): kept in the offer's trade list with id "want:<id>"
   (no database change); shown as "In return, you'd like" / "In return, they'd like".
+- "Revise offer" on offers you made (needs build/sql/supabase_offer_revise.sql, RPC offer_revise): loads it back into the
+  offer form; the conversation then shows "Revised the offer. Before: …".
+- One alert number on Marketplace for everything waiting on you (offers / messages / revisions on your list that need an
+  answer + counter offers / replies on offers you made); the Friends tab no longer has its own number.
+- Delete a message you sent (both sides, open offers, not revision notes): RPCs offer_delete_msg / owner_delete_msg in
+  supabase_offer_revise.sql.
+- Your offers no longer say "Giving them N cards" in the corner. Fix: shared lists reload when the saved links change
+  (frKey), e.g. after signing in as someone else on the same browser.
 Usage: patch_marketplace.py in.html out.html"""
 import sys
 
@@ -792,6 +800,114 @@ rep('</style>\n\n<div class="wrap" id="app">', '''.of-want .of-lab{color:#f0b35a
 </style>
 
 <div class="wrap" id="app">''')
+
+# ---------- revise an offer you made (needs build/sql/supabase_offer_revise.sql: RPC offer_revise). "Revise offer" on your
+# offer loads it back into that list's offer form (ticked cards, cards you'd trade / want, money); "Send revised offer"
+# replaces it and adds "Revised the offer." to the conversation with the old version ("was"), shown as "Before: …".
+rep('''<button class="btn" data-mo="reply">Send reply</button>''', '''<button class="btn" data-mo="reply">Send reply</button><button class="btn" data-mo="revise" title="Change the cards or money in this offer">Revise offer</button>''')
+rep('''  const card = b.closest(".mo-card"), code = card.dataset.reply, act = b.dataset.mo, msg = card.querySelector("[data-mo-msg]"), text = (moDraft[code] || "").trim();''',
+    '''  const card = b.closest(".mo-card"), code = card.dataset.reply, act = b.dataset.mo, msg = card.querySelector("[data-mo-msg]"), text = (moDraft[code] || "").trim();
+  if (act === "revise") return startRevise(code);''')
+rep('''  const n = Object.keys(S.sel).length, copies = Object.values(S.sel).reduce((a, p) => a + p.q, 0);
+  const foot = mine ?''', '''  const n = Object.keys(S.sel).length, copies = Object.values(S.sel).reduce((a, p) => a + p.q, 0), rv = S.revise && (myOffers || []).find(o => o.reply_token === S.revise);
+  const foot = mine ?''')
+rep('''    : `<div class="of-foot"><div class="of-trade"><span class="of-lab">Cards you'd trade''', '''    : `<div class="of-foot">${rv ? `<div class="of-revising"><b>Revising your offer</b> sent ${esc(fmtWhen(rv.created_at))}. Change the ticked cards, the cards you'd trade or want, or your offer, then tap <b>Send revised offer</b>. <button type="button" class="btn" data-of="unrevise">Cancel</button></div>` : ""}<div class="of-trade"><span class="of-lab">Cards you'd trade''')
+rep('''<button type="button" class="btn primary" data-of="send" ${n ? "" : "disabled"}>Send offer</button>''', '''<button type="button" class="btn primary" data-of="send" ${n ? "" : "disabled"}>${rv ? "Send revised offer" : "Send offer"}</button>''')
+rep('''  if (b.dataset.of !== "send") return;''', '''  if (b.dataset.of === "unrevise"){ Object.assign(S, {revise: null, sel: {}, trade: {}, offer: "", msg: "", ok: false}); renderFriends(); return; }
+  if (b.dataset.of !== "send") return;''')
+rep('''  if (!name){ say("Add your name so they know who the offer is from.");''', '''  if (!name && !S.revise){ say("Add your name so they know who the offer is from.");''')
+rep('''  b.disabled = true; say("Sending your offer…", true);''', '''  b.disabled = true; say(S.revise ? "Sending your revised offer…" : "Sending your offer…", true);
+  if (S.revise){
+    const { error: rerr } = await sb.rpc("offer_revise", { p_reply: S.revise, p_items: items, p_offer: offer.slice(0, 200), p_trade: trade, p_text: "" });
+    if (rerr){ say(/offer_revise|function|schema cache/i.test(rerr.message || "") ? "Revising offers needs a quick database update. The site owner has the steps." : offerErr(rerr)); b.disabled = false; return; }
+    Object.assign(S, {revise: null, sel: {}, trade: {}, offer: "", msg: "Revised offer sent. They'll see what changed.", ok: true});
+    await loadMyOffers(true); renderFriends(); return;
+  }''')
+rep('''// ---- cards you'd trade / want (offer form). Wanted cards sit in S.trade as "want:<card id>".''', '''// load an offer you made back into that list's offer form, to revise it
+function startRevise(code){
+  const o = (myOffers || []).find(x => x.reply_token === code); if (!o) return;
+  const S = offerOf(o.list_token);
+  S.sel = Object.fromEntries((o.items || []).map(i => [norm(i.name), {q: +i.q || 1}]));
+  S.trade = Object.fromEntries((o.trade || []).map(i => { const want = isWantKey(i.id), c = byId[realId(i.id)] || frCard(norm(i.name)); return c ? [(want ? "want:" : "") + c.id, +i.q || 1] : null; }).filter(Boolean));
+  S.offer = o.offer || ""; S.revise = code; S.msg = ""; S.ok = false;
+  const r = (frCache || frLast || []).find(x => x.share_token === o.list_token); if (r) frOpen.add(r.id);
+  renderFriends().then(() => { const f = document.querySelector(`.of-body[data-tok="${CSS.escape(o.list_token)}"] .of-foot`); if (f) f.scrollIntoView({block: "start", behavior: "smooth"}); });
+}
+// ---- cards you'd trade / want (offer form). Wanted cards sit in S.trade as "want:<card id>".''')
+# a revision in the conversation shows what the offer was before
+rep('''${m.text ? `<span>${esc(m.text)}</span>` : ""}${m.trade && m.trade.length ? `<span class="of-who">Cards to trade:</span>${tradeRows(m.trade)}` : ""}</div>`; }).join("")}</div>`;''',
+    '''${m.text ? `<span>${esc(m.text)}</span>` : ""}${m.revised && m.was ? `<span class="of-was">Before: ${wasText(m.was)}</span>` : ""}${m.trade && m.trade.length ? `<span class="of-who">Cards to trade:</span>${tradeRows(m.trade)}` : ""}</div>`; }).join("")}</div>`;''')
+rep('''function statusPill(o, ownerView){''', '''function wasText(w){
+  const parts = [], give = tradeGive(w.trade), want = tradeWant(w.trade), items = w.items || [];
+  if (w.offer) parts.push(esc(w.offer));
+  if (give.length) parts.push(cardRefs(give));
+  const out = parts.join(" + ") || "a straight swap";
+  return out + (items.length ? ` · giving ${cardRefs(items)}` : "") + (want.length ? ` · wanting ${cardRefs(want)}` : "");
+}
+function statusPill(o, ownerView){''')
+
+# ---------- one alert number on Marketplace for everything waiting on you, both sides: offers / messages / revised
+# offers on your list that need your answer, and counter offers / replies on offers you made. The chime already plays
+# for each new one (loadOffers: new offer or a new message from them, revisions included; loadMyOffers: anything new from
+# the owner). Offers you made are refreshed on the Marketplace tab too, where friends' shopping lists now live.
+rep('''function showOfferBadge(){
+  const n = offers ? offers.filter(o => o.status === "open" && (o.thread[o.thread.length - 1] || {by: "them"}).by === "them").length : 0;
+  $("t-shop").innerHTML = `Marketplace${n ? `<span class="fcount" title="${n} offer${n === 1 ? "" : "s"} waiting">${n}</span>` : ""}`;
+}''', '''function showOfferBadge(){
+  const mineN = offers ? offers.filter(o => o.status === "open" && (o.thread[o.thread.length - 1] || {by: "them"}).by === "them").length : 0;
+  let theirsN = 0; try { theirsN = (myOffers || []).filter(o => o.status === "open" && (o.thread[o.thread.length - 1] || {}).by === "owner").length; } catch(e){}   // myOffers is set up further down the page
+  const n = mineN + theirsN;
+  const tip = [mineN ? `${mineN} offer${mineN === 1 ? "" : "s"} on your list waiting for your answer` : "", theirsN ? `${theirsN} counter offer${theirsN === 1 ? "" : "s"} or repl${theirsN === 1 ? "y" : "ies"} on offers you made` : ""].filter(Boolean).join(" · ");
+  $("t-shop").innerHTML = `Marketplace${n ? `<span class="fcount" title="${esc(tip)}">${n}</span>` : ""}`;
+}''')
+rep('''function showFriendsBadge(){
+  const n = (myOffers || []).filter(o => o.status === "open" && (o.thread[o.thread.length - 1] || {}).by === "owner").length;
+  $("t-friends").innerHTML = `Friends${n ? `<span class="fcount" title="${n} counter offer${n === 1 ? "" : "s"} waiting">${n}</span>` : ""}`;
+}''', '''function showFriendsBadge(){ $("t-friends").textContent = "Friends"; showOfferBadge(); }''')
+rep('''  if (st.tab === "friends" && !document.activeElement?.closest?.(".of-body, .mo-card")) renderFriends();''',
+    '''  if ((st.tab === "friends" || st.tab === "shop") && !document.activeElement?.closest?.(".of-body, .mo-card")) renderFriends();''')
+rep('</style>\n\n<div class="wrap" id="app">', '''.of-revising{flex-basis:100%;background:color-mix(in srgb,#f0b35a 12%,var(--row));border:1px solid color-mix(in srgb,#f0b35a 50%,var(--line));border-radius:10px;padding:8px 12px;font-size:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.of-was{font-size:12.5px;color:var(--muted)}
+</style>
+
+<div class="wrap" id="app">''')
+
+# ---------- delete a message you sent (open offers only; revision notes stay). Needs supabase_offer_revise.sql
+# (RPCs offer_delete_msg / owner_delete_msg). Messages are found by their time ("at").
+rep('''function threadHTML(thread, ownerView){''', '''function threadHTML(thread, ownerView, canDel){''')
+rep('''${threadHTML(o.thread, true)}''', '''${threadHTML(o.thread, true, o.status === "open" && !threadsOff)}''')
+rep('''${threadHTML(o.thread, false)}''', '''${threadHTML(o.thread, false, o.status === "open")}''')
+rep('''<span class="of-who">${mine ? "You" : ownerView ? "Them" : "List owner"} <small>${esc(fmtWhen(m.at))}</small></span>''',
+    '''<span class="of-who">${mine ? "You" : ownerView ? "Them" : "List owner"} <small>${esc(fmtWhen(m.at))}</small>${mine && canDel && m.at && !m.revised ? `<button type="button" class="of-del" data-delmsg="${esc(m.at)}" title="Delete this message">Delete</button>` : ""}</span>''')
+rep('''// ---- Marketplace: each incoming offer folds by tapping the sender's name''', '''// delete a message you sent: on your list's offers (owner) and on offers you made (with the reply code)
+async function deleteMsg(btn){
+  if (!confirm("Delete this message? They won't see it any more.")) return;
+  const owner = btn.closest("[data-offer]"), mine = btn.closest(".mo-card"), at = btn.dataset.delmsg;
+  const msgEl = (owner || mine).querySelector(owner ? "[data-ofmsg]" : "[data-mo-msg]");
+  btn.disabled = true;
+  const { error } = owner ? await sb.rpc("owner_delete_msg", { p_id: owner.dataset.offer, p_at: at }) : await sb.rpc("offer_delete_msg", { p_reply: mine.dataset.reply, p_at: at });
+  if (error){ btn.disabled = false; if (msgEl) msgEl.textContent = /delete_msg|function|schema cache/i.test(error.message || "") ? "Deleting messages needs a quick database update. The site owner has the steps." : offerErr(error); return; }
+  if (owner) await loadOffers(true); else { await loadMyOffers(true); renderFriends(); }
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-delmsg]"); if (!b) return; e.preventDefault(); e.stopPropagation(); deleteMsg(b); }, true);
+// ---- Marketplace: each incoming offer folds by tapping the sender's name''')
+rep('</style>\n\n<div class="wrap" id="app">', '''.of-del{all:unset;cursor:pointer;margin-left:8px;font-size:11.5px;color:var(--muted);text-decoration:underline;text-underline-offset:2px}
+.of-del:hover,.of-del:focus-visible{color:var(--fury)}
+</style>
+
+<div class="wrap" id="app">''')
+
+# ---------- no "Giving them N cards" in the corner of your offers (the cards are listed in the offer itself)
+rep('''<span class="of-sum">Giving them ${n} card${n === 1 ? "" : "s"}</span>''', '')
+
+# ---------- fix: the shared lists were cached for a minute even when the saved links changed (e.g. signing in as someone
+# else on the same browser showed the last person's lists, or none). Reload whenever the set of links is different.
+rep('''  if (!frCache || Date.now() - frLoadedAt > 60000){''', '''  if (!frCache || Date.now() - frLoadedAt > 60000 || frKey !== tokens.join()){''')
+rep('''    frCache = (data || []).sort((a, b) => tokens.indexOf(a.share_token) - tokens.indexOf(b.share_token)); frLoadedAt = Date.now(); frLast = frCache;''',
+    '''    frCache = (data || []).sort((a, b) => tokens.indexOf(a.share_token) - tokens.indexOf(b.share_token)); frLoadedAt = Date.now(); frLast = frCache; frKey = tokens.join();''')
+rep('''$("fr-count").textContent = ""; frCache = [];''', '''$("fr-count").textContent = ""; frCache = []; frKey = "";''')
+rep('''// ---- Marketplace: fold / unfold a section by tapping its header''', '''var frKey = "";   // the saved links the shared-list cache was loaded for
+// ---- Marketplace: fold / unfold a section by tapping its header''')
 
 open(out, "w", encoding="utf-8").write(h)
 print("patch_marketplace: ok ->", out)

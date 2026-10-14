@@ -671,6 +671,10 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .of-want .of-chip{border-color:color-mix(in srgb,#f0b35a 45%,var(--line))}
 .of-said .of-wantk{margin-top:6px;color:#f0b35a}
 .of-want-in .collect-k{color:#f0b35a}
+.of-revising{flex-basis:100%;background:color-mix(in srgb,#f0b35a 12%,var(--row));border:1px solid color-mix(in srgb,#f0b35a 50%,var(--line));border-radius:10px;padding:8px 12px;font-size:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.of-was{font-size:12.5px;color:var(--muted)}
+.of-del{all:unset;cursor:pointer;margin-left:8px;font-size:11.5px;color:var(--muted);text-decoration:underline;text-underline-offset:2px}
+.of-del:hover,.of-del:focus-visible{color:var(--fury)}
 </style>
 
 <div class="wrap" id="app">
@@ -1781,6 +1785,17 @@ function cardPopHTML(c){
   addEventListener("scroll", hide, true);
   document.addEventListener("click", e => { const el = e.target.closest(".cardref"); if (!el) return; e.preventDefault(); e.stopPropagation(); hide(); openCard(byId[el.dataset.cref]); }, true);
 })();
+// delete a message you sent: on your list's offers (owner) and on offers you made (with the reply code)
+async function deleteMsg(btn){
+  if (!confirm("Delete this message? They won't see it any more.")) return;
+  const owner = btn.closest("[data-offer]"), mine = btn.closest(".mo-card"), at = btn.dataset.delmsg;
+  const msgEl = (owner || mine).querySelector(owner ? "[data-ofmsg]" : "[data-mo-msg]");
+  btn.disabled = true;
+  const { error } = owner ? await sb.rpc("owner_delete_msg", { p_id: owner.dataset.offer, p_at: at }) : await sb.rpc("offer_delete_msg", { p_reply: mine.dataset.reply, p_at: at });
+  if (error){ btn.disabled = false; if (msgEl) msgEl.textContent = /delete_msg|function|schema cache/i.test(error.message || "") ? "Deleting messages needs a quick database update. The site owner has the steps." : offerErr(error); return; }
+  if (owner) await loadOffers(true); else { await loadMyOffers(true); renderFriends(); }
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-delmsg]"); if (!b) return; e.preventDefault(); e.stopPropagation(); deleteMsg(b); }, true);
 // ---- Marketplace: each incoming offer folds by tapping the sender's name
 const offFold = new Set(Array.isArray(LS.get("rb-offer-fold")) ? LS.get("rb-offer-fold") : []);
 $("shop-offers").addEventListener("click", e => {
@@ -1790,6 +1805,7 @@ $("shop-offers").addEventListener("click", e => {
   if (offers) [...offFold].forEach(x => { if (!offers.some(o => o.id === x)) offFold.delete(x); });   // forget removed offers
   LS.set("rb-offer-fold", [...offFold]); art.classList.toggle("folded", offFold.has(id)); b.setAttribute("aria-expanded", !offFold.has(id));
 }, true);
+var frKey = "";   // the saved links the shared-list cache was loaded for
 // ---- Marketplace: fold / unfold a section by tapping its header
 const mkFold = Object.assign({}, LS.get("rb-mk-fold") || {});
 function mkFoldBtn(k, html){ return `<button type="button" class="mk-fold" data-fold="${k}" aria-expanded="${!mkFold[k]}"><span class="mk-car" aria-hidden="true"></span>${html}</button>`; }
@@ -2008,8 +2024,11 @@ async function loadOffers(force){
   offersAt = Date.now(); showOfferBadge(); if (st.tab === "shop") renderOffers();
 }
 function showOfferBadge(){
-  const n = offers ? offers.filter(o => o.status === "open" && (o.thread[o.thread.length - 1] || {by: "them"}).by === "them").length : 0;
-  $("t-shop").innerHTML = `Marketplace${n ? `<span class="fcount" title="${n} offer${n === 1 ? "" : "s"} waiting">${n}</span>` : ""}`;
+  const mineN = offers ? offers.filter(o => o.status === "open" && (o.thread[o.thread.length - 1] || {by: "them"}).by === "them").length : 0;
+  let theirsN = 0; try { theirsN = (myOffers || []).filter(o => o.status === "open" && (o.thread[o.thread.length - 1] || {}).by === "owner").length; } catch(e){}   // myOffers is set up further down the page
+  const n = mineN + theirsN;
+  const tip = [mineN ? `${mineN} offer${mineN === 1 ? "" : "s"} on your list waiting for your answer` : "", theirsN ? `${theirsN} counter offer${theirsN === 1 ? "" : "s"} or repl${theirsN === 1 ? "y" : "ies"} on offers you made` : ""].filter(Boolean).join(" · ");
+  $("t-shop").innerHTML = `Marketplace${n ? `<span class="fcount" title="${esc(tip)}">${n}</span>` : ""}`;
 }
 function offerHTML(o){
   const items = Array.isArray(o.items) ? o.items : [], n = items.reduce((a, i) => a + (+i.q || 0), 0);
@@ -2022,7 +2041,7 @@ function offerHTML(o){
     <span class="collect-k">Cards they have for you</span>
     <div class="of-items">${items.map(i => { const key = norm(i.name), c = frCard(key);
       return `<div class="frrow"${c ? ` data-card="${esc(c.id)}"` : ""}>${frThumb(key)}<span class="q">${+i.q || 0}×</span><span class="frn">${esc(i.name)}${cardSub(key)}</span></div>`; }).join("")}</div>
-    ${threadHTML(o.thread, true)}
+    ${threadHTML(o.thread, true, o.status === "open" && !threadsOff)}
     ${!threadsOff && o.status === "open" ? `<div class="of-reply"><input data-ofd="${esc(o.id)}" maxlength="200" value="${esc(ownerDraft[o.id] || "")}" placeholder="Counter offer, e.g. $25 or add your Jinx" aria-label="Your counter offer to ${esc(o.from_name)}"><button class="btn" data-ofa="counter">Send counter offer</button><button class="btn ok" data-ofa="oaccept">Accept</button><button class="btn" data-ofa="odecline">Decline</button></div>` : ""}
     <div class="frow"><button class="btn primary" data-ofa="got" title="Adds these cards to your collection and removes the offer">Got them: add to my collection</button><button class="btn" data-ofa="dismiss">${offerArm === o.id ? "Tap again to remove" : "Remove offer"}</button><span class="meta" data-ofmsg aria-live="polite"></span></div>
   </article>`;
@@ -2080,10 +2099,17 @@ function tradeRows(list){
     return `<div class="frrow"${c ? ` data-card="${esc(c.id)}"` : ""}>${c ? thumbHTML(c, 160) : frThumb(key)}<span class="q">${+i.q || 0}×</span><span class="frn">${esc(i.name)}<span class="of-sub">${c ? `<span class="dk-set" style="--sc:var(--${setCol[c.set] || "line"})">${esc(setName[c.set] || c.set)} · ${esc(codeOf(c))}</span><span class="of-mkt">${c.price != null ? `market ${esc(money(c.price))} each` : "no price"}</span>` : ""}</span></span></div>`; }).join("")}</div>`;
 }
 const fmtWhen = s => { const d = new Date(s); return isNaN(d) ? "" : d.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); };
-function threadHTML(thread, ownerView){
+function threadHTML(thread, ownerView, canDel){
   if (!thread || !thread.length) return "";
   return `<div class="of-thread">${thread.map(m => { const mine = ownerView ? m.by === "owner" : m.by === "them";
-    return `<div class="of-msg ${mine ? "me" : "them"}"><span class="of-who">${mine ? "You" : ownerView ? "Them" : "List owner"} <small>${esc(fmtWhen(m.at))}</small></span>${m.text ? `<span>${esc(m.text)}</span>` : ""}${m.trade && m.trade.length ? `<span class="of-who">Cards to trade:</span>${tradeRows(m.trade)}` : ""}</div>`; }).join("")}</div>`;
+    return `<div class="of-msg ${mine ? "me" : "them"}"><span class="of-who">${mine ? "You" : ownerView ? "Them" : "List owner"} <small>${esc(fmtWhen(m.at))}</small>${mine && canDel && m.at && !m.revised ? `<button type="button" class="of-del" data-delmsg="${esc(m.at)}" title="Delete this message">Delete</button>` : ""}</span>${m.text ? `<span>${esc(m.text)}</span>` : ""}${m.revised && m.was ? `<span class="of-was">Before: ${wasText(m.was)}</span>` : ""}${m.trade && m.trade.length ? `<span class="of-who">Cards to trade:</span>${tradeRows(m.trade)}` : ""}</div>`; }).join("")}</div>`;
+}
+function wasText(w){
+  const parts = [], give = tradeGive(w.trade), want = tradeWant(w.trade), items = w.items || [];
+  if (w.offer) parts.push(esc(w.offer));
+  if (give.length) parts.push(cardRefs(give));
+  const out = parts.join(" + ") || "a straight swap";
+  return out + (items.length ? ` · giving ${cardRefs(items)}` : "") + (want.length ? ` · wanting ${cardRefs(want)}` : "");
 }
 function statusPill(o, ownerView){
   const last = (o.thread[o.thread.length - 1] || {}).by;
@@ -2116,23 +2142,20 @@ async function loadMyOffers(force){
   if (fresh.length && old && offerSound()) coinChime();
   LS.set("rb-my-offers-seen", Object.fromEntries(myOffers.map(o => [o.reply_token, o.thread.length])));
   showFriendsBadge();
-  if (st.tab === "friends" && !document.activeElement?.closest?.(".of-body, .mo-card")) renderFriends();
+  if ((st.tab === "friends" || st.tab === "shop") && !document.activeElement?.closest?.(".of-body, .mo-card")) renderFriends();
 }
-function showFriendsBadge(){
-  const n = (myOffers || []).filter(o => o.status === "open" && (o.thread[o.thread.length - 1] || {}).by === "owner").length;
-  $("t-friends").innerHTML = `Friends${n ? `<span class="fcount" title="${n} counter offer${n === 1 ? "" : "s"} waiting">${n}</span>` : ""}`;
-}
+function showFriendsBadge(){ $("t-friends").textContent = "Friends"; showOfferBadge(); }
 function myOffersHTML(listTok){
   const mine = (myOffers || []).filter(o => o.list_token === listTok);
   if (!mine.length) return "";
   return `<div class="mo-box"><span class="collect-k">Your offers on this list</span>${mine.map(o => {
     const n = (o.items || []).reduce((a, i) => a + (+i.q || 0), 0), last = (o.thread[o.thread.length - 1] || {}).by, open = o.status === "open";
     return `<div class="mo-card" data-reply="${esc(o.reply_token)}">
-      <div class="of-top"><div>${moNew.has(o.reply_token) ? '<span class="of-new">New</span>' : ""}${statusPill(o, false)}<span class="meta">sent ${esc(fmtWhen(o.created_at))}</span></div><span class="of-sum">Giving them ${n} card${n === 1 ? "" : "s"}</span></div>
+      <div class="of-top"><div>${moNew.has(o.reply_token) ? '<span class="of-new">New</span>' : ""}${statusPill(o, false)}<span class="meta">sent ${esc(fmtWhen(o.created_at))}</span></div></div>
       ${o.offer || o.trade.length ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${o.offer ? esc(o.offer) : ""}${o.offer && tradeGive(o.trade).length ? " <span class=\"of-plus\">+</span> " : ""}${cardRefs(tradeGive(o.trade))}${!o.offer && !tradeGive(o.trade).length ? "<span class=\"meta\">a straight swap</span>" : ""}</span>${tradeWant(o.trade).length ? `<span class="collect-k of-wantk">In return, you'd like</span><span class="of-text">${cardRefs(tradeWant(o.trade))}</span>` : ""}</div>` : ""}
       ${(o.items || []).length ? `<span class="collect-k">Cards you're giving them</span>${tradeRows(o.items)}` : ""}
-      ${threadHTML(o.thread, false)}
-      ${open ? `<div class="of-reply"><input data-mo="text" maxlength="200" value="${esc(moDraft[o.reply_token] || "")}" placeholder="${last === "owner" ? "Reply to their counter offer…" : "Add a message…"}" aria-label="Your reply"><button class="btn" data-mo="reply">Send reply</button>${last === "owner" ? '<button class="btn ok" data-mo="accept">Accept their counter</button>' : ""}<button class="btn" data-mo="withdraw">${moArm === o.reply_token ? "Tap again to withdraw" : "Withdraw"}</button></div><p class="msg" data-mo-msg aria-live="polite"></p>` : ""}
+      ${threadHTML(o.thread, false, o.status === "open")}
+      ${open ? `<div class="of-reply"><input data-mo="text" maxlength="200" value="${esc(moDraft[o.reply_token] || "")}" placeholder="${last === "owner" ? "Reply to their counter offer…" : "Add a message…"}" aria-label="Your reply"><button class="btn" data-mo="reply">Send reply</button><button class="btn" data-mo="revise" title="Change the cards or money in this offer">Revise offer</button>${last === "owner" ? '<button class="btn ok" data-mo="accept">Accept their counter</button>' : ""}<button class="btn" data-mo="withdraw">${moArm === o.reply_token ? "Tap again to withdraw" : "Withdraw"}</button></div><p class="msg" data-mo-msg aria-live="polite"></p>` : ""}
     </div>`; }).join("")}</div>`;
 }
 frListen("input", e => { if (e.target.dataset.mo === "text") moDraft[e.target.closest(".mo-card").dataset.reply] = e.target.value; });
@@ -2140,6 +2163,7 @@ frListen("keydown", e => { if (e.target.dataset.mo === "text" && e.key === "Ente
 frListen("click", async e => {
   const b = e.target.closest("button[data-mo]"); if (!b) return;
   const card = b.closest(".mo-card"), code = card.dataset.reply, act = b.dataset.mo, msg = card.querySelector("[data-mo-msg]"), text = (moDraft[code] || "").trim();
+  if (act === "revise") return startRevise(code);
   if (act === "withdraw" && moArm !== code){ moArm = code; renderFriends(); return; }
   if (act === "reply" && !text){ msg.textContent = "Write your reply first."; card.querySelector('[data-mo="text"]').focus(); return; }
   if (badWords(text)){ msg.textContent = "Please keep it friendly: that has a word we don't allow."; return; }
@@ -2150,6 +2174,16 @@ frListen("click", async e => {
   delete moDraft[code]; moNew.delete(code); await loadMyOffers(true); renderFriends();
 });
 
+// load an offer you made back into that list's offer form, to revise it
+function startRevise(code){
+  const o = (myOffers || []).find(x => x.reply_token === code); if (!o) return;
+  const S = offerOf(o.list_token);
+  S.sel = Object.fromEntries((o.items || []).map(i => [norm(i.name), {q: +i.q || 1}]));
+  S.trade = Object.fromEntries((o.trade || []).map(i => { const want = isWantKey(i.id), c = byId[realId(i.id)] || frCard(norm(i.name)); return c ? [(want ? "want:" : "") + c.id, +i.q || 1] : null; }).filter(Boolean));
+  S.offer = o.offer || ""; S.revise = code; S.msg = ""; S.ok = false;
+  const r = (frCache || frLast || []).find(x => x.share_token === o.list_token); if (r) frOpen.add(r.id);
+  renderFriends().then(() => { const f = document.querySelector(`.of-body[data-tok="${CSS.escape(o.list_token)}"] .of-foot`); if (f) f.scrollIntoView({block: "start", behavior: "smooth"}); });
+}
 // ---- cards you'd trade / want (offer form). Wanted cards sit in S.trade as "want:<card id>".
 const isWantKey = k => String(k || "").startsWith("want:"), realId = k => String(k || "").replace(/^want:/, "");
 const tradeGive = list => (list || []).filter(i => !isWantKey(i.id));
@@ -2225,9 +2259,9 @@ function frShopBody(r, rows, mine){
       <span class="step" role="group" aria-label="How many ${esc(x.name)} you're offering"><button type="button" data-of="q" data-d="-1" aria-label="One fewer" ${pick.q > 1 ? "" : "disabled"}>−</button><output>${pick.q}</output><button type="button" data-of="q" data-d="1" aria-label="One more" ${pick.q < x.q ? "" : "disabled"}>+</button></span>` : ""}</div>`;
     return `<div class="frrow of-row${pick ? " on" : ""}" data-key="${esc(x.key)}" data-need="${x.q}"${frCardAttr(x.key)}>${frThumb(x.key)}<span class="q">${x.q}×</span><span class="frn">${esc(x.name)}${cardSub(x.key)}</span><span class="${own ? "ok" : "no"}">${own ? `✓ you have ${own}` : "you don't have it"}</span>${ctl}</div>`;
   }).join("");
-  const n = Object.keys(S.sel).length, copies = Object.values(S.sel).reduce((a, p) => a + p.q, 0);
+  const n = Object.keys(S.sel).length, copies = Object.values(S.sel).reduce((a, p) => a + p.q, 0), rv = S.revise && (myOffers || []).find(o => o.reply_token === S.revise);
   const foot = mine ? `<p class="meta">This is your shopping list. Offers friends send show up in your Marketplace tab.</p>`
-    : `<div class="of-foot"><div class="of-trade"><span class="of-lab">Cards you'd trade <small>(optional, your cards come up first)</small></span>
+    : `<div class="of-foot">${rv ? `<div class="of-revising"><b>Revising your offer</b> sent ${esc(fmtWhen(rv.created_at))}. Change the ticked cards, the cards you'd trade or want, or your offer, then tap <b>Send revised offer</b>. <button type="button" class="btn" data-of="unrevise">Cancel</button></div>` : ""}<div class="of-trade"><span class="of-lab">Cards you'd trade <small>(optional, your cards come up first)</small></span>
           <div class="qa-box"><input class="search" data-of="tq" placeholder="Add a card you'd trade, e.g. Jinx…" aria-label="Add a card you'd trade" autocomplete="off" role="combobox" aria-expanded="false"><ul class="sug" role="listbox" aria-label="Matching cards"></ul></div>
           ${tradeChips(S)}</div>
         <div class="of-trade of-want"><span class="of-lab">Cards you'd want <small>(optional, ask for cards back for a straight swap)</small></span>
@@ -2237,7 +2271,7 @@ function frShopBody(r, rows, mine){
         <label class="of-offer">Your offer <input data-of="offer" maxlength="200" value="${esc(S.offer)}" autocomplete="off" placeholder="${Object.keys(S.trade || {}).length ? "Optional: add money or a note" : "Anything: $20, a trade, a McChicken…"}"></label>
         <label class="of-name">Your name <input data-of="name" maxlength="40" value="${esc(S.name)}" autocomplete="nickname" placeholder="So they know who it's from"></label>
         <span class="of-total">${n ? `Offering <b>${copies}</b> card${copies === 1 ? "" : "s"}` : "Tick the cards you have to make an offer."}</span>
-        <button type="button" class="btn primary" data-of="send" ${n ? "" : "disabled"}>Send offer</button>
+        <button type="button" class="btn primary" data-of="send" ${n ? "" : "disabled"}>${rv ? "Send revised offer" : "Send offer"}</button>
         <p class="msg${S.ok ? " ok" : ""}" data-of-msg aria-live="polite">${esc(S.msg || "")}</p></div>`;
   return `<div class="frbody of-body" data-tok="${esc(r.share_token)}">${mine ? "" : `<p class="meta of-help">Have some of these? Tick <b>I have this</b> and choose how many, then write your offer (money, anything) and/or add cards you'd trade, and your name. You can follow your offer here, and the owner can send you a counter offer. Only the owner of this list sees it.</p>`}${lines}${foot}</div>`;
 }
@@ -2256,16 +2290,23 @@ frListen("click", async e => {
   const b = e.target.closest("button[data-of]"); if (!b) return;
   const body = b.closest(".of-body"), tok = body.dataset.tok, S = offerOf(tok);
   if (b.dataset.of === "q"){ const row = b.closest(".of-row"), p = S.sel[row.dataset.key]; if (p){ p.q = Math.max(1, Math.min(+row.dataset.need, p.q + +b.dataset.d)); renderFriends(); } return; }
+  if (b.dataset.of === "unrevise"){ Object.assign(S, {revise: null, sel: {}, trade: {}, offer: "", msg: "", ok: false}); renderFriends(); return; }
   if (b.dataset.of !== "send") return;
   const name = S.name.trim(), msg = body.querySelector("[data-of-msg]"), say = (t, ok) => { S.msg = t; S.ok = !!ok; msg.textContent = t; msg.className = "msg" + (ok ? " ok" : " err"); };
   const items = Object.entries(S.sel).map(([key, p]) => ({ name: (groups[key] || [])[0] ? groups[key][0].name : key, q: p.q })), offer = S.offer.trim();
   if (!items.length){ say("Tick at least one card you have."); return; }
   const trade = Object.entries(S.trade || {}).filter(([id]) => byId[realId(id)]).map(([id, q]) => ({ name: byId[realId(id)].name, q, id }));
   if (!offer && !trade.length){ say("Write your offer (money, anything) or add cards you'd trade."); body.querySelector('[data-of="offer"]').focus(); return; }
-  if (!name){ say("Add your name so they know who the offer is from."); body.querySelector('[data-of="name"]').focus(); return; }
+  if (!name && !S.revise){ say("Add your name so they know who the offer is from."); body.querySelector('[data-of="name"]').focus(); return; }
   if (badWords(name) || badWords(offer)){ say("Please keep it friendly: your name or offer has a word we don't allow."); return; }
   if (!sb){ say("Couldn't connect. Check your connection and try again."); return; }
-  b.disabled = true; say("Sending your offer…", true);
+  b.disabled = true; say(S.revise ? "Sending your revised offer…" : "Sending your offer…", true);
+  if (S.revise){
+    const { error: rerr } = await sb.rpc("offer_revise", { p_reply: S.revise, p_items: items, p_offer: offer.slice(0, 200), p_trade: trade, p_text: "" });
+    if (rerr){ say(/offer_revise|function|schema cache/i.test(rerr.message || "") ? "Revising offers needs a quick database update. The site owner has the steps." : offerErr(rerr)); b.disabled = false; return; }
+    Object.assign(S, {revise: null, sel: {}, trade: {}, offer: "", msg: "Revised offer sent. They'll see what changed.", ok: true});
+    await loadMyOffers(true); renderFriends(); return;
+  }
   let { data: replyCode, error } = await sb.rpc("make_offer", { p_token: tok, p_name: name.slice(0, 40), p_items: items, p_offer: offer.slice(0, 200), p_trade: trade });
   if (error && trade.length && /function|schema cache/i.test(error.message || "")){ say("Offering your own cards needs a quick database update. Remove them, or put them in your offer text."); b.disabled = false; return; }
   if (error){
@@ -2854,16 +2895,16 @@ async function renderFriendsList(){
   const list = $("fr-list"), tokens = savedLinks();
   setLinks(tokens);
   if (!tokens.length){
-    $("fr-count").textContent = ""; frCache = [];
+    $("fr-count").textContent = ""; frCache = []; frKey = "";
     list.innerHTML = `<div class="empty">No shared links yet. When a friend sends you a link to their deck or wish list, open it and it'll be saved here. You can also paste a link above.<br><br>To share your own, open a deck in My Decks, or your Wish List, and tap <b>Share with friends</b>.</div>`;
     return;
   }
   if (!sb){ list.innerHTML = `<div class="empty">Couldn't connect to load shared links. Check your connection and reload the page.</div>`; return; }
-  if (!frCache || Date.now() - frLoadedAt > 60000){
+  if (!frCache || Date.now() - frLoadedAt > 60000 || frKey !== tokens.join()){
     list.innerHTML = `<div class="empty">Loading shared links…</div>`;
     const { data, error } = await sb.rpc("get_shared", { p_tokens: tokens });
     if (error){ list.innerHTML = `<div class="empty">${/get_shared|function/i.test(error.message || "") ? "Shared links aren't switched on yet. They need a quick database update." : "Couldn't load shared links right now. Check your connection and open this tab again."}</div>`; return; }
-    frCache = (data || []).sort((a, b) => tokens.indexOf(a.share_token) - tokens.indexOf(b.share_token)); frLoadedAt = Date.now(); frLast = frCache;
+    frCache = (data || []).sort((a, b) => tokens.indexOf(a.share_token) - tokens.indexOf(b.share_token)); frLoadedAt = Date.now(); frLast = frCache; frKey = tokens.join();
     frMissing = tokens.filter(t => !frCache.some(r => r.share_token === t));
     if (frFocus){ const r = frCache.find(x => x.share_token === frFocus); if (r) frOpen.add(r.id); }
   }
