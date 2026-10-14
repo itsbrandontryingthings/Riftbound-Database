@@ -30,6 +30,23 @@ def get(url):
             print("retry", url, e, file=sys.stderr); time.sleep(3 * (i + 1))
     raise SystemExit("could not fetch " + url)
 
+def clean_flavour(f):
+    """Riftcodex flavour text drops the opening quote mark, keeps the closing one, and sometimes has stray
+    formatting (<em?, </e>, \r, blank lines of spaces). Returns the quote, plus "\n— Speaker" when it names one."""
+    t = (f or "").replace("\r", "")
+    t = re.sub(r"</?[a-z]+(?:\s[^<>]*)?>", "", t)                # <em>, </em>, <br />
+    t = re.sub(r"</?em?\??", "", t)                              # broken "<em?", "</e", "</em"
+    t = html.unescape(t).replace(" ", " ")
+    t = "\n".join(l.strip() for l in t.split("\n"))
+    t = re.sub(r"\n{2,}", "\n", t).strip()
+    t = re.sub(r"[ \t]{2,}", " ", t)
+    who = ""
+    m = re.search(r'(?:^|\n|["”]\s*)[-–—]\s*([^\n"“”-][^\n"“”]*?)\s*$', t)
+    if m and len(m.group(1)) <= 40:
+        who, t = m.group(1).strip(), t[:m.start()].rstrip()
+    t = t.strip().strip('"“”').strip()
+    return t + ("\n— " + who if who else "")
+
 def plain(rich):
     t = (rich or "").replace("\r", "")
     t = re.sub(r"<br\s*/?>", "\n", t)
@@ -38,6 +55,7 @@ def plain(rich):
     t = re.sub(r"<[^>]+>", "", t)
     t = html.unescape(t)
     t = re.sub(r"\n{2,}", "\n", t).strip()
+    t = re.sub(r"[ \t]{2,}", " ", t)
     return "" if t == "[NO TEXT]" else t
 
 def main(out):
@@ -53,7 +71,7 @@ def main(out):
         a, cl, tx = c.get("attributes") or {}, c.get("classification") or {}, c.get("text") or {}
         key = norm(c["name"])
         row = [a.get("energy"), a.get("might"), a.get("power"), plain(tx.get("rich") or tx.get("plain")),
-               (tx.get("flavour") or "").strip(), ",".join(c.get("tags") or []), cl.get("supertype") or ""]
+               clean_flavour(tx.get("flavour")), ",".join(c.get("tags") or []), cl.get("supertype") or ""]
         if key not in names or (not names[key][3] and row[3]): names[key] = row
         art = ((c.get("media") or {}).get("artist") or "").strip()
         if art:
