@@ -146,7 +146,10 @@ function collected(id, snap){
 }
 function undoCollected(){
   const u = shUndo.pop(); if (!u) return;
-  wish._shop = JSON.parse(u.snap); saveWish(); adjust(u.id, -1);
+  // put back only the shopping list's counts (cards you added, to-buy changes); sharing, sort and other settings stay as they are now
+  const s = JSON.parse(u.snap), P = {...shopP()};
+  for (const k of ["extra", "adj"]) { if (s[k] === undefined) delete P[k]; else P[k] = s[k]; }
+  wish._shop = P; saveWish(); adjust(u.id, -1);
   if (st.tab === "shop") renderShop();
   toast(`↶ Undone: <b>${esc(byId[u.id].name)}</b> is back on your shopping list`);
 }
@@ -923,6 +926,17 @@ const badWords = t => {
   const joined = n.replace(/\\b([a-z])[\\s._*-]+(?=[a-z]\\b)/g, "$1");   // "f u c k" -> "fuck"
   return [n, joined].some(x => BAD_SUB.test(x) || BAD_WORD.test(x) || BAD_MORE.test(x) || BAD_MASK.test(x));
 };''')
+
+# ---------- fix: on a phone at Page size L, a deck card's "I have 0 1 2 3 of 3" row couldn't wrap and pushed past the
+# screen edge; let it wrap
+rep('</style>\n\n<div class="wrap" id="app">', '''.dk-pair{flex-wrap:wrap;min-width:0}
+.dk-have{flex-wrap:wrap}
+.dk-tile .dk-set,.dk-tile .dk-buy,.dk-tile .sh-nh{white-space:normal;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.dk-tile .sh-tb{flex-wrap:wrap;max-width:100%}
+.dk-tile .dk-st,.dk-tile .sh-act{min-width:0;max-width:100%}
+</style>
+
+<div class="wrap" id="app">''')
 
 open(out, "w", encoding="utf-8").write(h)
 print("patch_marketplace: ok ->", out)

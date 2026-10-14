@@ -675,6 +675,11 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .of-was{font-size:12.5px;color:var(--muted)}
 .of-del{all:unset;cursor:pointer;margin-left:8px;font-size:11.5px;color:var(--muted);text-decoration:underline;text-underline-offset:2px}
 .of-del:hover,.of-del:focus-visible{color:var(--fury)}
+.dk-pair{flex-wrap:wrap;min-width:0}
+.dk-have{flex-wrap:wrap}
+.dk-tile .dk-set,.dk-tile .dk-buy,.dk-tile .sh-nh{white-space:normal;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.dk-tile .sh-tb{flex-wrap:wrap;max-width:100%}
+.dk-tile .dk-st,.dk-tile .sh-act{min-width:0;max-width:100%}
 </style>
 
 <div class="wrap" id="app">
@@ -1864,7 +1869,10 @@ function collected(id, snap){
 }
 function undoCollected(){
   const u = shUndo.pop(); if (!u) return;
-  wish._shop = JSON.parse(u.snap); saveWish(); adjust(u.id, -1);
+  // put back only the shopping list's counts (cards you added, to-buy changes); sharing, sort and other settings stay as they are now
+  const s = JSON.parse(u.snap), P = {...shopP()};
+  for (const k of ["extra", "adj"]) { if (s[k] === undefined) delete P[k]; else P[k] = s[k]; }
+  wish._shop = P; saveWish(); adjust(u.id, -1);
   if (st.tab === "shop") renderShop();
   toast(`↶ Undone: <b>${esc(byId[u.id].name)}</b> is back on your shopping list`);
 }
