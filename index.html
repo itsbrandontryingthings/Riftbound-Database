@@ -521,7 +521,6 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
     <h2 id="share-title">Share This Deck</h2>
     <p class="meta" id="share-intro">You'll get a private link to send to friends. Only people with the link can see it, under the name below. It isn't listed anywhere, and your email is never shown.</p>
     <label>Name friends will see <input id="share-name" maxlength="40" autocomplete="nickname" required></label>
-    <label>How to reach you for trades (optional) <input id="share-contact" maxlength="80" placeholder="e.g. Discord: brandon#1234"></label>
     <p class="msg" id="share-msg" aria-live="polite"></p>
     <div class="frow"><button type="submit" class="btn primary" id="share-go">Create link</button><button type="button" class="btn" id="share-x">Cancel</button></div>
   </form>
@@ -899,7 +898,7 @@ function renderWish(){
       <div class="vbox"><span class="collect-k">Cost to buy</span><span class="vbig">${moneyHTML(cost)}</span></div>
     </div>
     <div class="frow"><span class="meta">${ids.length ? "TCGplayer market prices" + (unpriced ? ` · ${unpriced} card${unpriced === 1 ? " has" : "s have"} no price yet` : "") : "Tap ♡ Want on any card in Collection to add it here, even if it's not in one of your decks."}</span><span style="flex:1"></span>
-      ${ids.length ? `<div class="seg" role="group" aria-label="Wish list layout"><button id="wv-list" aria-pressed="${wv === "list"}">List</button><button id="wv-grid" aria-pressed="${wv === "grid"}">Grid</button></div><button class="btn" id="wish-copy">Copy wish list</button>` : ""}${typeof openShare === "function" ? (wish._shared ? `<span class="tag ok">✓ Shared by link</span><button class="btn" id="wish-link">Copy share link</button><button class="btn" id="wish-unshare">Stop sharing</button>` : `<button class="btn" id="wish-share">Share with friends</button>`) : ""}</div>`;
+      ${ids.length ? `<div class="seg" role="group" aria-label="Wish list layout"><button id="wv-list" aria-pressed="${wv === "list"}">List</button><button id="wv-grid" aria-pressed="${wv === "grid"}">Grid</button></div><button class="btn" id="wish-copy">Copy wish list</button>` : ""}${typeof openShare === "function" && ids.length ? (wish._shared ? `<span class="tag ok">✓ Shared by link</span><button class="btn" id="wish-link">Copy share link</button><button class="btn" id="wish-unshare">Stop sharing</button>` : `<button class="btn" id="wish-share">Share with friends</button>`) : ""}</div>`;
   $("wish-list").className = wv === "grid" ? "list grid" + (st.size && st.size !== "s" ? " sz-" + st.size : "") : "wlist" + (st.size === "m" || st.size === "l" ? " lsz-" + st.size : "");
   $("wish-list").innerHTML = ids.map(id => { const c = byId[id], q = wish[id], have = counts[id] || 0;
     if (wv === "grid") return `<div class="card tile" data-id="${esc(id)}">${thumbHTML(c, PHONE() && st.size === "s" ? 480 : 744)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
@@ -1407,7 +1406,7 @@ $("acct-out").addEventListener("click", async () => {
   if (sb){ try { await cloudFlush(); await flushShared(); } catch(e){} await sb.auth.signOut(); }
   // clear this browser so the next person on a shared device starts empty
   counts = {}; customDecks = []; wish = {}; LS.set("rb-counts", counts); LS.set("rb-decks", customDecks); LS.set("rb-wish", wish);
-  shareProfile = {name:"", contact:""}; LS.set("rb-share-profile", shareProfile); frCache = null; frOpen.clear(); shareTok = {}; LS.set("rb-links", []);
+  shareProfile = {name:""}; LS.set("rb-share-profile", shareProfile); frCache = null; frOpen.clear(); shareTok = {}; LS.set("rb-links", []);
   render(); setSync("Signed out. Nothing is saved in this browser.", "ok");
 });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && cloudUser && cloudReady && !cloudDirty) cloudLoad(); });
@@ -1423,25 +1422,27 @@ function cloudInit(){
   });
 }
 // ---- sharing by private link (table "shared_decks": owners manage their own rows; others open one only with its secret link, via get_shared)
-let shareProfile = LS.get("rb-share-profile") || {name:"", contact:""};
+let shareProfile = LS.get("rb-share-profile") || {name:""};
 let shareTimer = null, frCache = null, frLoadedAt = 0, frOpen = new Set();
 let shareTarget = "deck", shareTok = {}, linksOff = false;
 const SHARE_BASE = location.origin + location.pathname;
 const shareURL = t => `${SHARE_BASE}#share=${t}`;
 const curShareId = () => shareTarget === "wish" ? "__wish__" : curDeck;
-function showShareLink(){
+function showShareLink(tried){
   const t = shareTok[curShareId()];
   $("share-form").hidden = true; $("share-done").hidden = false;
   $("share-done-title").textContent = shareTarget === "wish" ? "Your Wish List Link" : "Your Deck Link";
   $("share-url").value = t ? shareURL(t) : "";
   $("share-copy").disabled = !t;
-  $("share-done-msg").textContent = t ? "" : (linksOff ? "Share links need a quick database update before they work. The site owner has the steps." : "Making your link… if it doesn't appear, check your connection and try again.");
+  $("share-done-msg").textContent = t ? "" : (linksOff ? "Share links need a quick database update before they work. The site owner has the steps."
+             : tried ? "Couldn't make your link right now. Check your connection, then tap Copy share link to try again."
+             : "Making your link…");
   $("share-done-msg").className = t ? "msg" : "msg err";
 }
 async function openShareLink(){
   try { $("share").showModal(); } catch(e){ $("share").setAttribute("open", ""); }
   showShareLink();
-  if (!shareTok[curShareId()]){ await flushShared(); await pushShared(); showShareLink(); }
+  if (!shareTok[curShareId()]){ await flushShared(); await pushShared(); showShareLink(true); }
   if (shareTok[curShareId()]) $("share-copy").focus();
 }
 function openShare(target){
@@ -1451,16 +1452,16 @@ function openShare(target){
   const already = shareTarget === "wish" ? !!wish._shared : !!(customDecks.find(x => x.id === curDeck) || {}).shared;
   if (already) return openShareLink();
   $("share-form").hidden = false; $("share-done").hidden = true;
-  $("share-name").value = shareProfile.name || ""; $("share-contact").value = shareProfile.contact || ""; $("share-msg").textContent = "";
+  $("share-name").value = shareProfile.name || ""; $("share-msg").textContent = "";
   try { $("share").showModal(); } catch(e){ $("share").setAttribute("open", ""); }
   $("share-name").focus();
 }
 $("share-x").addEventListener("click", () => $("share").close());
 $("share-form").addEventListener("submit", e => {
   e.preventDefault();
-  const name = $("share-name").value.trim(), contact = $("share-contact").value.trim();
+  const name = $("share-name").value.trim();
   if (!name){ $("share-msg").textContent = "Add the name friends will see."; $("share-msg").className = "msg err"; return; }
-  shareProfile = {name, contact}; LS.set("rb-share-profile", shareProfile);
+  shareProfile = {name}; LS.set("rb-share-profile", shareProfile);
   if (shareTarget === "wish"){ wish._shared = true; saveWish(); renderWish(); }
   else { const d = customDecks.find(x => x.id === curDeck); if (d) d.shared = true; saveDecks(); renderDecks(); }
   $("share").close(); openShareLink();
@@ -1479,7 +1480,7 @@ async function pushShared(){
     const me = cloudUser; if (!me || !sb) return;
     const mine = customDecks.filter(d => d.shared).concat(wish._shared && wishIds().length ? [{ id: "__wish__", name: "Wish list", text: wishText() }] : []);
     if (mine.length && shareProfile.name){
-      const rows = mine.map(d => ({ owner: me.id, deck_id: d.id, owner_name: shareProfile.name.slice(0, 40), contact: (shareProfile.contact || "").slice(0, 80) || null, name: String(d.name).slice(0, 80), list: String(d.text).slice(0, 8000), updated_at: new Date().toISOString() }));
+      const rows = mine.map(d => ({ owner: me.id, deck_id: d.id, owner_name: shareProfile.name.slice(0, 40), contact: null, name: String(d.name).slice(0, 80), list: String(d.text).slice(0, 8000), updated_at: new Date().toISOString() }));
       let { data: saved, error } = linksOff ? await sb.from("shared_decks").upsert(rows, { onConflict: "owner,deck_id" })
                                              : await sb.from("shared_decks").upsert(rows, { onConflict: "owner,deck_id" }).select("deck_id, share_token");
       if (error && !linksOff && /share_token/i.test(error.message || "")){ linksOff = true; ({ error } = await sb.from("shared_decks").upsert(rows, { onConflict: "owner,deck_id" })); }
@@ -1498,8 +1499,8 @@ async function pushShared(){
 async function loadShareProfile(){
   if (!sb || !cloudUser || shareProfile.name) return;
   const me = cloudUser; if (!me) return;
-  const { data } = await sb.from("shared_decks").select("owner_name, contact").eq("owner", me.id).limit(1);
-  if (data && data[0]){ shareProfile = {name: data[0].owner_name, contact: data[0].contact || ""}; LS.set("rb-share-profile", shareProfile); }
+  const { data } = await sb.from("shared_decks").select("owner_name").eq("owner", me.id).limit(1);
+  if (data && data[0]){ shareProfile = {name: data[0].owner_name}; LS.set("rb-share-profile", shareProfile); }
 }
 // split the shared lists into "Friends' Decks" and "Wish Lists"
 function groupFriends(){
@@ -1569,7 +1570,7 @@ async function renderFriendsList(){
       const canGive = rows.filter(x => ownedOf(x.key) > 0);
       const body = open ? `<div class="frbody">${rows.map(x => { const own = ownedOf(x.key); return `<div class="frrow"><span class="q">${x.q}×</span><span>${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${own ? "ok" : "no"}">${own ? `✓ you have ${own}` : "you don't have it"}</span></div>`; }).join("")}</div>` : "";
       return `<article class="frdeck${r.share_token === frFocus ? " new" : ""}" data-id="${esc(r.id)}">
-        <div class="frhead"><div><h3>♥ ${esc(r.owner_name)}'s wish list</h3><span class="meta">${r.contact ? esc(r.contact) + " · " : ""}updated ${esc(fmtDate(String(r.updated_at).slice(0,10)))}</span></div>${mine ? '<span class="tag ok">Your wish list</span>' : ""}</div>
+        <div class="frhead"><div><h3>♥ ${esc(r.owner_name)}'s wish list</h3><span class="meta">updated ${esc(fmtDate(String(r.updated_at).slice(0,10)))}</span></div>${mine ? '<span class="tag ok">Your wish list</span>' : ""}</div>
         <div class="frstats"><span>Wants <b>${rows.length}</b> card${rows.length === 1 ? "" : "s"}</span><span>${canGive.length ? `You have <b>${canGive.length}</b> of them to trade` : "You don't have any of them yet"}</span></div>
         ${hits.length ? `<div class="frmatch">Wants ${hits.slice(0, 4).map(x => `${x.q}× ${esc(x.name)}`).join(", ")}${hits.length > 4 ? "…" : ""}</div>` : ""}
         <div class="frow"><button class="btn" data-act="toggle">${open ? "Hide list" : "Show list"}</button><button class="btn" data-act="forget">Remove from Friends</button></div>
@@ -1582,7 +1583,7 @@ async function renderFriendsList(){
     const open = frOpen.has(r.id);
     const body = open ? `<div class="frbody">${s.secs.map(sec => `<h4>${esc(sec.label)}</h4>${sec.rows.map(x => `<div class="frrow"><span class="q">${x.q}×</span><span>${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${x.miss ? "no" : "ok"}">${x.miss ? `you have ${x.h}` : "✓ you have it"}</span></div>`).join("")}`).join("")}</div>` : "";
     return `<article class="frdeck${r.share_token === frFocus ? " new" : ""}" data-id="${esc(r.id)}">
-      <div class="frhead"><div><h3>${esc(r.name)}</h3><span class="meta">by <b>${esc(r.owner_name)}</b>${r.contact ? ` · ${esc(r.contact)}` : ""} · updated ${esc(fmtDate(String(r.updated_at).slice(0,10)))}</span></div>${mine ? '<span class="tag ok">Your deck</span>' : ""}${banned ? `<span class="tag ban">⚠ ${banned} banned</span>` : ""}</div>
+      <div class="frhead"><div><h3>${esc(r.name)}</h3><span class="meta">by <b>${esc(r.owner_name)}</b> · updated ${esc(fmtDate(String(r.updated_at).slice(0,10)))}</span></div>${mine ? '<span class="tag ok">Your deck</span>' : ""}${banned ? `<span class="tag ban">⚠ ${banned} banned</span>` : ""}</div>
       <div class="frstats">${legend ? `<span>Legend: <b>${esc(legend)}</b></span>` : ""}<span>You own <b>${s.have} / ${s.need}</b></span><span>${s.need - s.have ? `<b>${esc(money(s.cost))}</b> to finish` : "<b>You own every card</b>"}</span></div>
       ${hits.length ? `<div class="frmatch">Includes ${hits.slice(0, 4).map(x => `${x.q}× ${esc(x.name)}`).join(", ")}${hits.length > 4 ? "…" : ""}</div>` : ""}
       <div class="frow"><button class="btn" data-act="toggle">${open ? "Hide list" : "Show list"}</button>${mine ? "" : '<button class="btn" data-act="copy">Copy to my decks</button>'}<button class="btn" data-act="forget">Remove from Friends</button><span class="meta" data-msg aria-live="polite"></span></div>

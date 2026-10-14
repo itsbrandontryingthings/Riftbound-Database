@@ -13,6 +13,9 @@ alter table public.shared_decks alter column share_token set default replace(gen
 alter table public.shared_decks alter column share_token set not null;
 create unique index if not exists shared_decks_share_token_key on public.shared_decks (share_token);
 
+-- 1b) the site no longer asks for a trades contact; clear any that were saved
+update public.shared_decks set contact = null where contact is not null;
+
 -- 2) nobody can browse the table any more: people can only read their own rows
 drop policy if exists "signed-in people can read shared decks" on public.shared_decks;
 drop policy if exists "read own shared decks" on public.shared_decks;

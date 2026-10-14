@@ -22,10 +22,10 @@ async def main():
         async def signin(email):
             await pg.click("#acct-in"); await pg.fill("#auth-email",email); await pg.fill("#auth-pass","secret12"); await pg.click("#auth-go"); await pg.wait_for_timeout(900)
         # A shares a deck
-        await signup("brandon@example.com")
+        await signup("alex@example.com")
         await pg.click("#t-decks"); await pg.evaluate("document.getElementById('deck-add').open=true")
         await pg.fill("#dk-name","Jinx Aggro"); await pg.fill("#dk-list","Legend:\n1 Jinx, Loose Cannon\nMain deck:\n3 Get Excited!\n3 Gust\n2 Stacked Deck"); await pg.click("#dk-save"); await pg.wait_for_timeout(300)
-        await pg.click("#dk-share"); await pg.fill("#share-name","Brandon"); await pg.fill("#share-contact","Discord: brandon"); await pg.click("#share-go"); await pg.wait_for_timeout(1500)
+        await pg.click("#dk-share"); await pg.fill("#share-name","Alex"); await pg.click("#share-go"); await pg.wait_for_timeout(1500)
         url = await pg.input_value("#share-url"); print("deck link:", url, "| done visible:", await pg.is_visible("#share-done"))
         await pg.screenshot(path=S+"link_dialog.png")
         await pg.click("#share-copy"); await pg.wait_for_timeout(200); print("clipboard:", await pg.evaluate("navigator.clipboard.readText()") == url)
@@ -61,7 +61,7 @@ async def main():
         print("signed-out viewer:", await pg.eval_on_selector_all(".frdeck h3","e=>e.map(x=>x.textContent)"))
         # A stops sharing -> link dies
         await pg.goto(BASE); await pg.wait_for_timeout(500)
-        await signin("brandon@example.com"); await pg.click("#t-decks"); await pg.wait_for_timeout(400)
+        await signin("alex@example.com"); await pg.click("#t-decks"); await pg.wait_for_timeout(400)
         await pg.click("#dk-unshare"); await pg.wait_for_timeout(1500)
         print("rows left:", await pg.evaluate("JSON.parse(localStorage.__db).shared_decks.map(r=>r.deck_id)"))
         await pg.click("#acct-out"); await pg.wait_for_timeout(300)
