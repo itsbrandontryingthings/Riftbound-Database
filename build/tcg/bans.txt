@@ -1,0 +1,15 @@
+# Riftbound competitive ban list. name|formats|since   (formats: std = banned in Standard and 2v2; 2v2 = banned in 2v2 only)
+# Checked 2026-10-13 against riftbound.zone, riftcompare.com and riftbound.gg (latest change: Sept 18, 2026)
+Called Shot|std|2026-03-31
+Draven, Vanquisher|std|2026-03-31
+Fight or Flight|std|2026-03-31
+Scrapheap|std|2026-03-31
+The Dreaming Tree|std|2026-03-31
+Obelisk of Power|std|2026-03-31
+Reaver's Row|std|2026-03-31
+Stealthy Pursuer|std|2026-07-24
+The Arena's Greatest|std|2026-07-24
+Aspirant's Climb|std|2026-07-24
+Master Yi, Wuju Bladesman|2v2|2026-07-24
+Ekko, Recurrent|std|2026-09-18
+Stacked Deck|std|2026-09-18

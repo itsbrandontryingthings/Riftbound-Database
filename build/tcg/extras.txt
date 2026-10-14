@@ -1,0 +1,186 @@
+# TCGplayer-only printings (not in the Riftcodex card database). set|productId|name|number|rarity|domains
+VEN|708197|Renekton, Butcher of the Sands (Signature)|190*|Showcase|Fury;Body
+VEN|708198|Ambessa, Matriarch of War (Signature)|196*|Showcase|Body;Order
+VEN|709102|Shen, Eye of Twilight (Signature)|193*|Showcase|Calm;Order
+VEN|709103|Jayce, Defender of Tomorrow (Signature)|194*|Showcase|Mind;Body
+VEN|709304|Nasus, Curator of the Sands (Signature)|192*|Showcase|Calm;Mind
+VEN|709666|Zed, Master of Shadows (Signature)|191*|Showcase|Fury;Chaos
+VEN|709667|Kennen, Heart of the Tempest (Signature)|197*|Showcase|Chaos;Order
+VEN|709668|Akali, Rogue Assassin (Signature)|189*|Showcase|Fury;Calm
+VEN|709669|Mel, Soul's Reflection (Signature)|195*|Showcase|Mind;Chaos
+VEN|709309|Body Rune (Alternate Art)|R04a|Showcase|Body
+VEN|709310|Calm Rune (Alternate Art)|R02a|Showcase|Calm
+VEN|709311|Chaos Rune (Alternate Art)|R05a|Showcase|Chaos
+VEN|709312|Fury Rune (Alternate Art)|R01a|Showcase|Fury
+VEN|709313|Mind Rune (Alternate Art)|R03a|Showcase|Mind
+VEN|709314|Order Rune (Alternate Art)|R06a|Showcase|Order
+VEN|709916|Shadow Clone // Tentacle|T05|Common|
+VEN|709917|Mech // Recruit|T03|Common|
+VEN|709918|Empowered // Gold|T01|Common|
+VEN|713239|Shadow Clone // Tentacle (Full Art)|T05f|Common|
+VEN|723243|Recruit // Empowered|T04|Common|
+VEN|723244|Empowered // Mech|T01b|Common|
+UNL|692932|Fury Rune (Alternate Art)|R01a|Showcase|Fury
+UNL|692933|Calm Rune (Alternate Art)|R02a|Showcase|Calm
+UNL|692934|Mind Rune (Alternate Art)|R03a|Showcase|Mind
+UNL|692935|Body Rune (Alternate Art)|R04a|Showcase|Body
+UNL|692936|Chaos Rune (Alternate Art)|R05a|Showcase|Chaos
+UNL|692937|Order Rune (Alternate Art)|R06a|Showcase|Order
+UNL|694646|Body Rune (Promo)|R04b|Promo|Body
+UNL|694647|Calm Rune (Promo)|R02b|Promo|Calm
+UNL|694648|Chaos Rune (Promo)|R05b|Promo|Chaos
+UNL|694649|Fury Rune (Promo)|R01b|Promo|Fury
+UNL|694650|Mind Rune (Promo)|R03b|Promo|Mind
+UNL|694651|Order Rune (Promo)|R06b|Promo|Order
+UNL|696614|Fury Rune|R01|Common|Fury
+UNL|696615|Body Rune|R04|Common|Body
+UNL|696616|Calm Rune|R02|Common|Calm
+UNL|696617|Chaos Rune|R05|Common|Chaos
+UNL|696618|Mind Rune|R03|Common|Mind
+UNL|696619|Order Rune|R06|Common|Order
+UNL|695874|Reflection // Buff|T06|Common|
+UNL|695875|Bird // Buff|T02|Common|
+UNL|695876|Bird // Gold|T02b|Common|
+UNL|695877|Sprite // Gold|T07|Common|
+UNL|695878|Reflection // Gold|T06b|Common|
+UNL|695879|Baron Pit // Gold|T01|Common|
+UNL|695880|Brush // Buff|T03|Common|
+UNL|696620|XP Tracker // Gold|T08|Common|
+UNL|696621|XP Tracker // Buff|T08b|Common|
+UNL|696622|Sprite // Buff|T07b|Common|
+SFD|678180|Body Rune|R04|Common|Body
+SFD|678181|Calm Rune|R02|Common|Calm
+SFD|678182|Chaos Rune|R05|Common|Chaos
+SFD|678183|Fury Rune|R01|Common|Fury
+SFD|678184|Order Rune|R06|Common|Order
+SFD|678185|Mind Rune|R03|Common|Mind
+SFD|678224|Fury Rune (Alternate Art)|R01a|Showcase|Fury
+SFD|678227|Calm Rune (Alternate Art)|R02a|Showcase|Calm
+SFD|678229|Mind Rune (Alternate Art)|R03a|Showcase|Mind
+SFD|678231|Body Rune (Alternate Art)|R04a|Showcase|Body
+SFD|678232|Chaos Rune (Alternate Art)|R05a|Showcase|Chaos
+SFD|678233|Order Rune (Alternate Art)|R06a|Showcase|Order
+SFD|680274|Fury Rune (Promo)|R01b|Promo|Fury
+SFD|680304|Calm Rune (Promo)|R02b|Promo|Calm
+SFD|680331|Mind Rune (Promo)|R03b|Promo|Mind
+SFD|680347|Body Rune (Promo)|R04b|Promo|Body
+SFD|680392|Chaos Rune (Promo)|R05b|Promo|Chaos
+SFD|680432|Order Rune (Promo)|R06b|Promo|Order
+SFD|678186|Mech // Buff|T01|Common|
+SFD|678187|Sand Soldier // Buff|T02|Common|
+SFD|721767|Mech // Gold|T01b|Common|
+OGS|664567|Fortified Position (Oversized)|279|Uncommon|
+OGS|664569|Startipped Peak (Oversized)|288|Uncommon|
+OGS|664570|Trifarian War Camp (Oversized)|294|Uncommon|
+OGS|664571|Void Gate (Oversized)|296|Uncommon|
+OPP|662920|Mystic Poro|171|Promo|Chaos
+OPP|684999|Edge of Night (Champion)|139|Promo|Chaos
+OPP|685001|Edge of Night (Top 8)|139|Promo|Chaos
+OPP|685261|Guardian Angel (Top 8)|051|Promo|Calm
+OPP|685263|Guardian Angel (Champion)|051|Promo|Calm
+OPP|685264|Long Sword (Top 8)|022|Promo|Fury
+OPP|689166|Kai'Sa, Daughter of the Void (Prize Wall)|247|Promo|Fury;Mind
+OPP|689167|Volibear, Relentless Storm (Prize Wall)|249|Promo|Fury;Body
+OPP|689168|Jinx, Loose Cannon (Prize Wall)|251|Promo|Fury;Chaos
+OPP|689169|Darius, Hand of Noxus (Prize Wall)|253|Promo|Fury;Order
+OPP|689170|Ahri, Nine-Tailed Fox (Prize Wall)|255|Promo|Calm;Mind
+OPP|689171|Lee Sin, Blind Monk (Prize Wall)|257|Promo|Calm;Body
+OPP|689172|Yasuo, Unforgiven (Prize Wall)|259|Promo|Calm;Chaos
+OPP|689173|Leona, Radiant Dawn (Prize Wall)|261|Promo|Calm;Order
+OPP|689174|Teemo, Swift Scout (Prize Wall)|263|Promo|Mind;Chaos
+OPP|689175|Viktor, Herald of the Arcane (Prize Wall)|265|Promo|Mind;Order
+OPP|689176|Miss Fortune, Bounty Hunter (Prize Wall)|267|Promo|Body;Chaos
+OPP|689177|Sett, The Boss (Prize Wall)|269|Promo|Body;Order
+OPP|689178|Annie, Dark Child (Prize Wall)|017|Promo|Fury;Chaos
+OPP|689179|Master Yi, Wuju Bladesman (Prize Wall)|019|Promo|Calm;Body
+OPP|689180|Lux, Lady of Luminosity (Prize Wall)|021|Promo|Mind;Order
+OPP|689181|Garen, Might of Demacia (Prize Wall)|023|Promo|Body;Order
+OPP|689182|Renata Glasc, Chem-Baroness (Prize Wall)|201|Promo|Mind;Order
+OPP|689183|Azir, Emperor of the Sands (Prize Wall)|197|Promo|Calm;Order
+OPP|689184|Draven, Glorious Executioner (Prize Wall)|185|Promo|Fury;Chaos
+OPP|689185|Ezreal, Prodigal Explorer (Prize Wall)|199|Promo|Mind;Chaos
+OPP|689186|Fiora, Grand Duelist (Prize Wall)|205|Promo|Body;Order
+OPP|689187|Irelia, Blade Dancer (Prize Wall)|195|Promo|Calm;Chaos
+OPP|689188|Jax, Grandmaster At Arms (Prize Wall)|193|Promo|Calm;Body
+OPP|689189|Lucian, Purifier (Prize Wall)|183|Promo|Fury;Body
+OPP|689190|Ornn, Fire Below the Mountain (Prize Wall)|189|Promo|Calm;Mind
+OPP|689191|Rek'sai, Void Burrower (Prize Wall)|187|Promo|Fury;Order
+OPP|689192|Rumble, Mechanized Menace (Prize Wall)|181|Promo|Fury;Mind
+OPP|689193|Sivir, Battle Mistress (Prize Wall)|203|Promo|Body;Chaos
+OPP|693156|Lee Sin, Centered (Promo)|151b|Promo|Body
+OPP|696689|Diana, Scorn of the Moon (Prize Wall)|197|Promo|Mind;Chaos
+OPP|696690|Ivern, Green Father (Prize Wall)|195|Promo|Calm;Order
+OPP|696691|Jhin, Virtuoso (Prize Wall)|181|Promo|Fury;Mind
+OPP|696692|Kha'Zix, Voidreaver (Prize Wall)|201|Promo|Body;Chaos
+OPP|696693|LeBlanc, Deceiver (Prize Wall)|199|Promo|Mind;Order
+OPP|696694|Lillia, Bashful Bloom (Prize Wall)|189|Promo|Calm;Mind
+OPP|696695|Master Yi, Wuju Master (Prize Wall)|191|Promo|Calm;Body
+OPP|696696|Poppy, Keeper of the Hammer (Prize Wall)|203|Promo|Body;Order
+OPP|696697|Pyke, Bloodharbor Ripper (Prize Wall)|185|Promo|Fury;Chaos
+OPP|696698|Rengar, Pridestalker (Prize Wall)|183|Promo|Fury;Body
+OPP|696700|Vex, Gloomist (Prize Wall)|193|Promo|Calm;Chaos
+OPP|696701|Vi, Piltover Enforcer (Prize Wall)|187|Promo|Fury;Order
+OPP|696824|Rengar, Trophy Hunter (Champion)|120|Promo|Body
+OPP|697492|Order Rune (Promo)|R06c|Promo|Order
+OPP|697493|Chaos Rune (Promo)|R05c|Promo|Chaos
+OPP|697495|Body Rune (Promo)|R04c|Promo|Body
+OPP|697496|Mind Rune (Promo)|R03c|Promo|Mind
+OPP|697497|Calm Rune (Promo)|R02c|Promo|Calm
+OPP|697499|Fury Rune (Promo)|R01c|Promo|Fury
+OPP|701526|Bird // Buff (Promo)|T02|Promo|
+OPP|705531|Lillia, Protector of Dreams (Champion)|058|Promo|Calm
+OPP|708201|Riven, Shattered|041|Promo|Calm
+OPP|709101|Poppy, Defender of the Meek (Alternate Art)|178a|Promo|Order
+OPP|709727|Blade Twirler|002|Promo|Fury
+OPP|709728|Dune Surfer|004|Promo|Fury
+OPP|709729|Shadow Assassin|013|Promo|Fury
+OPP|709730|Field Musicians|026|Promo|Calm
+OPP|709731|Ol' Poro|029|Promo|Calm
+OPP|709732|Tomb-Raider Barbara|037|Promo|Calm
+OPP|709733|Cloud Drake|048|Promo|Mind
+OPP|709734|Grumpy Rockbear|050|Promo|Mind
+OPP|709735|Patched Porobot|058|Promo|Mind
+OPP|709736|Fretful Feline|071|Promo|Body
+OPP|709737|Repair Specialist|076|Promo|Body
+OPP|709738|Profiteer|082|Promo|Body
+OPP|709739|Spiderling|097|Promo|Chaos
+OPP|709740|Tornado Warrior|099|Promo|Chaos
+OPP|709741|Gust Monk|101|Promo|Chaos
+OPP|709742|Horns of the Dragon|118|Promo|Order
+OPP|709743|Soulspinner|123|Promo|Order
+OPP|709744|Hungry Wolf|125|Promo|Order
+OPP|709745|Body Rune (Vendetta Promo)|R04b|Promo|Body
+OPP|709746|Calm Rune (Vendetta Promo)|R02b|Promo|Calm
+OPP|709747|Chaos Rune (Vendetta Promo)|R05b|Promo|Chaos
+OPP|709748|Fury Rune (Vendetta Promo)|R01b|Promo|Fury
+OPP|709749|Mind Rune (Vendetta Promo)|R03b|Promo|Mind
+OPP|709750|Order Rune (Vendetta Promo)|R06b|Promo|Order
+OPP|709987|Mel, Newly Awakened (Promo)|069b|Promo|Mind
+OPP|713479|Kayle, Justified (Top 8)|134|Promo|Order
+OPP|713480|Kayle, Justified (Champion)|134|Promo|Order
+OPP|713481|Swain, Visionary|065|Promo|Mind
+OPP|713482|Morgana, Vindictive|017|Promo|Fury
+OPP|713483|Illaoi, Prophet of the Great Kraken (Top 8)|109|Promo|Chaos
+OPP|713484|Illaoi, Prophet of the Great Kraken (Champion)|109|Promo|Chaos
+OPP|722790|Akali, Rogue Assassin (Metal Best Of)|139|Promo|Fury;Calm
+OPP|722791|Akali, Rogue Assassin (Prize Wall)|139|Promo|Fury;Calm
+OPP|722792|Ambessa, Matriarch of War (Metal Best Of)|153|Promo|Body;Order
+OPP|722793|Ambessa, Matriarch of War (Prize Wall)|153|Promo|Body;Order
+OPP|722794|Jayce, Defender of Tomorrow (Metal Best Of)|149|Promo|Mind;Body
+OPP|722795|Jayce, Defender of Tomorrow (Prize Wall)|149|Promo|Mind;Body
+OPP|722809|Kennen, Heart of the Tempest (Metal Best Of)|155|Promo|Chaos;Order
+OPP|722810|Kennen, Heart of the Tempest (Prize Wall)|155|Promo|Chaos;Order
+OPP|722813|Mel, Soul's Reflection (Metal Best Of)|151|Promo|Mind;Chaos
+OPP|722814|Mel, Soul's Reflection (Prize Wall)|151|Promo|Mind;Chaos
+OPP|722815|Nasus, Curator of the Sands (Metal Best Of)|145|Promo|Calm;Mind
+OPP|722816|Nasus, Curator of the Sands (Prize Wall)|145|Promo|Calm;Mind
+OPP|722817|Renekton, Butcher of the Sands (Metal Best Of)|141|Promo|Fury;Body
+OPP|722820|Renekton, Butcher of the Sands (Prize Wall)|141|Promo|Fury;Body
+OPP|722823|Shen, Eye of Twilight (Metal Best Of)|147|Promo|Calm;Order
+OPP|722829|Shen, Eye of Twilight (Prize Wall)|147|Promo|Calm;Order
+OPP|722830|Zed, Master of Shadows (Prize Wall)|143|Promo|Fury;Chaos
+OPP|722831|Zed, Master of Shadows (Metal Best Of)|143|Promo|Fury;Chaos
+OPP|723239|Jayce, Brilliant Inventor (Promo)|068|Promo|Mind
+PR|702608|Bird // Brush|T02|Promo|
+PR|710699|Riven, Shattered (Alternate Art)|041a|Promo|Calm
+JDG|721871|Gangplank, Naval|086|Promo|Body

@@ -1,0 +1,665 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Riftbound - Complete Database (Shared)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: header panel with collection progress, set progress strip, sticky filter bar, dense card list with owned steppers. Single dark look by choice. */
+:root{
+  color-scheme: dark;
+  --bg:#13151c; --panel:#1b1e28; --row:#20242f; --line:#2e3342;
+  --fg:#e8e9ee; --muted:#9097a9; --accent:#8fc25a; --ok:#58c48a; --warn:#e0b45a;
+  --fury:#e0605a; --calm:#5cc28d; --mind:#4f93db; --body:#e08a3a; --chaos:#a46fd8; --order:#d9c24f;
+  --display:"Chakra Petch", "Segoe UI", sans-serif;
+  --body-font:"Barlow", "Segoe UI", system-ui, sans-serif;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body-font);font-size:15px;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:14px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px}
+.eyebrow{font-family:var(--display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.eyebrow .tag{letter-spacing:.04em;text-transform:none;font-size:13px}
+.tag.ok{color:var(--ok)} .tag.warn{color:var(--warn)}
+h1{font-family:var(--display);font-size:26px;margin:0;text-wrap:balance}
+.collect-row{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.collect-k{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.collect-v{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.collect-s{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.view{display:grid;gap:14px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;font-family:var(--display);font-size:15px;font-weight:600;color:var(--muted);white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px}
+.panel h2{font-family:var(--display);font-size:18px;margin:0}
+.qa-head{display:grid;gap:4px}
+.qa-box{position:relative;flex:1 1 280px;min-width:0;display:flex}
+.qa-box .search{font-size:17px;padding:12px 14px}
+.sug{list-style:none;margin:0;padding:4px;position:absolute;top:100%;left:0;right:0;z-index:6;background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-top:4px;display:grid;gap:2px;max-height:360px;overflow:auto}
+.sug:empty{display:none}
+.sug li{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:6px;cursor:pointer}
+.sug li[aria-selected="true"]{background:var(--row);outline:1px solid var(--accent)}
+.sug .own{font-size:12px;color:var(--muted);white-space:nowrap}
+.pack-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.log{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.log li{display:grid;grid-template-columns:72px minmax(0,1fr) auto auto;gap:10px;align-items:center;background:var(--row);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.log .undo{background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:13px}
+.log .undo:hover{color:var(--fg);border-color:var(--muted)}
+.deck-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.deck-tabs button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 14px;display:grid;gap:2px;text-align:left}
+.deck-tabs button[aria-pressed="true"]{border-color:var(--accent);background:var(--row)}
+.deck-tabs b{font-family:var(--display);font-size:14px}
+.deck-tabs small{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dsum{display:flex;gap:12px 32px;flex-wrap:wrap;align-items:flex-end}
+.dsec{display:grid;gap:4px}
+.dsec h3{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:10px 0 2px;font-family:var(--body-font)}
+.drow{display:grid;grid-template-columns:44px minmax(0,1fr) 84px minmax(96px,auto);gap:10px;align-items:center;background:var(--row);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.drow.done{background:var(--panel);opacity:.62}
+.drow .q{font-family:var(--display);font-size:15px;font-variant-numeric:tabular-nums}
+.drow .h{font-variant-numeric:tabular-nums;font-size:14px}
+.drow .h.ok{color:var(--ok)} .drow .h.no{color:var(--warn)}
+.drow .unk{color:var(--warn);font-size:12px}
+.add-grid{display:grid;gap:10px}
+.add-grid label{display:grid;gap:4px;font-size:14px;color:var(--muted)}
+textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:inherit;color:var(--fg);resize:vertical;min-height:160px}
+#backup summary,#deck-add summary{cursor:pointer;font-family:var(--display);font-weight:600}
+.btn.primary{border-color:var(--accent);color:var(--accent)}
+.btn.danger{color:var(--fury)}
+@media (max-width:520px){.drow{grid-template-columns:36px minmax(0,1fr) auto;}.drow .p{grid-column:2/4;justify-self:start}.log li{grid-template-columns:54px minmax(0,1fr) auto}.log li .pp{grid-column:2}}
+.value-row{display:flex;gap:12px 28px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--line)}
+.vbox{display:grid;gap:0;padding-top:8px}
+.vbig{font-family:var(--display);font-size:30px;font-weight:700;color:var(--ok);font-variant-numeric:tabular-nums;line-height:1.15}
+.vmid{font-family:var(--display);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.3}
+.vbig .alt,.vmid .alt{display:block;font-family:var(--body-font);font-size:14px;font-weight:500;color:var(--muted)}
+.right{display:flex;align-items:center;gap:10px}
+.price{display:grid;justify-items:end;font-variant-numeric:tabular-nums;min-width:64px}
+.price b{font-family:var(--display);font-size:15px;font-weight:600}
+.price small{font-size:11.5px;color:var(--muted)}
+.view{color:var(--accent);text-decoration:none;font-size:12.5px;font-weight:600;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:4px;padding:0 7px;line-height:20px;white-space:nowrap}
+.view:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.price .na{color:var(--muted);font-size:13px}
+.card.got .price b{color:var(--ok)}
+.bar{height:8px;background:var(--bg);border-radius:999px;border:1px solid var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);border-radius:999px}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .25s ease}}
+
+.sets{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.setbtn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:left;display:grid;gap:6px}
+.setbtn[aria-pressed="true"]{border-color:var(--accent);background:var(--row)}
+.setbtn .sn{font-family:var(--display);font-size:14px;display:flex;justify-content:space-between;gap:8px}
+.setbtn .sn small{color:var(--muted);font-family:var(--body-font);font-variant-numeric:tabular-nums}
+.setbtn .bar{height:5px}
+
+.filters{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px;display:grid;gap:8px;border-bottom:1px solid var(--line)}
+.frow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.search{flex:1 1 220px;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+select{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:none;border:0;padding:8px 11px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--row);color:var(--fg)}
+.dom{display:inline-flex;gap:4px;flex-wrap:wrap}
+.dom button{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 10px 5px 8px;font-size:13px;display:inline-flex;gap:6px;align-items:center;color:var(--muted)}
+.dom button[aria-pressed="true"]{color:var(--fg);border-color:var(--muted);background:var(--row)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:14px;color:var(--muted)}
+.meta{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.btn:hover{border-color:var(--muted)}
+
+.list{display:grid;gap:4px}
+.card{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--row);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.card.got{background:var(--panel);opacity:.62}
+.card.got:hover,.card.got:focus-within{opacity:.9}
+.code{font-family:var(--display);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.2}
+.code b{display:block;color:var(--fg);font-size:13px}
+.info{min-width:0;display:grid;gap:2px}
+.name{font-weight:600;overflow-wrap:anywhere}
+.name a{color:inherit;text-decoration:none}
+.name a:hover{text-decoration:underline;text-decoration-color:var(--accent)}
+.sub{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted)}
+.pill{border:1px solid var(--line);border-radius:4px;padding:0 6px;font-size:11.5px;line-height:18px}
+.pill.var{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
+.r-Common{color:#a9afbd}.r-Uncommon{color:#6fb7d9}.r-Rare{color:#d58ad8}.r-Epic{color:#e9a948}.r-Showcase{color:#f0d27a}.r-Promo{color:#8fc25a}
+.step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
+.step button{background:none;border:0;width:34px;height:34px;font-size:18px;line-height:1;color:var(--muted)}
+.step button:hover{color:var(--fg);background:var(--row)}
+.step button:disabled{opacity:.3;cursor:default;background:none}
+.step output{min-width:28px;text-align:center;font-family:var(--display);font-size:16px;font-variant-numeric:tabular-nums}
+.card.got .step output{color:var(--ok)}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:10px;padding:24px;text-align:center;color:var(--muted)}
+.more{justify-self:center}
+.note{font-size:13px;color:var(--muted);max-width:80ch}
+.note a{color:var(--accent)}
+@media (max-width:520px){
+  .card{grid-template-columns:54px minmax(0,1fr) auto;gap:8px;padding:8px}
+  .right{flex-direction:column;align-items:flex-end;gap:4px}
+  .vbig{font-size:26px}
+  .step button{width:30px;height:32px}
+  h1{font-size:22px}
+}
+</style>
+
+<div class="wrap" id="app">
+  <div class="top">
+    <div class="eyebrow">Collection tracker <span class="tag" id="sync">Loading your collection…</span></div>
+    <h1>Riftbound - Complete Database</h1>
+    <div class="collect-row">
+      <span class="collect-k">Unique cards owned</span>
+      <span class="collect-v"><b id="c-have">0</b> / <span id="c-tot">0</span></span>
+      <span class="collect-s" id="c-copies"></span>
+    </div>
+    <div class="bar" role="progressbar" aria-label="Unique cards owned" aria-valuemin="0" id="c-bar"><i id="c-fill"></i></div>
+    <div class="value-row">
+      <div class="vbox"><span class="collect-k">My collection is worth</span><span class="vbig" id="v-have">$0.00</span><span class="collect-s" id="v-have-s"></span></div>
+      <div class="vbox"><span class="collect-k" id="v-need-k">Cost to complete</span><span class="vmid" id="v-need">$0.00</span><span class="collect-s" id="v-need-s"></span></div>
+    </div>
+    <div class="meta" id="c-updated"></div>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="t-collection" aria-selected="true" aria-controls="view-collection">Collection</button>
+    <button role="tab" id="t-packs" aria-selected="false" aria-controls="view-packs">Open packs</button>
+    <button role="tab" id="t-decks" aria-selected="false" aria-controls="view-decks">Deck checker</button>
+  </nav>
+
+  <section class="view" id="view-collection" role="tabpanel" aria-labelledby="t-collection">
+  <div class="sets" id="sets" role="group" aria-label="Filter by set"></div>
+
+  <div class="filters">
+    <div class="frow">
+      <input class="search" id="q" type="search" placeholder="Search card name, e.g. Jinx, Gust, Grove" aria-label="Search cards" autocomplete="off">
+      <div class="seg" role="group" aria-label="Which cards to show">
+        <button id="s-all" aria-pressed="true">All</button>
+        <button id="s-have" aria-pressed="false">I have</button>
+        <button id="s-need" aria-pressed="false">Missing</button>
+      </div>
+    </div>
+    <div class="frow">
+      <div class="dom" id="doms" role="group" aria-label="Filter by domain"></div>
+      <select id="type" aria-label="Card type"><option value="">All types</option></select>
+      <select id="rarity" aria-label="Rarity"><option value="">All rarities</option></select>
+      <div class="seg" role="group" aria-label="Currency">
+        <button id="c-both" aria-pressed="true">CAD + USD</button>
+        <button id="c-cad" aria-pressed="false">CAD</button>
+        <button id="c-usd" aria-pressed="false">USD</button>
+      </div>
+      <select id="sort" aria-label="Sort cards"><option value="set">Sort: set order</option><option value="price">Sort: price, high to low</option><option value="value">Sort: my value, high to low</option><option value="name">Sort: name</option></select>
+      <label class="chk"><input type="checkbox" id="variants" checked> Show alt arts, overnumbered and promos</label>
+    </div>
+    <div class="frow">
+      <span class="meta" id="count"></span>
+      <span style="flex:1"></span>
+      <button class="btn" id="copy-have">Copy cards I have</button>
+      <button class="btn" id="copy-need">Copy missing list</button>
+      <span class="meta" id="copied" aria-live="polite"></span>
+    </div>
+  </div>
+
+  <div class="list" id="list" aria-live="polite"></div>
+  <button class="btn more" id="more" hidden>Show more</button>
+  </section>
+
+  <section class="view" id="view-packs" role="tabpanel" aria-labelledby="t-packs" hidden>
+    <div class="panel qa">
+      <div class="qa-head">
+        <h2>Open packs</h2>
+        <p class="meta">Type part of a card name, then press Enter to add one copy. Use ↑ ↓ to pick a different printing. Everything you add goes straight into your collection.</p>
+      </div>
+      <div class="frow">
+        <select id="qa-set" aria-label="Which set are you opening?"><option value="">Any set</option></select>
+        <div class="qa-box">
+          <input class="search" id="qa-q" type="search" placeholder="Start typing a card name…" aria-label="Card name" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="qa-sug" aria-autocomplete="list">
+          <ul class="sug" id="qa-sug" role="listbox" aria-label="Matching cards"></ul>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="pack-head">
+        <div><span class="collect-k">This pack</span><div class="vmid" id="qa-total">$0.00</div><span class="collect-s" id="qa-count">No cards added yet</span></div>
+        <div class="frow"><button class="btn" id="qa-new">Start next pack</button><button class="btn" id="qa-copy">Copy pack list</button></div>
+      </div>
+      <ol class="log" id="qa-log"></ol>
+      <p class="meta" id="qa-hist"></p>
+    </div>
+  </section>
+
+  <section class="view" id="view-decks" role="tabpanel" aria-labelledby="t-decks" hidden>
+    <div class="deck-tabs" id="deck-tabs" role="group" aria-label="Choose a deck"></div>
+    <div class="panel" id="deck-summary"></div>
+    <div id="deck-body"></div>
+    <details class="panel" id="deck-add">
+      <summary id="dk-title">Add a deck</summary>
+      <div class="add-grid">
+        <label>Deck name <input class="search" id="dk-name" placeholder="e.g. Kai'Sa Showdown"></label>
+        <label>Decklist <textarea id="dk-list" rows="10" placeholder="One card per line with the number of copies:&#10;1 Jinx, Loose Cannon&#10;3 Get Excited!&#10;Sideboard:&#10;2 Gust"></textarea></label>
+        <p class="meta">Paste a list from RiftDecks or anywhere else. A line ending in a colon (like "Sideboard:" or "Runes:") starts a new section.</p>
+        <div class="frow"><button class="btn primary" id="dk-save">Save deck</button><button class="btn" id="dk-cancel" hidden>Cancel editing</button><span class="meta" id="dk-msg" aria-live="polite"></span></div>
+      </div>
+    </details>
+  </section>
+
+  <details class="panel" id="backup">
+    <summary>Back up or move your collection</summary>
+    <p class="meta" id="backup-hint" hidden>Your cards and decks are saved only in this browser. To use them on another phone or computer, or to keep a safe copy, copy your backup code and keep it somewhere (notes app, email to yourself). On the other device, open this page and paste it under Restore.</p>
+    <div class="frow"><button class="btn" id="bk-copy">Copy backup code</button><span class="meta" id="bk-msg" aria-live="polite"></span></div>
+    <label class="add-grid"><span class="meta">Restore: paste a backup code here</span><textarea id="bk-text" rows="4" placeholder="Paste your backup code"></textarea></label>
+    <div class="frow"><button class="btn" id="bk-restore">Restore from backup</button></div>
+  </details>
+
+  <p class="note">🔒 Your card counts and decks are private. Anyone else who opens this link gets their own empty database, and nobody, including the person who shared it, can see what you've entered.</p>
+  <p class="note">Card list from the Riftcodex card database plus TCGplayer's listings, refreshed weekly so new sets and promos show up on their own. Prices are TCGplayer market prices in US dollars, refreshed weekly; for printings that only come in foil, the foil price is used. Your collection's value is copies × price for every card you've marked. Tap <b>+</b> or <b>−</b> to record how many copies you own; your counts are saved to your Claude account, so they follow you to your phone. Each card name opens its TCGplayer page.</p>
+</div>
+
+<script src="cards.js"></script>
+<script>
+(function(){
+const CARDS = window.RB_CARDS || [], META = window.RB_META || {sets:[]};
+const DOMS = [["Fury","--fury"],["Calm","--calm"],["Mind","--mind"],["Body","--body"],["Chaos","--chaos"],["Order","--order"]];
+const RAR = ["Common","Uncommon","Rare","Epic","Showcase","Promo"];
+const PAGE = 150;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let counts = {};             // id -> copies owned
+let st = {set:"", q:"", show:"all", doms:new Set(), type:"", rarity:"", variants:true, sort:"set", cur:"both", limit:PAGE};
+const FX = (META.fx && META.fx.usdcad) || 0;
+const fUSD = new Intl.NumberFormat("en-US", {style:"currency", currency:"USD", currencyDisplay:"narrowSymbol"});
+const fCAD = new Intl.NumberFormat("en-CA", {style:"currency", currency:"CAD", currencyDisplay:"narrowSymbol"});
+const usd = v => "US " + fUSD.format(v || 0), cad = v => "CA " + fCAD.format((v || 0) * FX);
+const money = v => !FX || st.cur === "usd" ? usd(v) : st.cur === "cad" ? cad(v) : `${cad(v)} · ${usd(v)}`;
+// stacked version for the big header numbers
+const moneyHTML = v => !FX || st.cur !== "both" ? esc(money(v)) : `${esc(cad(v))}<small class="alt">${esc(usd(v))}</small>`;
+const ownedValue = list => list.reduce((a,c) => a + (counts[c.id]||0) * (c.price||0), 0);
+let store = null, saveTimer = null, lastSaved = "";
+
+// ---- local fallback / remembered filters (per browser only)
+const LS = {get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+counts = LS.get("rb-counts") || {};
+const savedF = LS.get("rb-filters"); if (savedF) { Object.assign(st, savedF, {doms:new Set(savedF.doms||[]), limit:PAGE}); }
+
+// ---- static controls
+const setName = Object.fromEntries(META.sets.map(s => [s.code, s.name]));
+const types = [...new Set(CARDS.map(c => c.type))].sort();
+types.forEach(t => $("type").insertAdjacentHTML("beforeend", `<option value="${esc(t)}">${esc(t)}</option>`));
+RAR.filter(r => CARDS.some(c => c.rarity === r)).forEach(r => $("rarity").insertAdjacentHTML("beforeend", `<option value="${r}">${r}</option>`));
+$("doms").innerHTML = DOMS.map(([d,v]) => `<button data-d="${d}" aria-pressed="false"><span class="dot" style="background:var(${v})"></span>${d}</button>`).join("");
+if (META.updated) $("c-updated").textContent = `Card list updated ${META.updated} · ${CARDS.length.toLocaleString()} printings across ${META.sets.length} sets` + (META.pricesUpdated ? ` · Prices are TCGplayer market prices (USD), updated ${META.pricesUpdated}` : "") + (FX ? ` · CAD at the Bank of Canada rate of ${FX.toFixed(4)} (${META.fx.date})` : "");
+
+function syncControls(){
+  $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("variants").checked = st.variants; $("sort").value = st.sort || "set";
+  ["all","have","need"].forEach(k => $("s-"+k).setAttribute("aria-pressed", st.show===k));
+  ["both","cad","usd"].forEach(k => $("c-"+k).setAttribute("aria-pressed", st.cur===k));
+  document.querySelectorAll("#doms button").forEach(b => b.setAttribute("aria-pressed", st.doms.has(b.dataset.d)));
+}
+
+const isVariant = c => !!c.variant || ["OPP","PR","JDG"].includes(c.set);
+function matches(c, ignoreSet){
+  if (!ignoreSet && st.set && c.set !== st.set) return false;
+  if (!st.variants && isVariant(c)) return false;
+  if (st.type && c.type !== st.type) return false;
+  if (st.rarity && c.rarity !== st.rarity) return false;
+  if (st.doms.size && !c.domains.some(d => st.doms.has(d))) return false;
+  if (st.q){ const q = st.q.toLowerCase(); if (!(c.name.toLowerCase().includes(q) || c.id.includes(q))) return false; }
+  const n = counts[c.id]||0;
+  if (st.show==="have" && !n) return false;
+  if (st.show==="need" && n) return false;
+  return true;
+}
+
+function renderSummary(){
+  const pool = CARDS.filter(c => st.variants || !isVariant(c));
+  const have = pool.filter(c => counts[c.id] > 0).length;
+  const copies = CARDS.reduce((a,c) => a + (counts[c.id]||0), 0);
+  $("c-have").textContent = have.toLocaleString(); $("c-tot").textContent = pool.length.toLocaleString();
+  $("c-copies").textContent = `${copies.toLocaleString()} total copies` + (st.variants ? "" : " · counting standard printings only");
+  const pct = pool.length ? have/pool.length*100 : 0;
+  $("c-fill").style.width = pct + "%"; $("c-bar").setAttribute("aria-valuenow", Math.round(pct)); $("c-bar").setAttribute("aria-valuemax", 100);
+  // value of everything owned (all printings, whatever the filters), and what the missing cards in this view would cost (one of each)
+  const owned = CARDS.filter(c => counts[c.id] > 0);
+  const unpricedOwned = owned.filter(c => c.price == null).length;
+  $("v-have").innerHTML = moneyHTML(ownedValue(owned));
+  $("v-have-s").textContent = owned.length ? `${copies.toLocaleString()} copies` + (unpricedOwned ? ` · ${unpricedOwned} card${unpricedOwned===1?"":"s"} with no price yet` : "") : "Tap + on cards you own to see their value";
+  const scope = pool.filter(c => !st.set || c.set === st.set);
+  const missing = scope.filter(c => !counts[c.id]);
+  $("v-need-k").textContent = st.set ? `Cost to complete ${setName[st.set]}` : "Cost to complete everything";
+  $("v-need").innerHTML = moneyHTML(missing.reduce((a,c) => a + (c.price||0), 0));
+  $("v-need-s").textContent = `${missing.length.toLocaleString()} missing card${missing.length===1?"":"s"}, one copy each` + (st.variants ? "" : " · standard printings only");
+  const allBtn = `<button class="setbtn" data-set="" aria-pressed="${st.set===""}"><span class="sn">All sets <small>${have}/${pool.length}</small></span><span class="bar"><i style="width:${pct}%"></i></span><span class="collect-s">${money(ownedValue(owned))}</span></button>`;
+  $("sets").innerHTML = allBtn + META.sets.map(s => {
+    const p = pool.filter(c => c.set === s.code); if (!p.length) return "";
+    const h = p.filter(c => counts[c.id] > 0).length;
+    return `<button class="setbtn" data-set="${s.code}" aria-pressed="${st.set===s.code}" title="Released ${s.released}"><span class="sn">${esc(s.name)} <small>${h}/${p.length}</small></span><span class="bar"><i style="width:${p.length? h/p.length*100 : 0}%"></i></span><span class="collect-s">${money(ownedValue(CARDS.filter(c => c.set === s.code)))}</span></button>`;
+  }).join("");
+}
+
+// opens this exact printing on TCGplayer (full card image, alt arts, listings); a search when there's no listing yet
+function tcgURL(c){ return c && c.tcg ? `https://www.tcgplayer.com/product/${c.tcg}` : `https://www.tcgplayer.com/search/riftbound-league-of-legends-trading-card-game/product?q=${encodeURIComponent(c ? c.name : "")}`; }
+function viewLink(c, label){ return `<a class="view" href="${tcgURL(c)}" target="_blank" rel="noopener" aria-label="View ${esc(label || c.name)} on TCGplayer">View card ↗</a>`; }
+function cardHTML(c){
+  const n = counts[c.id]||0;
+  const num = c.id.split("-").slice(1).join("-").replace(/-\d+$/,"").replace("~metal","").toUpperCase();
+  const link = c.tcg ? `https://www.tcgplayer.com/product/${c.tcg}` : `https://www.tcgplayer.com/search/riftbound-league-of-legends-trading-card-game/product?q=${encodeURIComponent(c.name)}`;
+  const dots = c.domains.map(d => `<span class="dot" title="${d}" style="background:var(--${d.toLowerCase()})"></span>`).join("");
+  const kind = c.type + (c.champ ? " · Champion" : "") + (c.sig ? " · Signature" : "") + (c.token ? " · Token" : "");
+  return `<div class="card${n?" got":""}" data-id="${esc(c.id)}">
+    <div class="code"><b>${c.set}</b>${esc(num)}</div>
+    <div class="info"><span class="name"><a href="${link}" target="_blank" rel="noopener">${esc(c.name)}</a></span>
+      <span class="sub">${dots}<span>${esc(kind)}</span><span class="r-${c.rarity}">${c.rarity}</span>${c.variant?`<span class="pill var">${esc(c.variant)}</span>`:""}${viewLink(c)}</span></div>
+    <div class="right">${priceHTML(c, n)}<div class="step" role="group" aria-label="Copies of ${esc(c.name)}">
+      <button data-a="-1" aria-label="Remove one" ${n?"":"disabled"}>−</button><output>${n}</output><button data-a="1" aria-label="Add one">+</button>
+    </div></div></div>`;
+}
+function priceHTML(c, n){
+  if (c.price == null) return `<span class="price"><span class="na" title="No recent TCGplayer sales">No price</span></span>`;
+  const one = FX && st.cur === "both" ? cad(c.price) : money(c.price);
+  const lines = [];
+  if (FX && st.cur === "both") lines.push(usd(c.price));
+  if (n > 1) lines.push(`${n} × = ${FX && st.cur === "both" ? cad(n*c.price) : money(n*c.price)}`);
+  else if (c.foil) lines.push("foil only");
+  return `<span class="price" title="TCGplayer market price${c.foil ? " (this printing only comes in foil)" : ""}"><b>${esc(one)}</b>${lines.map(l => `<small>${esc(l)}</small>`).join("")}</span>`;
+}
+
+let shown = [];
+function renderList(){
+  shown = CARDS.filter(c => matches(c));
+  if (st.sort === "price") shown.sort((a,b) => (b.price ?? -1) - (a.price ?? -1));
+  else if (st.sort === "value") shown.sort((a,b) => (counts[b.id]||0)*(b.price||0) - (counts[a.id]||0)*(a.price||0) || (b.price ?? -1) - (a.price ?? -1));
+  else if (st.sort === "name") shown.sort((a,b) => a.name.localeCompare(b.name));
+  const slice = shown.slice(0, st.limit);
+  $("list").innerHTML = slice.length ? slice.map(cardHTML).join("")
+    : `<div class="empty">${st.show==="have" && !Object.keys(counts).length ? "You haven't marked any cards yet. Switch to All and tap + on the cards you own." : "No cards match these filters. Try clearing the search or a filter."}</div>`;
+  $("more").hidden = shown.length <= st.limit;
+  $("more").textContent = `Show ${Math.min(PAGE, shown.length - st.limit)} more`;
+  $("count").textContent = `${shown.length.toLocaleString()} card${shown.length===1?"":"s"}` + (st.set ? ` in ${setName[st.set]}` : "");
+}
+function render(){ renderSummary(); renderList(); if (st.tab === "decks") renderDecks(); if (st.tab === "packs") renderPack(); LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); }
+
+// ---- events
+$("list").addEventListener("click", e => {
+  const b = e.target.closest("button[data-a]"); if (!b) return;
+  adjust(b.closest(".card").dataset.id, Number(b.dataset.a));
+});
+$("sets").addEventListener("click", e => { const b = e.target.closest(".setbtn"); if (!b) return; st.set = b.dataset.set; st.limit = PAGE; render(); });
+$("doms").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; const d = b.dataset.d; st.doms.has(d) ? st.doms.delete(d) : st.doms.add(d); st.limit = PAGE; syncControls(); render(); });
+let qT; $("q").addEventListener("input", e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); st.limit = PAGE; render(); }, 120); });
+["all","have","need"].forEach(k => $("s-"+k).addEventListener("click", () => { st.show = k; st.limit = PAGE; syncControls(); render(); }));
+$("type").addEventListener("change", e => { st.type = e.target.value; st.limit = PAGE; render(); });
+$("rarity").addEventListener("change", e => { st.rarity = e.target.value; st.limit = PAGE; render(); });
+$("variants").addEventListener("change", e => { st.variants = e.target.checked; st.limit = PAGE; render(); });
+["both","cad","usd"].forEach(k => $("c-"+k).addEventListener("click", () => { st.cur = k; syncControls(); render(); }));
+$("sort").addEventListener("change", e => { st.sort = e.target.value; st.limit = PAGE; render(); });
+$("more").addEventListener("click", () => { st.limit += PAGE; renderList(); });
+
+function listText(have){
+  const pool = CARDS.filter(c => counts[c.id] > 0 && (!st.set || c.set===st.set));
+  const lines = pool.map(c => `${counts[c.id]} ${c.name}${c.variant?` (${c.variant})`:""} [${c.set} ${c.num}]` + (c.price != null ? ` — ${money(counts[c.id]*c.price)}` : ""));
+  return lines.join("\n") + `\n\nTotal value: ${money(ownedValue(pool))} (TCGplayer market, USD)`;
+}
+async function copy(text, label){
+  try { await navigator.clipboard.writeText(text); $("copied").textContent = `Copied ${label}`; }
+  catch(e){ const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select(); try{document.execCommand("copy"); $("copied").textContent = `Copied ${label}`;}catch(_){ $("copied").textContent = "Copy didn't work here — select the text manually."; } t.remove(); }
+  setTimeout(() => $("copied").textContent = "", 2500);
+}
+$("copy-have").addEventListener("click", () => copy(listText(true), "cards you have"));
+$("copy-need").addEventListener("click", () => { const t = shown.filter(c => !counts[c.id]); copy(t.map(c => `${c.name}${c.variant?` (${c.variant})`:""} [${c.set} ${c.num}]` + (c.price != null ? ` — ${money(c.price)}` : "")).join("\n") + `\n\nTotal: ${money(t.reduce((a,c)=>a+(c.price||0),0))}`, `${t.length} missing cards`); });
+
+// ---- shared helpers
+const norm = s => String(s).toLowerCase().replace(/[’`]/g,"'").replace(/\s*[-,–—]\s*/g," ").replace(/[!.]/g,"").replace(/\s+/g," ").trim();
+const byId = Object.fromEntries(CARDS.map(c => [c.id, c]));
+const groups = {};               // normalized card name -> every printing of it (tokens excluded)
+for (const c of CARDS) if (!c.token) (groups[norm(c.name)] ||= []).push(c);
+const ownedOf = key => (groups[key]||[]).reduce((a,c) => a + (counts[c.id]||0), 0);
+const cheapestOf = key => { const p = (groups[key]||[]).filter(c => c.price != null).sort((a,b) => a.price - b.price); return p[0] || null; };
+const codeOf = c => c.set + " " + c.id.split("-").slice(1).join("-").replace(/-\d+$/,"").replace("~metal","").toUpperCase();
+
+function adjust(id, d){
+  const n = Math.max(0, (counts[id]||0) + d);
+  if (n) counts[id] = n; else delete counts[id];
+  const row = document.querySelector(`#list .card[data-id="${CSS.escape(id)}"]`);
+  if (row){ row.classList.toggle("got", n>0); row.querySelector("output").textContent = n; row.querySelector('button[data-a="-1"]').disabled = !n; row.querySelector(".price").outerHTML = priceHTML(byId[id], n); }
+  renderSummary(); queueSave();
+  if (st.tab === "decks") renderDecks();
+  return n;
+}
+
+// ---- tabs
+function showTab(t){
+  st.tab = t;
+  for (const k of ["collection","packs","decks"]){ $("t-"+k).setAttribute("aria-selected", k===t); $("view-"+k).hidden = k!==t; }
+  if (t === "collection") renderList();
+  if (t === "packs"){ renderPack(); setTimeout(() => $("qa-q").focus(), 0); }
+  if (t === "decks") renderDecks();
+  LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined});
+}
+["collection","packs","decks"].forEach(k => $("t-"+k).addEventListener("click", () => showTab(k)));
+
+// ---- open packs (quick add)
+META.sets.forEach(s => $("qa-set").insertAdjacentHTML("beforeend", `<option value="${s.code}">${esc(s.name)}</option>`));
+let pack = LS.get("rb-pack") || [], packHist = LS.get("rb-pack-hist") || [], sug = [], sel = 0;
+$("qa-set").value = LS.get("rb-qa-set") || "";
+$("qa-set").addEventListener("change", e => { LS.set("rb-qa-set", e.target.value); suggest(); $("qa-q").focus(); });
+function suggest(){
+  const q = norm($("qa-q").value), set = $("qa-set").value;
+  if (!q){ sug = []; } else {
+    const words = q.split(" ");
+    sug = CARDS.filter(c => (!set || c.set === set) && words.every(w => norm(c.name).includes(w)))
+      .map(c => ({c, s: (norm(c.name).startsWith(q) ? 0 : 10) + (c.variant ? 3 : 0) + (c.token ? 6 : 0) + (["OPP","PR","JDG"].includes(c.set) ? 2 : 0) + (META.sets.findIndex(x => x.code === c.set) * 0.1)}))
+      .sort((a,b) => a.s - b.s || a.c.name.localeCompare(b.c.name)).slice(0, 8).map(x => x.c);
+  }
+  sel = 0; drawSug();
+}
+function drawSug(){
+  $("qa-q").setAttribute("aria-expanded", sug.length > 0);
+  $("qa-sug").innerHTML = sug.map((c,i) => `<li role="option" id="sug-${i}" data-i="${i}" aria-selected="${i===sel}">
+    <span class="code"><b>${c.set}</b>${esc(codeOf(c).split(" ")[1])}</span>
+    <span class="info"><span class="name">${esc(c.name)}</span><span class="sub"><span class="r-${c.rarity}">${c.rarity}</span>${c.variant?`<span class="pill var">${esc(c.variant)}</span>`:""}<span>${c.price!=null?esc(money(c.price)):"No price"}</span></span></span>
+    <span class="own">${counts[c.id]?`own ${counts[c.id]}`:""}</span></li>`).join("");
+  $("qa-q").setAttribute("aria-activedescendant", sug.length ? "sug-"+sel : "");
+}
+function addFromSug(i){
+  const c = sug[i]; if (!c) return;
+  adjust(c.id, 1); pack.push(c.id); LS.set("rb-pack", pack);
+  $("qa-q").value = ""; sug = []; drawSug(); renderPack(); $("qa-q").focus();
+}
+$("qa-q").addEventListener("input", suggest);
+$("qa-q").addEventListener("keydown", e => {
+  if (e.key === "ArrowDown" && sug.length){ sel = (sel+1) % sug.length; drawSug(); e.preventDefault(); }
+  else if (e.key === "ArrowUp" && sug.length){ sel = (sel-1+sug.length) % sug.length; drawSug(); e.preventDefault(); }
+  else if (e.key === "Enter"){ addFromSug(sel); e.preventDefault(); }
+  else if (e.key === "Escape"){ $("qa-q").value = ""; sug = []; drawSug(); }
+});
+$("qa-sug").addEventListener("mousedown", e => { const li = e.target.closest("li"); if (li){ e.preventDefault(); addFromSug(+li.dataset.i); } });
+const packValue = () => pack.reduce((a,id) => a + ((byId[id]||{}).price||0), 0);
+function renderPack(){
+  $("qa-total").innerHTML = moneyHTML(packValue());
+  $("qa-count").textContent = pack.length ? `${pack.length} card${pack.length===1?"":"s"} added` : "No cards added yet";
+  $("qa-log").innerHTML = pack.map((id,i) => { const c = byId[id]; if (!c) return ""; return `<li><span class="code"><b>${c.set}</b>${esc(codeOf(c).split(" ")[1])}</span>
+    <span class="info"><span class="name">${esc(c.name)}</span><span class="sub"><span class="r-${c.rarity}">${c.rarity}</span>${c.variant?`<span class="pill var">${esc(c.variant)}</span>`:""}${viewLink(c)}</span></span>
+    <span class="pp meta">${c.price!=null?esc(money(c.price)):"—"}</span><button class="undo" data-i="${i}" aria-label="Undo ${esc(c.name)}">Undo</button></li>`; }).reverse().join("");
+  $("qa-hist").textContent = packHist.length ? "Earlier packs: " + packHist.slice(-6).map(h => `${h.n} cards, ${money(h.v)}`).join(" · ") : "";
+}
+$("qa-log").addEventListener("click", e => { const b = e.target.closest(".undo"); if (!b) return; const i = +b.dataset.i; const id = pack[i]; pack.splice(i,1); LS.set("rb-pack", pack); adjust(id, -1); renderPack(); });
+$("qa-new").addEventListener("click", () => { if (pack.length){ packHist.push({n:pack.length, v:packValue()}); packHist = packHist.slice(-20); LS.set("rb-pack-hist", packHist); } pack = []; LS.set("rb-pack", pack); renderPack(); $("qa-q").focus(); });
+$("qa-copy").addEventListener("click", () => copy(pack.map(id => { const c = byId[id]; return `${c.name}${c.variant?` (${c.variant})`:""} [${codeOf(c)}]` + (c.price!=null?` — ${money(c.price)}`:""); }).join("\n") + `\n\nPack total: ${money(packValue())}`, "pack list"));
+
+// ---- deck checker
+const BUILTIN = [];
+let customDecks = LS.get("rb-decks") || [], deckStore = null, curDeck = LS.get("rb-deck") || "shen", withSide = LS.get("rb-side") ?? true, armDelete = false;
+// a saved deck with a built-in deck's id is your edited version of it and replaces the original
+const allDecks = () => [...BUILTIN.map(b => customDecks.find(c => c.id === b.id) || b), ...customDecks.filter(c => !BUILTIN.some(b => b.id === c.id))];
+let editingId = null;
+
+function parseDeck(text){
+  const sections = []; let cur = {label:"Main deck", rows:[]}; sections.push(cur);
+  for (let line of text.split(/\r?\n/)){
+    line = line.trim(); if (!line) continue;
+    const m = line.match(/^(\d+)\s*x?\s+(.+)$/i) || line.match(/^(.+?)\s+x?(\d+)$/i);
+    if (m){ const q = +(/^\d/.test(line) ? m[1] : m[2]); const name = (/^\d/.test(line) ? m[2] : m[1]).replace(/\s*\[.*\]$/,"").trim(); cur.rows.push({name, q, key:norm(name)}); }
+    else { const label = line.replace(/[:\-—]+$/,"").replace(/\(\d+\)$/,"").trim(); cur = {label, rows:[]}; sections.push(cur); }
+  }
+  return sections.filter(s => s.rows.length);
+}
+const isSide = s => /side/i.test(s.label);
+function deckStats(deck){
+  const secs = parseDeck(deck.text).filter(s => withSide || !isSide(s));
+  const left = {}; let need = 0, have = 0, cost = 0, unknown = 0;
+  const out = secs.map(s => ({label:s.label, rows:s.rows.map(r => {
+    if (!(r.key in left)) left[r.key] = ownedOf(r.key);
+    const h = Math.min(r.q, left[r.key]); left[r.key] -= h;
+    const cheap = cheapestOf(r.key), known = !!groups[r.key];
+    need += r.q; have += h; if (!known) unknown++;
+    const miss = r.q - h; if (miss && cheap) cost += miss * cheap.price;
+    return {...r, h, miss, cheap, known};
+  })}));
+  return {secs:out, need, have, cost, unknown};
+}
+function renderDecks(){
+  const decks = allDecks();
+  if (!decks.length){
+    $("deck-tabs").innerHTML = ""; $("deck-body").innerHTML = "";
+    $("deck-summary").innerHTML = `<h2>No decks yet</h2><p class="meta">Paste a decklist below to see which cards you already own, what's missing, and what it would cost to finish. Your decks are private: nobody else who opens this page can see them.</p>`;
+    $("deck-add").open = true; return;
+  }
+  if (!decks.find(d => d.id === curDeck)) curDeck = decks[0].id;
+  $("deck-tabs").innerHTML = decks.map(d => { const s = deckStats(d); return `<button data-d="${esc(d.id)}" aria-pressed="${d.id===curDeck}"><b>${esc(d.name)}</b><small>${s.have}/${s.need} copies · ${s.need-s.have ? esc(money(s.cost))+" to finish" : "complete"}</small></button>`; }).join("");
+  const d = decks.find(x => x.id === curDeck), s = deckStats(d), pct = s.need ? s.have/s.need*100 : 0, custom = customDecks.some(x => x.id === d.id), isBuiltin = BUILTIN.some(b => b.id === d.id);
+  $("deck-summary").innerHTML = `<div class="eyebrow">${esc(d.sub || "Your deck")} ${s.have===s.need?'<span class="tag ok">✓ You own every card</span>':""}</div>
+    <h2>${esc(d.name)}</h2>
+    <div class="dsum">
+      <div class="vbox"><span class="collect-k">Copies you own</span><span class="vmid">${s.have} / ${s.need}</span></div>
+      <div class="vbox"><span class="collect-k">Cost to finish</span><span class="vbig">${moneyHTML(s.cost)}</span></div>
+    </div>
+    <div class="bar" role="progressbar" aria-label="Deck completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><i style="width:${pct}%"></i></div>
+    <div class="frow">
+      <label class="chk"><input type="checkbox" id="dk-side" ${withSide?"checked":""}> Include sideboard</label>
+      <span style="flex:1"></span>
+      <button class="btn" id="dk-copy">Copy shopping list</button>
+      <button class="btn" id="dk-edit">Edit deck</button>
+      ${custom ? `<button class="btn danger" id="dk-del">${armDelete ? (isBuiltin ? "Tap again to restore the original list" : "Tap again to delete this deck") : (isBuiltin ? "Restore original list" : "Delete deck")}</button>` : ""}
+    </div>
+    <p class="meta">Counts come from your collection: any printing of a card counts toward the deck. "Cost to finish" uses the cheapest printing of each missing card.${s.unknown ? ` ${s.unknown} card name${s.unknown===1?" isn't":"s aren't"} in the database, marked below.` : ""}</p>`;
+  $("deck-body").innerHTML = s.secs.map(sec => `<div class="dsec"><h3>${esc(sec.label)}</h3>${sec.rows.map(r => `<div class="drow${r.miss?"":" done"}">
+    <span class="q">${r.q}×</span>
+    <span class="info"><span class="name">${r.cheap ? `<a href="${tcgURL(r.cheap)}" target="_blank" rel="noopener">${esc(r.name)}</a>` : esc(r.name)}</span>${r.known ? `<span class="sub">${viewLink(r.cheap || (groups[r.key]||[])[0], r.name)}</span>` : `<span class="unk">Not found in the database. Check the spelling.</span>`}</span>
+    <span class="h ${r.miss?"no":"ok"}">${r.miss ? `have ${r.h}, need ${r.miss}` : "✓ have"}</span>
+    <span class="p price">${r.miss && r.cheap ? `<b>${esc(money(r.miss*r.cheap.price))}</b><small>${r.miss>1?`${r.miss} × ${esc(money(r.cheap.price))}`:esc(codeOf(r.cheap))}</small>` : ""}</span></div>`).join("")}</div>`).join("");
+}
+$("deck-tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; curDeck = b.dataset.d; armDelete = false; if (editingId && editingId !== curDeck){ stopEditing(); $("deck-add").open = false; } LS.set("rb-deck", curDeck); renderDecks(); });
+$("deck-summary").addEventListener("change", e => { if (e.target.id === "dk-side"){ withSide = e.target.checked; LS.set("rb-side", withSide); renderDecks(); } });
+$("deck-summary").addEventListener("click", e => {
+  if (e.target.id === "dk-copy"){
+    const d = allDecks().find(x => x.id === curDeck), s = deckStats(d), rows = [];
+    s.secs.forEach(sec => sec.rows.forEach(r => { if (r.miss) rows.push(`${r.miss} ${r.name}` + (r.cheap ? ` — ${money(r.miss*r.cheap.price)} (${codeOf(r.cheap)})` : "")); }));
+    copy(rows.length ? rows.join("\n") + `\n\nTotal: ${money(s.cost)}` : "Nothing to buy, you own every card.", "shopping list");
+  }
+  if (e.target.id === "dk-del"){
+    if (!armDelete){ armDelete = true; renderDecks(); return; }
+    const keep = BUILTIN.some(b => b.id === curDeck);
+    customDecks = customDecks.filter(x => x.id !== curDeck); armDelete = false;
+    if (!keep) curDeck = (allDecks()[0]||{}).id || "";
+    if (editingId) stopEditing();
+    saveDecks(); renderDecks();
+  }
+  if (e.target.id === "dk-edit"){
+    const d = allDecks().find(x => x.id === curDeck); if (!d) return;
+    editingId = d.id;
+    $("dk-name").value = d.name; $("dk-list").value = d.text;
+    $("dk-title").textContent = `Edit deck: ${d.name}`; $("dk-save").textContent = "Save changes"; $("dk-cancel").hidden = false; $("dk-msg").textContent = "";
+    $("deck-add").open = true; $("deck-add").scrollIntoView({behavior:"smooth", block:"start"}); $("dk-list").focus({preventScroll:true});
+  }
+});
+function stopEditing(){
+  editingId = null; $("dk-name").value = ""; $("dk-list").value = "";
+  $("dk-title").textContent = "Add a deck"; $("dk-save").textContent = "Save deck"; $("dk-cancel").hidden = true;
+}
+$("dk-cancel").addEventListener("click", () => { stopEditing(); $("deck-add").open = false; $("dk-msg").textContent = ""; });
+$("dk-save").addEventListener("click", () => {
+  const name = $("dk-name").value.trim(), text = $("dk-list").value.trim();
+  if (!name || !text){ $("dk-msg").textContent = "Add a deck name and paste the list first."; return; }
+  const secs = parseDeck(text); if (!secs.length){ $("dk-msg").textContent = "No cards found. Each line needs a number and a card name, like 3 Tideturner."; return; }
+  if (editingId){
+    const old = allDecks().find(x => x.id === editingId) || {};
+    const d = {id:editingId, name, sub: old.sub || "Your deck", text};
+    const i = customDecks.findIndex(x => x.id === editingId);
+    if (i >= 0) customDecks[i] = d; else customDecks.push(d);   // first edit of a built-in deck saves your version
+    curDeck = editingId; stopEditing(); $("dk-msg").textContent = `Saved changes to ${name}.`;
+  } else {
+    const d = {id:"d"+Date.now().toString(36), name, sub:"Your deck", text}; customDecks.push(d); curDeck = d.id;
+    $("dk-name").value = ""; $("dk-list").value = ""; $("dk-msg").textContent = `Saved ${name}.`;
+  }
+  saveDecks(); $("deck-add").open = false; armDelete = false; renderDecks();
+  $("deck-summary").scrollIntoView({behavior:"smooth", block:"start"});
+});
+function saveDecks(){
+  LS.set("rb-decks", customDecks); LS.set("rb-deck", curDeck);
+  if (deckStore) deckStore.set({decks: customDecks, savedAt: new Date().toISOString()}).catch(() => {});
+}
+
+// ---- backup / restore (lets browser-only users move their data between devices)
+let bkArm = false;
+$("bk-copy").addEventListener("click", () => copy(btoa(unescape(encodeURIComponent(JSON.stringify({v:1, counts, decks:customDecks})))), "backup code"));
+$("bk-restore").addEventListener("click", () => {
+  let data; try { data = JSON.parse(decodeURIComponent(escape(atob($("bk-text").value.trim())))); } catch(e){ data = null; }
+  if (!data || typeof data.counts !== "object"){ $("bk-msg").textContent = "That doesn't look like a backup code. Copy the whole code and try again."; return; }
+  if (!bkArm){ bkArm = true; $("bk-restore").textContent = "Tap again to replace everything on this page"; return; }
+  bkArm = false; $("bk-restore").textContent = "Restore from backup";
+  counts = {}; for (const [k,v] of Object.entries(data.counts)) if (byId[k] && v > 0) counts[k] = Math.floor(v);
+  customDecks = Array.isArray(data.decks) ? data.decks.filter(d => d && d.name && d.text) : [];
+  $("bk-text").value = ""; $("bk-msg").textContent = `Restored ${Object.keys(counts).length} cards and ${customDecks.length} deck${customDecks.length===1?"":"s"}.`;
+  saveDecks(); queueSave(); render();
+});
+
+// ---- saving to the account
+function setSync(text, cls){ const s = $("sync"); s.textContent = text; s.className = "tag " + (cls||""); }
+function queueSave(){
+  LS.set("rb-counts", counts);
+  if (!store) return;
+  setSync("Saving…");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const body = JSON.stringify(counts);
+    try { await store.set({counts: JSON.parse(body), savedAt: new Date().toISOString()}); lastSaved = body; if (JSON.stringify(counts) === body) saveTimer = null; setSync("✓ Saved to your account", "ok"); }
+    catch(e){ saveTimer = null; if (e && e.code === "invalid_argument"){ store = null; deckStore = null; $("backup-hint").hidden = false; setSync("🔒 Private — saved in this browser", "ok"); return; } setSync(e && e.code === "quota_exceeded" ? "Couldn't save: storage is full" : "Couldn't save to your account — saved in this browser only", "warn"); }
+  }, 700);
+}
+
+async function connect(){
+  try {
+    const db = await window.claude?.use?.("db");
+    const user = await window.claude?.use?.("user");
+    const uid = user ? await user.id() : null;
+    let canWrite = null; try { canWrite = user ? await user.can("data.write") : false; } catch(e){}
+    if (!db || !uid || canWrite === false){ setSync("🔒 Private — saved in this browser", "ok"); $("backup-hint").hidden = false; return; }
+    store = db.doc("data/users/" + uid + "/collection");
+    deckStore = db.doc("data/users/" + uid + "/decks");
+    deckStore.get().then(snap => {
+      const remote = snap.exists ? (snap.data().decks || []) : null;
+      if (remote){ customDecks = remote.map(d => ({...d})); LS.set("rb-decks", customDecks); if (st.tab === "decks") renderDecks(); }
+      else if (customDecks.length) saveDecks();
+    }).catch(() => {});
+    const local = {...counts};
+    let first = true;
+    store.onSnapshot(snap => {
+      if (snap.metadata.hasPendingWrites) return;
+      const remote = snap.exists ? (snap.data().counts || {}) : null;
+      if (first){
+        first = false;
+        if (!remote){ // first visit with account storage: carry over anything recorded in this browser
+          if (Object.keys(local).length){ counts = local; queueSave(); } else setSync("✓ Saved to your account", "ok");
+          return;
+        }
+      }
+      if (remote && JSON.stringify(remote) !== JSON.stringify(counts) && !saveTimer){
+        counts = {...remote}; LS.set("rb-counts", counts); render();
+      }
+      if (remote) setSync("✓ Saved to your account", "ok");
+    }, () => setSync("Couldn't reach your account — saving in this browser", "warn"));
+  } catch(e){ setSync("Saved in this browser only", "warn"); }
+}
+syncControls(); render(); showTab(["collection","packs","decks"].includes(st.tab) ? st.tab : "collection"); connect();
+})();
+</script>
+
+</body></html>
