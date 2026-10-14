@@ -2085,7 +2085,12 @@ $("shop-offers").addEventListener("click", async e => {
 
 // ---- bad words (same patterns as rb_bad_words in supabase_offer_threads.sql)
 const BAD_SUB = new RegExp("f+[._*-]*u+[._*-]*c+[._*-]*k+|b+[._*-]*i+[._*-]*t+[._*-]*c+[._*-]*h+|w+[._*-]*h+[._*-]*o+[._*-]*r+[._*-]*e+|s+[._*-]*l+[._*-]*u+[._*-]*t+|b+[._*-]*a+[._*-]*s+[._*-]*t+[._*-]*a+[._*-]*r+[._*-]*d+|a+[._*-]*s+[._*-]*s+[._*-]*h+[._*-]*o+[._*-]*l+[._*-]*e+|n+[._*-]*i+[._*-]*g+[._*-]*g+|f+[._*-]*a+[._*-]*g+[._*-]*g+[._*-]*o+[._*-]*t+|r+[._*-]*e+[._*-]*t+[._*-]*a+[._*-]*r+[._*-]*d+|m+[._*-]*o+[._*-]*t+[._*-]*h+[._*-]*e+[._*-]*r+[._*-]*f+|d+[._*-]*i+[._*-]*l+[._*-]*d+[._*-]*o+|p+[._*-]*u+[._*-]*s+[._*-]*s+[._*-]*y+|c+[._*-]*o+[._*-]*c+[._*-]*k+[._*-]*s+[._*-]*u+[._*-]*c+[._*-]*k+|t+[._*-]*w+[._*-]*a+[._*-]*t+|w+[._*-]*a+[._*-]*n+[._*-]*k+|j+[._*-]*i+[._*-]*z+[._*-]*z+|s+[._*-]*h+[._*-]*i[._*-]*t+"), BAD_WORD = new RegExp("\\b(ass|asses|dick|dicks|cock|cocks|cum|tit|tits|piss|fag|fags|fuk|fck|hoe|hoes|kike|spic|spics|chink|tranny|rape|raping|rapist|nazi|porn|pedo|kys|nigga|niggas|cunt|cunts)\\b"), LEET = {"0":"o","1":"i","3":"e","4":"a","5":"s","7":"t","@":"a","$":"s","!":"i"};
-const badWords = t => { const n = String(t || "").toLowerCase().replace(/[013457@$!]/g, c => LEET[c]); return BAD_SUB.test(n) || BAD_WORD.test(n); };
+const BAD_MORE = new RegExp("\\b(damn|damned|dammit|goddamn|crap|crappy|hell|bloody|bugger|bollocks|prick|pricks|dumbass|jackass|smartass|asshat|asswipe|wtf|stfu|gtfo|douche|douchebag|skank|mf|mfer)\\b"), BAD_MASK = new RegExp("f[*#]+c?k|f[*#]{2,}|sh[*#]+t|b[*#]+t?ch|c[*#]+nt|d[*#]+ck|a[*#]{2}|p[*#]+ss");
+const badWords = t => {
+  const n = String(t || "").toLowerCase().replace(/[013457@$!]/g, c => LEET[c]);
+  const joined = n.replace(/\b([a-z])[\s._*-]+(?=[a-z]\b)/g, "$1");   // "f u c k" -> "fuck"
+  return [n, joined].some(x => BAD_SUB.test(x) || BAD_WORD.test(x) || BAD_MORE.test(x) || BAD_MASK.test(x));
+};
 const offerErr = error => { const m = (error && error.message) || "";
   return /words/.test(m) ? "Please keep it friendly: that has a word we don't allow."
     : /closed/.test(m) ? "This offer is already closed."

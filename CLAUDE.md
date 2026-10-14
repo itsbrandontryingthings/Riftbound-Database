@@ -16,7 +16,7 @@ and keep the site working on phones.
 | `build/patches/` | The build: `patch_*.py` scripts, each a string-replace transform that **asserts its anchor text exists** (fails loudly if an earlier change moved it). `build.py` makes `cards.js` from raw Riftcodex rows + `build/tcg/*`. |
 | `build/base/shared.html` | The original base page every website build starts from. |
 | `build/tcg/` | Inputs for `build.py`: `prices.txt` (`productId:price[f]`, f = foil-only), `fx.txt` (USD→CAD `rate|date`, Bank of Canada), `extras.txt` (TCGplayer-only printings), `ven_map.txt`, `images.txt` (Riftcodex image file per card), `tcg_photos.txt`, `bans.txt` (`name|std or 2v2|since`). The weekly task's working copies live in Brandon's claude.ai Project "Personal" under `claude/riftbound-collection/`; keep them in sync if you change one. |
-| `build/sql/` | Supabase SQL, run by Brandon in Supabase → SQL Editor: `supabase_setup.sql` (collections table), `supabase_sharing.sql` (shared_decks), `supabase_wishlist.sql` (wish column), `supabase_links.sql` (private share links), `supabase_offers.sql` (offers on shopping lists), `supabase_offer_threads.sql` (counter offers, trade cards, bad-word filter — see "Pending"), `supabase_offer_revise.sql` (revising an offer you made). |
+| `build/sql/` | Supabase SQL, run by Brandon in Supabase → SQL Editor: `supabase_setup.sql` (collections table), `supabase_sharing.sql` (shared_decks), `supabase_wishlist.sql` (wish column), `supabase_links.sql` (private share links), `supabase_offers.sql` (offers on shopping lists), `supabase_offer_threads.sql` (counter offers, trade cards, bad-word filter — see "Pending"), `supabase_offer_revise.sql` (revising an offer you made), `supabase_bad_words.sql` (stricter bad-word check). |
 | `build/tests/` | `smoke.py` (loads the built site with stand-in images + fake Supabase; checks no JS errors, filters, info sheet), `links_test.py` (end-to-end private links), `fake_supabase.js` (in-browser stand-in that enforces the same rules as the real database). |
 | `build/make.sh` | Rebuilds `index.html`; `--local` also builds the local Desktop copy. |
 
@@ -68,6 +68,9 @@ with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` he
 
 ## Pending / known gaps
 
+- **Brandon must run `build/sql/supabase_bad_words.sql`** (stricter `rb_bad_words`: masked letters, spelled-out
+  letters, more words). The site already checks the same way (`badWords` + `BAD_MORE`/`BAD_MASK` in patch_marketplace);
+  the database check is the backstop. Keep both pattern sets the same.
 - All SQL files have been run in Supabase as of Oct 14, 2026: `supabase_links.sql`, `supabase_offers.sql`,
   `supabase_offer_threads.sql` and `supabase_offer_revise.sql` (revise offers, delete messages). A new SQL file is
   something Brandon runs in Supabase → SQL Editor; note it here until Brandon confirms "Success".

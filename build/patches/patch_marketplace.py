@@ -42,6 +42,8 @@
   answer + counter offers / replies on offers you made); the Friends tab no longer has its own number.
 - Delete a message you sent (both sides, open offers, not revision notes): RPCs offer_delete_msg / owner_delete_msg in
   supabase_offer_revise.sql.
+- Stricter bad-word check for names, offers and messages: masked letters (f*ck), spelled-out letters ("f u c k") and
+  more words (BAD_MORE / BAD_MASK); the database side is build/sql/supabase_bad_words.sql (keep them the same).
 - Your offers no longer say "Giving them N cards" in the corner. Fix: shared lists reload when the saved links change
   (frKey), e.g. after signing in as someone else on the same browser.
 Usage: patch_marketplace.py in.html out.html"""
@@ -908,6 +910,19 @@ rep('''    frCache = (data || []).sort((a, b) => tokens.indexOf(a.share_token) -
 rep('''$("fr-count").textContent = ""; frCache = [];''', '''$("fr-count").textContent = ""; frCache = []; frKey = "";''')
 rep('''// ---- Marketplace: fold / unfold a section by tapping its header''', '''var frKey = "";   // the saved links the shared-list cache was loaded for
 // ---- Marketplace: fold / unfold a section by tapping its header''')
+
+# ---------- stricter bad-word check (names, offers and messages, both sides). Keep these the same as rb_bad_words in
+# build/sql/supabase_bad_words.sql. On top of the old check: masked letters (f*ck, sh*t, f***), letters spelled out with
+# spaces or dots ("f u c k"), and more words (dumbass, jackass, wtf, stfu, damn, crap, hell, bloody…).
+BAD_MORE = "damn|damned|dammit|goddamn|crap|crappy|hell|bloody|bugger|bollocks|prick|pricks|dumbass|jackass|smartass|asshat|asswipe|wtf|stfu|gtfo|douche|douchebag|skank|mf|mfer"
+BAD_MASK = "f[*#]+c?k|f[*#]{2,}|sh[*#]+t|b[*#]+t?ch|c[*#]+nt|d[*#]+ck|a[*#]{2}|p[*#]+ss"
+rep('''const badWords = t => { const n = String(t || "").toLowerCase().replace(/[013457@$!]/g, c => LEET[c]); return BAD_SUB.test(n) || BAD_WORD.test(n); };''',
+    '''const BAD_MORE = new RegExp("\\\\b(''' + BAD_MORE + ''')\\\\b"), BAD_MASK = new RegExp("''' + BAD_MASK + '''");
+const badWords = t => {
+  const n = String(t || "").toLowerCase().replace(/[013457@$!]/g, c => LEET[c]);
+  const joined = n.replace(/\\b([a-z])[\\s._*-]+(?=[a-z]\\b)/g, "$1");   // "f u c k" -> "fuck"
+  return [n, joined].some(x => BAD_SUB.test(x) || BAD_WORD.test(x) || BAD_MORE.test(x) || BAD_MASK.test(x));
+};''')
 
 open(out, "w", encoding="utf-8").write(h)
 print("patch_marketplace: ok ->", out)
