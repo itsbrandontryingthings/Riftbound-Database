@@ -1,4 +1,8 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.pgjump{display:inline-flex;align-items:center;gap:6px}
+.pgin{width:3.6em;padding:4px 6px;text-align:center;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;-moz-appearance:textfield}
+.pgin:focus{outline:2px solid var(--accent);outline-offset:1px}
+.pgin::-webkit-outer-spin-button,.pgin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+</style></head><body>
 <title>Riftbound Database</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
@@ -850,7 +854,7 @@ function tileHTML(c){
     </div></div></div>`;
 }
 function renderPager(pages){
-  const html = pages <= 1 ? "" : `<button class="btn" data-pg="-1" ${st.page ? "" : "disabled"}>‹ Prev</button><span class="meta">Page ${st.page + 1} of ${pages}</span><button class="btn" data-pg="1" ${st.page < pages - 1 ? "" : "disabled"}>Next ›</button>`;
+  const html = pages <= 1 ? "" : `<button class="btn" data-pg="-1" ${st.page ? "" : "disabled"}>‹ Prev</button><label class="meta pgjump">Page <input class="pgin" type="number" min="1" max="${pages}" value="${st.page + 1}" inputmode="numeric" enterkeyhint="go" aria-label="Page number, out of ${pages}"> of ${pages}</label><button class="btn" data-pg="1" ${st.page < pages - 1 ? "" : "disabled"}>Next ›</button>`;
   $("pager-top").innerHTML = html; $("pager-bot").innerHTML = html;
 }
 function renderWish(){
@@ -954,6 +958,18 @@ $("more").addEventListener("click", () => { st.limit += PAGE; renderList(); });
 new MutationObserver(() => { $("count2").textContent = $("count").textContent; }).observe($("count"), {childList:true, characterData:true, subtree:true});
 ["list","grid"].forEach(v => $("v-"+v).addEventListener("click", () => { if (st.view === v) return; st.view = v; st.page = 0; render(); }));
 ["s","m","l"].forEach(z => $("sz-"+z).addEventListener("click", () => { if (st.size === z) return; st.size = z; st.page = 0; render(); }));
+document.querySelectorAll(".pager").forEach(p => p.addEventListener("change", e => {
+  const inp = e.target.closest(".pgin"); if (!inp) return;
+  const max = Number(inp.max) || 1, v = Math.round(Number(inp.value));
+  if (!v){ inp.value = st.page + 1; return; }
+  const pg = Math.min(max, Math.max(1, v)) - 1;
+  if (pg === st.page){ inp.value = pg + 1; return; }
+  st.page = pg; render();
+  const top = document.querySelector(".listbar").getBoundingClientRect().top + scrollY - (document.querySelector(".filters").offsetHeight + 8);
+  scrollTo({top: Math.max(0, top), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+}));
+document.querySelectorAll(".pager").forEach(p => p.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.closest(".pgin")) e.target.blur(); }));
+document.querySelectorAll(".pager").forEach(p => p.addEventListener("focusin", e => { if (e.target.closest(".pgin")) e.target.select(); }));
 document.querySelectorAll(".pager").forEach(p => p.addEventListener("click", e => {
   const b = e.target.closest("button[data-pg]"); if (!b || b.disabled) return;
   st.page += Number(b.dataset.pg); render();
