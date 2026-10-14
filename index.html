@@ -665,11 +665,13 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 #card-pop .cp-stats small{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 #card-pop .cp-stats b{font-size:16px}
 #card-pop .cp-rules{font-size:12.5px;max-height:190px;overflow:hidden}
+.uisize.curpick + .uisize{margin-left:14px}
+@media (max-width:520px){.uisize.curpick{margin-left:0}.uisize.curpick + .uisize{margin-left:auto}}
 </style>
 
 <div class="wrap" id="app">
   <div class="top">
-    <div class="eyebrow">Collection tracker <span class="tag" id="sync">Loading your collection…</span><span class="uisize"><span>Page size</span><span class="seg" role="group" aria-label="Page size"><button id="ui-s" aria-pressed="true" title="Normal size">S</button><button id="ui-m" aria-pressed="false" title="Bigger">M</button><button id="ui-l" aria-pressed="false" title="Biggest">L</button></span></span></div>
+    <div class="eyebrow">Collection tracker <span class="tag" id="sync">Loading your collection…</span><span class="uisize curpick"><span>Currency</span><span class="seg" role="group" aria-label="Currency"><button id="c-both" aria-pressed="true">CAD + USD</button><button id="c-cad" aria-pressed="false">CAD</button><button id="c-usd" aria-pressed="false">USD</button></span></span><span class="uisize"><span>Page size</span><span class="seg" role="group" aria-label="Page size"><button id="ui-s" aria-pressed="true" title="Normal size">S</button><button id="ui-m" aria-pressed="false" title="Bigger">M</button><button id="ui-l" aria-pressed="false" title="Biggest">L</button></span></span></div>
     <div class="updnote" id="c-sched" hidden></div>
     <h1>Riftbound - Complete Database</h1>
     <div class="acct" id="acct"><button class="btn primary" id="acct-in">Sign in or create an account</button><span class="who" id="acct-who"></span><button class="btn" id="acct-out" hidden>Sign out</button></div>
@@ -723,11 +725,6 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
       <select id="rarity" aria-label="Rarity"><option value="">All rarities</option></select>
       <select id="kw" aria-label="Keyword"><option value="">All keywords</option></select>
       <select id="tg" aria-label="Champion or region tag"><option value="">All tags</option></select>
-      <div class="seg" role="group" aria-label="Currency">
-        <button id="c-both" aria-pressed="true">CAD + USD</button>
-        <button id="c-cad" aria-pressed="false">CAD</button>
-        <button id="c-usd" aria-pressed="false">USD</button>
-      </div>
       <select id="sort" aria-label="Sort cards"><option value="set">Sort: set order</option><option value="price">Sort: price, high to low</option><option value="value">Sort: my value, high to low</option><option value="name">Sort: name</option></select>
       <label class="chk"><input type="checkbox" id="variants" checked> Show alt arts, overnumbered and promos</label>
       <button class="btn reset" id="freset" type="button" disabled>Reset filters</button>

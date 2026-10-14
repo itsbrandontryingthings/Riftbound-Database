@@ -726,5 +726,20 @@ rep('</style>\n\n<div class="wrap" id="app">', '''.cardref{all:unset;cursor:poin
 
 <div class="wrap" id="app">''')
 
+# ---------- currency (CAD + USD / CAD / USD) moves from Collection's filters to the top right, next to Page size, so it
+# works from every tab (same button ids, so the existing click handlers still apply)
+rep('''      <div class="seg" role="group" aria-label="Currency">
+        <button id="c-both" aria-pressed="true">CAD + USD</button>
+        <button id="c-cad" aria-pressed="false">CAD</button>
+        <button id="c-usd" aria-pressed="false">USD</button>
+      </div>
+''', '')
+rep('''<span class="uisize"><span>Page size</span>''', '''<span class="uisize curpick"><span>Currency</span><span class="seg" role="group" aria-label="Currency"><button id="c-both" aria-pressed="true">CAD + USD</button><button id="c-cad" aria-pressed="false">CAD</button><button id="c-usd" aria-pressed="false">USD</button></span></span><span class="uisize"><span>Page size</span>''')
+rep('</style>\n\n<div class="wrap" id="app">', '''.uisize.curpick + .uisize{margin-left:14px}
+@media (max-width:520px){.uisize.curpick{margin-left:0}.uisize.curpick + .uisize{margin-left:auto}}
+</style>
+
+<div class="wrap" id="app">''')
+
 open(out, "w", encoding="utf-8").write(h)
 print("patch_marketplace: ok ->", out)
