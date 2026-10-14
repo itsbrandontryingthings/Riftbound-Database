@@ -4,6 +4,8 @@
   and Friends no longer shows it.
 - Wish list: "Share with friends" only shows once the list has a card (an empty list never gets a link).
 - Share dialog: if a link couldn't be made, say so plainly instead of "Making your link…".
+- The name field is "Name This Shared Deck" / "Name This Shared Wishlist": it names that shared item (saved as
+  deck.shareName / wish._shareName, sent as name and owner_name) and is the title friends see, with no "by …" line.
 Usage: patch_share_tidy.py in.html out.html"""
 import sys
 
@@ -44,6 +46,38 @@ rep('''(linksOff ? "Share links need a quick database update before they work. T
              : "Making your link…");''')
 rep('''  if (!shareTok[curShareId()]){ await flushShared(); await pushShared(); showShareLink(); }''',
     '''  if (!shareTok[curShareId()]){ await flushShared(); await pushShared(); showShareLink(true); }''')
+
+# ---------- the name field names the shared deck / wish list (saved with each one), not the person
+rep('''    <label>Name friends will see <input id="share-name" maxlength="40" autocomplete="nickname" required></label>''',
+    '''    <label><span id="share-name-label">Name This Shared Deck</span> <input id="share-name" maxlength="40" autocomplete="off" required></label>''')
+rep('''  $("share-title").textContent = shareTarget === "wish" ? "Share Your Wish List" : "Share This Deck";''',
+    '''  $("share-title").textContent = shareTarget === "wish" ? "Share Your Wish List" : "Share This Deck";
+  $("share-name-label").textContent = shareTarget === "wish" ? "Name This Shared Wishlist" : "Name This Shared Deck";''')
+rep('''  $("share-name").value = shareProfile.name || "";''',
+    '''  $("share-name").value = shareTarget === "wish" ? (wish._shareName || "My Wish List") : (shareDeckName(customDecks.find(x => x.id === curDeck)) || "");''')
+rep('''if (!name){ $("share-msg").textContent = "Add the name friends will see.";''',
+    '''if (!name){ $("share-msg").textContent = shareTarget === "wish" ? "Give your shared wish list a name." : "Give your shared deck a name.";''')
+rep('''  shareProfile = {name}; LS.set("rb-share-profile", shareProfile);
+  if (shareTarget === "wish"){ wish._shared = true; saveWish(); renderWish(); }
+  else { const d = customDecks.find(x => x.id === curDeck); if (d) d.shared = true; saveDecks(); renderDecks(); }''',
+    '''  if (shareTarget === "wish"){ wish._shared = true; wish._shareName = name; saveWish(); renderWish(); }
+  else { const d = customDecks.find(x => x.id === curDeck); if (d){ d.shared = true; d.shareName = name; } saveDecks(); renderDecks(); }''')
+rep('''let shareProfile = LS.get("rb-share-profile") || {name:""};''',
+    '''let shareProfile = LS.get("rb-share-profile") || {name:""};
+const shareDeckName = d => d ? String(d.shareName || d.name || "").trim() : "";''')
+# keep the shared name when a deck is edited
+rep('''    const d = {id:editingId, name, sub: old.sub || "Your deck", text, shared: !!old.shared};''',
+    '''    const d = {id:editingId, name, sub: old.sub || "Your deck", text, shared: !!old.shared, shareName: old.shareName};''')
+rep('''[{ id: "__wish__", name: "Wish list", text: wishText() }]''', '''[{ id: "__wish__", shareName: wish._shareName || "My Wish List", text: wishText() }]''')
+rep('''    if (mine.length && shareProfile.name){
+      const rows = mine.map(d => ({ owner: me.id, deck_id: d.id, owner_name: shareProfile.name.slice(0, 40), contact: null, name: String(d.name).slice(0, 80),''',
+    '''    if (mine.length){
+      const rows = mine.map(d => ({ owner: me.id, deck_id: d.id, owner_name: (shareDeckName(d) || "Shared").slice(0, 40), contact: null, name: (shareDeckName(d) || "Shared").slice(0, 80),''')
+# what friends see: the shared name as the title, no "by …"
+rep('''<h3>♥ ${esc(r.owner_name)}'s wish list</h3>''', '''<h3>♥ ${esc(r.name)}</h3>''')
+rep('''<span class="meta">by <b>${esc(r.owner_name)}</b> · updated ''', '''<span class="meta">updated ''')
+rep('''name: `${r.name} (${r.owner_name})`.slice(0, 80), sub: `Copied from ${r.owner_name}`,''',
+    '''name: String(r.name).slice(0, 80), sub: "Copied from a friend's link",''')
 
 open(out, "w", encoding="utf-8").write(h)
 print("patch_share_tidy: ok ->", out)

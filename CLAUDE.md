@@ -38,7 +38,7 @@ What each patch does: local = thumbnails + enlarged preview (lightbox) + image U
 web = website wording; accounts = Supabase sign-in + cloud save; sharing = shared decks + Friends tab; mobile = grid view,
 pager, S/M/L sizes, phone layout; wish = Token filter + Wish List tab; polish = tab names, My Decks intro, deck import,
 list sizes, Friends sections; foil = rainbow shine on foil-only cards; info = card info sheet in the preview, keyword
-and tag filters, ability search, page-number box, Reset filters; links = private share links; share_tidy = no trades-contact field, no sharing an empty wish list.
+and tag filters, ability search, page-number box, Reset filters; links = private share links; share_tidy = no trades-contact field, share name = "Name This Shared Deck/Wishlist" (the title friends see, no "by …"), no sharing an empty wish list.
 
 ## How the site works (key facts)
 
