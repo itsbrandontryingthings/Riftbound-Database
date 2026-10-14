@@ -68,11 +68,10 @@ with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` he
 
 ## Pending / known gaps
 
-- **Brandon must run `build/sql/supabase_bad_words.sql`** (stricter `rb_bad_words`: masked letters, spelled-out
-  letters, more words). The site already checks the same way (`badWords` + `BAD_MORE`/`BAD_MASK` in patch_marketplace);
-  the database check is the backstop. Keep both pattern sets the same.
 - All SQL files have been run in Supabase as of Oct 14, 2026: `supabase_links.sql`, `supabase_offers.sql`,
-  `supabase_offer_threads.sql` and `supabase_offer_revise.sql` (revise offers, delete messages). A new SQL file is
+  `supabase_offer_threads.sql`, `supabase_offer_revise.sql` (revise offers, delete messages) and
+  `supabase_bad_words.sql` (stricter `rb_bad_words`). The site checks words the same way (`badWords` +
+  `BAD_MORE`/`BAD_MASK` in patch_marketplace); keep both pattern sets the same. A new SQL file is
   something Brandon runs in Supabase → SQL Editor; note it here until Brandon confirms "Success".
 - 26 printings have no text in `text.js` (Kennen – Heart of the Tempest, double-sided tokens like "Bird // Buff").
 - The site is tested with a fake Supabase; real-database behaviour should be checked after SQL changes
