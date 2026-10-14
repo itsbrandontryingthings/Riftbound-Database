@@ -16,7 +16,7 @@ and keep the site working on phones.
 | `build/patches/` | The build: `patch_*.py` scripts, each a string-replace transform that **asserts its anchor text exists** (fails loudly if an earlier change moved it). `build.py` makes `cards.js` from raw Riftcodex rows + `build/tcg/*`. |
 | `build/base/shared.html` | The original base page every website build starts from. |
 | `build/tcg/` | Inputs for `build.py`: `prices.txt` (`productId:price[f]`, f = foil-only), `fx.txt` (USD→CAD `rate|date`, Bank of Canada), `extras.txt` (TCGplayer-only printings), `ven_map.txt`, `images.txt` (Riftcodex image file per card), `tcg_photos.txt`, `bans.txt` (`name|std or 2v2|since`). The weekly task's working copies live in Brandon's claude.ai Project "Personal" under `claude/riftbound-collection/`; keep them in sync if you change one. |
-| `build/sql/` | Supabase SQL, run by Brandon in Supabase → SQL Editor: `supabase_setup.sql` (collections table), `supabase_sharing.sql` (shared_decks), `supabase_wishlist.sql` (wish column), `supabase_links.sql` (private share links), `supabase_offers.sql` (offers on shopping lists — see "Pending"). |
+| `build/sql/` | Supabase SQL, run by Brandon in Supabase → SQL Editor: `supabase_setup.sql` (collections table), `supabase_sharing.sql` (shared_decks), `supabase_wishlist.sql` (wish column), `supabase_links.sql` (private share links), `supabase_offers.sql` (offers on shopping lists), `supabase_offer_threads.sql` (counter offers, trade cards, bad-word filter — see "Pending"). |
 | `build/tests/` | `smoke.py` (loads the built site with stand-in images + fake Supabase; checks no JS errors, filters, info sheet), `links_test.py` (end-to-end private links), `fake_supabase.js` (in-browser stand-in that enforces the same rules as the real database). |
 | `build/make.sh` | Rebuilds `index.html`; `--local` also builds the local Desktop copy. |
 
@@ -27,7 +27,7 @@ and keep the site working on phones.
 python3 build/tests/smoke.py         # needs playwright + Chromium
 ```
 Website pipeline (order matters):
-`patch_local → patch_bans → patch_web → patch_accounts → patch_sharing → patch_mobile → patch_wish → patch_polish → patch_foil → patch_info → patch_links → patch_share_tidy → patch_decks_ui → patch_friends_ui → patch_shop → patch_offers → patch_shop_add → patch_uisize → patch_friends_size → patch_fixes → patch_chime`
+`patch_local → patch_bans → patch_web → patch_accounts → patch_sharing → patch_mobile → patch_wish → patch_polish → patch_foil → patch_info → patch_links → patch_share_tidy → patch_decks_ui → patch_friends_ui → patch_shop → patch_offers → patch_shop_add → patch_uisize → patch_friends_size → patch_fixes → patch_chime → patch_offer_threads`
 
 To change the site: edit the right patch (usually add to the latest one — `patch_info.py` for card/filter UI,
 `patch_links.py` for sharing — or start a new `patch_<name>.py` appended to the end of the pipeline in
@@ -38,7 +38,7 @@ What each patch does: local = thumbnails + enlarged preview (lightbox) + image U
 web = website wording; accounts = Supabase sign-in + cloud save; sharing = shared decks + Friends tab; mobile = grid view,
 pager, S/M/L sizes, phone layout; wish = Token filter + Wish List tab; polish = tab names, My Decks intro, deck import,
 list sizes, Friends sections; foil = rainbow shine on foil-only cards; info = card info sheet in the preview, keyword
-and tag filters, ability search, page-number box, Reset filters; links = private share links; share_tidy = no trades-contact field, share name = "Name This Shared Deck/Wishlist" (the title friends see, no "by …"), no sharing an empty wish list; decks_ui = My Decks workspace (Need taps edit the list, I have taps change the collection, list/grid S-M-L via st.dview + st.size, rule checks, add a card); friends_ui = Friends card lines with picture, "you have N", tap to preview; shop = Shopping List tab (missing cards across decks, settings in wish._shop, shared as deck_id "__shop__"); offers = friends send offers on a shared shopping list (RPC make_offer, table shop_offers, needs supabase_offers.sql), owner sees them in Shopping List; shop_add = Add a Card box in Shopping List (wish._shop.extra {card id: copies}), CA + US prices on the list; uisize = Page size S/M/L (CSS zoom on body, localStorage rb-ui-size); friends_size = S-M-L card lines and a sort menu in Friends (st.size, st.frsort); fixes = small bug fixes (Friends buttons use frLast when frCache was cleared); chime = cute poro "brrr-eep!" + mystical "ca-ching" (synthesized, not a recording) + "New" tag for new offers, offers checked every minute (rb-offers-seen, rb-offer-sound).
+and tag filters, ability search, page-number box, Reset filters; links = private share links; share_tidy = no trades-contact field, share name = "Name This Shared Deck/Wishlist" (the title friends see, no "by …"), no sharing an empty wish list; decks_ui = My Decks workspace (Need taps edit the list, I have taps change the collection, list/grid S-M-L via st.dview + st.size, rule checks, add a card); friends_ui = Friends card lines with picture, "you have N", tap to preview; shop = Shopping List tab (missing cards across decks, settings in wish._shop, shared as deck_id "__shop__"); offers = friends send offers on a shared shopping list (RPC make_offer, table shop_offers, needs supabase_offers.sql), owner sees them in Shopping List; shop_add = Add a Card box in Shopping List (wish._shop.extra {card id: copies}), CA + US prices on the list; uisize = Page size S/M/L (CSS zoom on body, localStorage rb-ui-size); friends_size = S-M-L card lines and a sort menu in Friends (st.size, st.frsort); fixes = small bug fixes (Friends buttons use frLast when frCache was cleared); chime = cute poro "brrr-eep!" + mystical "ca-ching" (synthesized, not a recording) + "New" tag for new offers, offers checked every minute (rb-offers-seen, rb-offer-sound); offer_threads = counter offers / replies (thread + status per offer), cards you'd trade in an offer, bad-word filter (badWords here = rb_bad_words in SQL, keep the patterns the same); offerers keep secret reply codes in rb-my-offers / wish._myoffers.
 
 ## How the site works (key facts)
 
@@ -65,8 +65,8 @@ with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` he
 
 ## Pending / known gaps
 
-- `supabase_links.sql` has been run (Oct 14, 2026). **Brandon must run `build/sql/supabase_offers.sql`** in Supabase for
-  shopping-list offers; until then the site says offers need a database update.
+- `supabase_links.sql` has been run (Oct 14, 2026). `supabase_offers.sql` has been run too. **Brandon must run `build/sql/supabase_offer_threads.sql`** for counter offers,
+  trade cards and the server-side bad-word check; until then offers stay one-way and trade cards are refused.
 - 26 printings have no text in `text.js` (Kennen – Heart of the Tempest, double-sided tokens like "Bird // Buff").
 - The site is tested with a fake Supabase; real-database behaviour should be checked after SQL changes
   (share a deck, open its link in a private window).

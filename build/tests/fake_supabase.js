@@ -33,10 +33,20 @@ window.supabase = { createClient(){ let session = L("__sess"); const subs=[]; co
       if(fn==="make_offer"){ const d=db(), s=d.shared_decks.find(r=>r.share_token===args.p_token&&r.deck_id==="__shop__");
         if(!s) return {data:null,error:{message:"link"}};
         if(!String(args.p_name||"").trim()) return {data:null,error:{message:"name"}};
-        if(!String(args.p_offer||"").trim()) return {data:null,error:{message:"offer"}};
+        if(!String(args.p_offer||"").trim()&&!(args.p_trade||[]).length) return {data:null,error:{message:"offer"}};
         if(!Array.isArray(args.p_items)||!args.p_items.length) return {data:null,error:{message:"items"}};
-        const id="o"+Math.random().toString(36).slice(2,8);
-        d.shop_offers.push({id,owner:s.owner,share_token:args.p_token,from_name:args.p_name.trim(),items:args.p_items.map(i=>({name:i.name,q:i.q})),offer:String(args.p_offer).trim(),created_at:new Date().toISOString()}); P("__db",d); return {data:id,error:null}; }
+        const id="o"+Math.random().toString(36).slice(2,8), reply=tok(), now=new Date().toISOString();
+        d.shop_offers.push({id,owner:s.owner,share_token:args.p_token,from_name:args.p_name.trim(),items:args.p_items.map(i=>({name:i.name,q:i.q})),offer:String(args.p_offer||"").trim(),trade:(args.p_trade||[]).map(i=>({name:i.name,q:i.q,id:i.id})),thread:[],status:"open",reply_token:reply,created_at:now,updated_at:now}); P("__db",d); return {data:reply,error:null}; }
+      if(fn==="get_my_offers"){ const d=db(); return {data:d.shop_offers.filter(o=>args.p_replies.includes(o.reply_token)).map(o=>({reply_token:o.reply_token,list_name:(d.shared_decks.find(s=>s.share_token===o.share_token)||{}).name||null,list_token:o.share_token,from_name:o.from_name,items:o.items,trade:o.trade||[],offer:o.offer,thread:o.thread||[],status:o.status||"open",created_at:o.created_at,updated_at:o.updated_at})),error:null}; }
+      if(fn==="offer_reply"||fn==="owner_reply"){ const d=db(), uid=session&&session.user.id;
+        const o=fn==="offer_reply"?d.shop_offers.find(x=>x.reply_token===args.p_reply):d.shop_offers.find(x=>x.id===args.p_id&&x.owner===uid);
+        if(!o) return {data:null,error:{message:"link"}}; if((o.status||"open")!=="open") return {data:null,error:{message:"closed"}};
+        o.thread=o.thread||[]; const by=fn==="offer_reply"?"them":"owner", text=String(args.p_text||"").trim(), at=new Date().toISOString(), a=args.p_action;
+        if(a==="reply"||a==="counter"){ if(!text&&!(args.p_trade||[]).length) return {data:null,error:{message:"offer"}}; o.thread.push({by,text,trade:args.p_trade||[],at}); }
+        else if(a==="accept"){ if(by==="them"&&(o.thread[o.thread.length-1]||{}).by!=="owner") return {data:null,error:{message:"closed"}}; o.status="accepted"; o.thread.push({by,text:text||(by==="them"?"Accepted your counter offer.":"Accepted your offer."),at}); }
+        else if(a==="decline"){ o.status="declined"; o.thread.push({by,text:text||"Declined your offer.",at}); }
+        else if(a==="withdraw"){ o.status="withdrawn"; o.thread.push({by,text:"Withdrew the offer.",at}); }
+        o.updated_at=at; P("__db",d); return {data:o.status,error:null}; }
       if(fn!=="get_shared") return {error:{message:"no function"}}; const uid=session&&session.user.id; window.__rpcCalls=(window.__rpcCalls||0)+1;
       const rows=db().shared_decks.filter(r=>args.p_tokens.includes(r.share_token)).map(({owner,...r})=>({...r,is_mine:owner===uid})); return {data:rows,error:null}; },
     auth:{ onAuthStateChange(f){subs.push(f); setTimeout(()=>f("INITIAL_SESSION",session),0); return {data:{subscription:{unsubscribe(){}}}}},
