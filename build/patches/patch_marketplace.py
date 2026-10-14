@@ -13,6 +13,11 @@
   that use it with their counts, and "+ Collected 1" (was "+ Bought 1"), which adds one to your collection and takes
   one off "to buy"; the collection, totals, decks and shared list all update from that.
 - My Decks: the Need − / + on each deck card is gone; only "I have" stays.
+- Marketplace headers (Incoming Offers, Shopping List Overview, My Shopping List, Friends' Shopping Lists) fold up when
+  tapped (localStorage "rb-mk-fold").
+- Friends' Shopping Lists: moved from the Friends tab to the end of Marketplace, with their own filters (search,
+  domain, type, rarity) plus sort and size. renderFriends still builds them in #fr-list; groupFriends moves them to
+  #mk-frlist, and every #fr-list listener is on both (frListen). Opening or pasting a shopping list link goes there.
 Usage: patch_marketplace.py in.html out.html"""
 import sys
 
@@ -254,6 +259,126 @@ rep('''const ctl = `<div class="dk-ctl"><span class="dk-pair">${dkNeedCtl(r)}</s
     '''const ctl = r.known ? `<div class="dk-ctl"><span class="dk-pair">${dkHaveCtl(r, view === "grid")}</span></div>` : "";''')
 rep('''tap <b>Need</b> to change how many of a card the deck runs, tap <b>I have</b> to update your collection (it's the same count you see in Collection), add or remove cards,''',
     '''tap <b>I have</b> to update your collection (it's the same count you see in Collection), add or remove cards, change how many of a card the deck runs with <b>Edit list as text</b>,''')
+
+# ---------- Marketplace headers fold up (Incoming Offers, Shopping List Overview, My Shopping List, Friends' Shopping
+# Lists); which ones are folded is kept in localStorage "rb-mk-fold"
+rep('''<h2 class="of-h mk-h">Incoming Offers</h2>''', '''<h2 class="of-h mk-h">${mkFoldBtn("offers", "Incoming Offers")}</h2>''')
+rep('''<h2 class="of-h mk-h">Incoming Offers <small>${offers.length}</small></h2>''', '''<h2 class="of-h mk-h">${mkFoldBtn("offers", `Incoming Offers <small>${offers.length}</small>`)}</h2>''')
+rep('''<h3 class="of-h">Shopping List Overview</h3>''', '''<h3 class="of-h">${mkFoldBtn("overview", "Shopping List Overview")}</h3>''', 2)
+rep('''<h2 class="mk-h">My Shopping List</h2>''', '''<h2 class="mk-h">${mkFoldBtn("list", "My Shopping List")}</h2>''')
+rep('''// ---- Marketplace filters for your shopping list (this visit only, not saved)''', '''// ---- Marketplace: fold / unfold a section by tapping its header
+const mkFold = Object.assign({}, LS.get("rb-mk-fold") || {});
+function mkFoldBtn(k, html){ return `<button type="button" class="mk-fold" data-fold="${k}" aria-expanded="${!mkFold[k]}"><span class="mk-car" aria-hidden="true"></span>${html}</button>`; }
+function mkFoldSync(){
+  const v = $("view-shop");
+  ["offers", "overview", "list", "friends"].forEach(k => { v.classList.toggle("fold-" + k, !!mkFold[k]); v.querySelectorAll(`[data-fold="${k}"]`).forEach(b => b.setAttribute("aria-expanded", !mkFold[k])); });
+}
+$("view-shop").addEventListener("click", e => { const b = e.target.closest("[data-fold]"); if (!b) return; mkFold[b.dataset.fold] = !mkFold[b.dataset.fold]; LS.set("rb-mk-fold", mkFold); mkFoldSync(); });
+mkFoldSync();
+// ---- Marketplace: friends' shopping lists. They're built by the Friends tab code (renderFriends), then moved here, so
+// every listener that used to sit on #fr-list sits on both lists (frListen).
+function frListen(type, fn, opt){ ["fr-list", "mk-frlist"].forEach(id => $(id).addEventListener(type, fn, opt)); }
+const mkf = {q: "", dom: "", type: "", rar: ""};
+function mkfOn(){ return !!(mkf.q || mkf.dom || mkf.type || mkf.rar); }
+function mkfMatch(x){ const c = frCard(x.key), nm = !mkf.q || norm(x.name).includes(norm(mkf.q));
+  if (!c) return nm && !mkf.dom && !mkf.type && !mkf.rar;
+  return nm && (!mkf.dom || (c.domains || []).includes(mkf.dom)) && (!mkf.type || c.type === mkf.type) && (!mkf.rar || c.rarity === mkf.rar); }
+function mkFriendsFill(shops){
+  const box = $("mk-frlist"); box.innerHTML = "";
+  if (shops.length) shops.forEach(a => box.append(a));
+  else box.innerHTML = mkfOn() ? `<div class="empty">No cards on your friends' shopping lists match these filters. <button class="btn" id="mkf-clear">Reset filters</button></div>`
+    : `<div class="empty">No friends' shopping lists yet. When a friend sends you a link to their shopping list, open it (or paste it in the <b>Friends</b> tab) and it shows up here, where you can send them an offer.</div>`;
+  $("mkf-count").textContent = shops.length ? `${shops.length} list${shops.length === 1 ? "" : "s"}` : "";
+}
+function mkfReset(){ Object.assign(mkf, {q: "", dom: "", type: "", rar: ""}); $("mkf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("mkf-" + k).value = ""); $("mkf-reset").disabled = true; renderFriends(); }
+let mkfT; $("mkf-q").addEventListener("input", e => { mkf.q = e.target.value.trim(); $("mkf-reset").disabled = !mkfOn(); clearTimeout(mkfT); mkfT = setTimeout(renderFriends, 150); });
+["dom", "type", "rar"].forEach(k => $("mkf-" + k).addEventListener("change", e => { mkf[k] = e.target.value; $("mkf-reset").disabled = !mkfOn(); renderFriends(); }));
+$("mkf-reset").addEventListener("click", mkfReset);
+$("mk-frlist").addEventListener("click", e => { if (e.target.id === "mkf-clear") mkfReset(); });
+$("mkf-sort").addEventListener("change", e => { st.frsort = e.target.value; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); renderFriends(); });
+["s","m","l"].forEach(k => $("mkfs-" + k).addEventListener("click", () => { st.size = k; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); frSize(); }));
+// ---- Marketplace filters for your shopping list (this visit only, not saved)''')
+rep('''  fill("shf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));''', '''  fill("shf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
+  fill("mkf-dom", uniq(c => c.domains || [])); fill("mkf-type", uniq(c => [c.type])); fill("mkf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));''')
+rep('''    <div id="shop-body"></div>
+    </div>
+  </section>''', '''    <div id="shop-body"></div>
+    </div>
+    <div id="mk-friends">
+      <div class="mk-hrow"><h2 class="mk-h"><button type="button" class="mk-fold" data-fold="friends" aria-expanded="true"><span class="mk-car" aria-hidden="true"></span>Friends' Shopping Lists</button></h2><span class="meta" id="mkf-count"></span></div>
+      <div class="panel sh-filt" id="mkf-filtp" role="search" aria-label="Filter your friends' shopping lists">
+        <div class="frow">
+          <input class="search" id="mkf-q" type="search" placeholder="Search your friends' shopping lists, e.g. Jinx" aria-label="Search your friends' shopping lists" autocomplete="off">
+          <select id="mkf-dom" aria-label="Domain"><option value="">All domains</option></select>
+          <select id="mkf-type" aria-label="Card type"><option value="">All types</option></select>
+          <select id="mkf-rar" aria-label="Rarity"><option value="">All rarities</option></select>
+          <button class="btn reset" id="mkf-reset" type="button" disabled>Reset filters</button>
+        </div>
+        <div class="frow"><select id="mkf-sort" aria-label="Sort the cards in friends' shopping lists"><option value="">Sort: list order</option><option value="set">Sort: set order</option><option value="name">Sort: name A–Z</option><option value="price">Sort: price, high to low</option></select><span class="meta">Card size</span><div class="seg sizeseg" role="group" aria-label="Card size"><button id="mkfs-s" aria-pressed="false" title="Small cards">S</button><button id="mkfs-m" aria-pressed="false" title="Medium cards">M</button><button id="mkfs-l" aria-pressed="false" title="Large cards">L</button></div></div>
+      </div>
+      <div class="frlist" id="mk-frlist"></div>
+    </div>
+  </section>''')
+h = h.replace('$("fr-list").addEventListener(', 'frListen(')
+assert 'frListen("click"' in h
+h = h.replace('#fr-list.frsz', ':is(#fr-list,#mk-frlist).frsz')
+rep('''["s","m","l"].forEach(k => { $("frs-" + k).setAttribute("aria-pressed", k === z); $("fr-list").classList.toggle("frsz-" + k, k === z); });''',
+    '''["s","m","l"].forEach(k => { $("frs-" + k).setAttribute("aria-pressed", k === z); $("fr-list").classList.toggle("frsz-" + k, k === z); $("mkfs-" + k).setAttribute("aria-pressed", k === z); $("mk-frlist").classList.toggle("frsz-" + k, k === z); });
+  $("mkf-sort").value = st.frsort || "";''')
+# Friends tab search doesn't hide shopping lists (they have their own filters in Marketplace)
+rep('''  }).filter(x => x.ok);''', '''  }).filter(x => x.ok || x.r.deck_id === "__shop__");''')
+rep('''      const mine = !!r.is_mine, open = frOpen.has(r.id);
+      const canGive = rows.filter(x => ownedOf(x.key) > 0);
+      const body = shop ? (open ? frShopBody(r, rows, mine) : "") :''', '''      const fRows = shop && mkfOn() ? rows.filter(mkfMatch) : rows;
+      if (shop && mkfOn() && !fRows.length) return "";
+      const mine = !!r.is_mine, open = frOpen.has(r.id) || (shop && mkfOn());
+      const canGive = rows.filter(x => ownedOf(x.key) > 0);
+      const body = shop ? (open ? frShopBody(r, fRows, mine) : "") :''')
+rep('''  const list = $("fr-list"), arts = [...list.querySelectorAll(":scope > article.frdeck")];
+  if (!arts.length) return;
+  const isWish = a => (a.querySelector("h3") || {}).textContent.trim().startsWith("♥"), isShop = a => (a.querySelector("h3") || {}).textContent.trim().startsWith("🛒");
+  const wishes = arts.filter(isWish), shops = arts.filter(isShop), decks = arts.filter(a => !isWish(a) && !isShop(a)), q = $("fr-q").value.trim();
+  list.innerHTML = "";''', '''  const list = $("fr-list"), arts = [...list.querySelectorAll(":scope > article.frdeck")];
+  const isWish = a => (a.querySelector("h3") || {}).textContent.trim().startsWith("♥"), isShop = a => (a.querySelector("h3") || {}).textContent.trim().startsWith("🛒");
+  const wishes = arts.filter(isWish), shops = arts.filter(isShop), decks = arts.filter(a => !isWish(a) && !isShop(a)), q = $("fr-q").value.trim();
+  // two renders can overlap (e.g. opening a link); if an earlier one already sorted this list, leave it alone
+  if (!arts.length && list.querySelector(":scope > .frsec")) return;
+  mkFriendsFill(shops);
+  if (!arts.length) return;
+  list.innerHTML = "";''')
+rep('''  if (shops.length || !q) section("Shopping Lists", shops, q ? "No shared shopping lists match this search." : "No shopping list links saved yet.");''',
+    '''  if (shops.length){ const p = document.createElement("p"); p.className = "meta frnone"; p.innerHTML = `Your friends' shopping lists (${shops.length}) are in the <b>Marketplace</b> tab, where you can send them offers.`; list.append(p); }''')
+rep('''  if (t === "shop") renderShop();
+  if (t === "friends") renderFriends();''', '''  if (t === "shop"){ renderShop(); renderFriends(); }
+  if (t === "friends") renderFriends();''')
+rep('''frCache = null; if (st.tab === "friends") renderFriends(); };''', '''frCache = null; if (st.tab === "friends" || st.tab === "shop") renderFriends(); };''')
+# a friend's shopping list link (opened or pasted) goes to Marketplace
+rep('''  showTab("friends");
+  renderFriends().then(() => { const a = document.querySelector(".frdeck.new"); if (a) a.scrollIntoView({block: "start", behavior: "smooth"}); });''',
+    '''  showTab("friends");
+  renderFriends().then(() => { const a = document.querySelector(".frdeck.new"); if (a && a.closest("#mk-frlist")) return mkGoFriend(); if (a) a.scrollIntoView({block: "start", behavior: "smooth"}); });''')
+rep('''$("fr-add").value = ""; addLink(t, true); renderFriends().then(() => { const a = document.querySelector(".frdeck.new"); if (a) a.scrollIntoView({block: "center"}); });''',
+    '''$("fr-add").value = ""; addLink(t, true); renderFriends().then(() => { const a = document.querySelector(".frdeck.new"); if (a && a.closest("#mk-frlist")){ $("fr-add-msg").textContent = "Added. It's a shopping list, so it's in the Marketplace tab."; return; } if (a) a.scrollIntoView({block: "center"}); });''')
+rep('''function frListen(type, fn, opt){''', '''function mkGoFriend(){
+  if (mkFold.friends){ mkFold.friends = false; LS.set("rb-mk-fold", mkFold); mkFoldSync(); }
+  showTab("shop"); setTimeout(() => { const b = document.querySelector("#mk-frlist .frdeck.new"); if (b) b.scrollIntoView({block: "start", behavior: "smooth"}); }, 400);
+}
+function frListen(type, fn, opt){''')
+rep('</style>\n\n<div class="wrap" id="app">', '''.mk-fold{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;border-radius:4px}
+.mk-fold:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.mk-fold:hover{color:var(--accent)}
+.mk-car::before{content:"▾";display:inline-block;width:1em;font-size:.8em;color:var(--muted)}
+.mk-fold[aria-expanded="false"] .mk-car::before{content:"▸"}
+#view-shop.fold-offers #shop-offers .of-panel > :not(:first-child){display:none}
+#view-shop.fold-offers #shop-offers .of-hrow > :not(:first-child){display:none}
+#view-shop.fold-overview #shop-summary > :not(:first-child){display:none}
+#view-shop.fold-list #sh-filtp,#view-shop.fold-list #shop-body{display:none}
+#view-shop.fold-friends #mkf-filtp,#view-shop.fold-friends #mk-frlist{display:none}
+#mk-friends{margin-top:8px}
+#mk-friends .mk-hrow{margin-top:22px}
+</style>
+
+<div class="wrap" id="app">''')
 
 open(out, "w", encoding="utf-8").write(h)
 print("patch_marketplace: ok ->", out)

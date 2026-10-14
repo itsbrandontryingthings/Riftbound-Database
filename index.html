@@ -551,23 +551,23 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .uisize .seg button{padding:4px 10px;font-size:13px;font-family:var(--display)}
 .fr-tools{gap:8px}
 #fr-sort{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--fg);margin-right:6px}
-#fr-list.frsz-m .frrow{grid-template-columns:64px 2.4em minmax(0,1fr) auto auto;gap:6px 12px;padding:6px 8px}
-#fr-list.frsz-m .frrow:not(:has(.pill.ban)){grid-template-columns:64px 2.4em minmax(0,1fr) auto}
-#fr-list.frsz-m .frrow .frn{font-size:16px}
-#fr-list.frsz-m .frrow .q{font-size:16px}
-#fr-list.frsz-m .frrow .ok,#fr-list.frsz-m .frrow .no{font-size:13.5px}
-#fr-list.frsz-l .frrow{grid-template-columns:104px 2.6em minmax(0,1fr) auto auto;gap:8px 14px;padding:8px 10px}
-#fr-list.frsz-l .frrow:not(:has(.pill.ban)){grid-template-columns:104px 2.6em minmax(0,1fr) auto}
-#fr-list.frsz-l .frrow .frn{font-size:18.5px;font-weight:600}
-#fr-list.frsz-l .frrow .q{font-size:18px}
-#fr-list.frsz-l .frrow .ok,#fr-list.frsz-l .frrow .no{font-size:14.5px}
-#fr-list.frsz-l .of-sub,#fr-list.frsz-l .of-mkt{font-size:13.5px}
-#fr-list.frsz-l .frdeck h3{font-size:19px}
-#fr-list.frsz-l .frstats{font-size:15px}
+:is(#fr-list,#mk-frlist).frsz-m .frrow{grid-template-columns:64px 2.4em minmax(0,1fr) auto auto;gap:6px 12px;padding:6px 8px}
+:is(#fr-list,#mk-frlist).frsz-m .frrow:not(:has(.pill.ban)){grid-template-columns:64px 2.4em minmax(0,1fr) auto}
+:is(#fr-list,#mk-frlist).frsz-m .frrow .frn{font-size:16px}
+:is(#fr-list,#mk-frlist).frsz-m .frrow .q{font-size:16px}
+:is(#fr-list,#mk-frlist).frsz-m .frrow .ok,:is(#fr-list,#mk-frlist).frsz-m .frrow .no{font-size:13.5px}
+:is(#fr-list,#mk-frlist).frsz-l .frrow{grid-template-columns:104px 2.6em minmax(0,1fr) auto auto;gap:8px 14px;padding:8px 10px}
+:is(#fr-list,#mk-frlist).frsz-l .frrow:not(:has(.pill.ban)){grid-template-columns:104px 2.6em minmax(0,1fr) auto}
+:is(#fr-list,#mk-frlist).frsz-l .frrow .frn{font-size:18.5px;font-weight:600}
+:is(#fr-list,#mk-frlist).frsz-l .frrow .q{font-size:18px}
+:is(#fr-list,#mk-frlist).frsz-l .frrow .ok,:is(#fr-list,#mk-frlist).frsz-l .frrow .no{font-size:14.5px}
+:is(#fr-list,#mk-frlist).frsz-l .of-sub,:is(#fr-list,#mk-frlist).frsz-l .of-mkt{font-size:13.5px}
+:is(#fr-list,#mk-frlist).frsz-l .frdeck h3{font-size:19px}
+:is(#fr-list,#mk-frlist).frsz-l .frstats{font-size:15px}
 @media (max-width:520px){
-  #fr-list.frsz-m .frrow,#fr-list.frsz-m .frrow:not(:has(.pill.ban)){grid-template-columns:56px 2em minmax(0,1fr)}
-  #fr-list.frsz-l .frrow,#fr-list.frsz-l .frrow:not(:has(.pill.ban)){grid-template-columns:84px 2.2em minmax(0,1fr)}
-  #fr-list.frsz-l .frrow .frn{font-size:16.5px}
+  :is(#fr-list,#mk-frlist).frsz-m .frrow,:is(#fr-list,#mk-frlist).frsz-m .frrow:not(:has(.pill.ban)){grid-template-columns:56px 2em minmax(0,1fr)}
+  :is(#fr-list,#mk-frlist).frsz-l .frrow,:is(#fr-list,#mk-frlist).frsz-l .frrow:not(:has(.pill.ban)){grid-template-columns:84px 2.2em minmax(0,1fr)}
+  :is(#fr-list,#mk-frlist).frsz-l .frrow .frn{font-size:16.5px}
 }
 .of-new{display:inline-block;background:var(--accent);color:var(--bg);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:0 6px;line-height:18px;margin-right:6px;vertical-align:2px}
 #of-sound{padding:6px 10px;font-size:13px}
@@ -622,6 +622,18 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .sh-nh b{color:var(--fg)}
 .sh-tb{display:inline-flex;align-items:center;gap:6px}
 .sh-zero{opacity:.55}
+.mk-fold{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;border-radius:4px}
+.mk-fold:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.mk-fold:hover{color:var(--accent)}
+.mk-car::before{content:"▾";display:inline-block;width:1em;font-size:.8em;color:var(--muted)}
+.mk-fold[aria-expanded="false"] .mk-car::before{content:"▸"}
+#view-shop.fold-offers #shop-offers .of-panel > :not(:first-child){display:none}
+#view-shop.fold-offers #shop-offers .of-hrow > :not(:first-child){display:none}
+#view-shop.fold-overview #shop-summary > :not(:first-child){display:none}
+#view-shop.fold-list #sh-filtp,#view-shop.fold-list #shop-body{display:none}
+#view-shop.fold-friends #mkf-filtp,#view-shop.fold-friends #mk-frlist{display:none}
+#mk-friends{margin-top:8px}
+#mk-friends .mk-hrow{margin-top:22px}
 </style>
 
 <div class="wrap" id="app">
@@ -790,6 +802,20 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
       <div id="shop-tools"></div>
     </div>
     <div id="shop-body"></div>
+    </div>
+    <div id="mk-friends">
+      <div class="mk-hrow"><h2 class="mk-h"><button type="button" class="mk-fold" data-fold="friends" aria-expanded="true"><span class="mk-car" aria-hidden="true"></span>Friends' Shopping Lists</button></h2><span class="meta" id="mkf-count"></span></div>
+      <div class="panel sh-filt" id="mkf-filtp" role="search" aria-label="Filter your friends' shopping lists">
+        <div class="frow">
+          <input class="search" id="mkf-q" type="search" placeholder="Search your friends' shopping lists, e.g. Jinx" aria-label="Search your friends' shopping lists" autocomplete="off">
+          <select id="mkf-dom" aria-label="Domain"><option value="">All domains</option></select>
+          <select id="mkf-type" aria-label="Card type"><option value="">All types</option></select>
+          <select id="mkf-rar" aria-label="Rarity"><option value="">All rarities</option></select>
+          <button class="btn reset" id="mkf-reset" type="button" disabled>Reset filters</button>
+        </div>
+        <div class="frow"><select id="mkf-sort" aria-label="Sort the cards in friends' shopping lists"><option value="">Sort: list order</option><option value="set">Sort: set order</option><option value="name">Sort: name A–Z</option><option value="price">Sort: price, high to low</option></select><span class="meta">Card size</span><div class="seg sizeseg" role="group" aria-label="Card size"><button id="mkfs-s" aria-pressed="false" title="Small cards">S</button><button id="mkfs-m" aria-pressed="false" title="Medium cards">M</button><button id="mkfs-l" aria-pressed="false" title="Large cards">L</button></div></div>
+      </div>
+      <div class="frlist" id="mk-frlist"></div>
     </div>
   </section>
 
@@ -1349,7 +1375,7 @@ function showTab(t){
   if (t === "packs"){ renderPack(); setTimeout(() => $("qa-q").focus(), 0); }
   if (t === "decks") renderDecks();
   if (t === "wish") renderWish();
-  if (t === "shop") renderShop();
+  if (t === "shop"){ renderShop(); renderFriends(); }
   if (t === "friends") renderFriends();
   LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined});
 }
@@ -1573,6 +1599,41 @@ function renderDecks(){
       <button class="btn primary" id="dk-addgo">Add</button><span class="meta" id="dk-addmsg" aria-live="polite"></span></form>`;
   if (!$("dk-names")) document.body.insertAdjacentHTML("beforeend", `<datalist id="dk-names">${Object.values(groups).map(g => `<option value="${esc(g[0].name)}">`).join("")}</datalist>`);
 }
+// ---- Marketplace: fold / unfold a section by tapping its header
+const mkFold = Object.assign({}, LS.get("rb-mk-fold") || {});
+function mkFoldBtn(k, html){ return `<button type="button" class="mk-fold" data-fold="${k}" aria-expanded="${!mkFold[k]}"><span class="mk-car" aria-hidden="true"></span>${html}</button>`; }
+function mkFoldSync(){
+  const v = $("view-shop");
+  ["offers", "overview", "list", "friends"].forEach(k => { v.classList.toggle("fold-" + k, !!mkFold[k]); v.querySelectorAll(`[data-fold="${k}"]`).forEach(b => b.setAttribute("aria-expanded", !mkFold[k])); });
+}
+$("view-shop").addEventListener("click", e => { const b = e.target.closest("[data-fold]"); if (!b) return; mkFold[b.dataset.fold] = !mkFold[b.dataset.fold]; LS.set("rb-mk-fold", mkFold); mkFoldSync(); });
+mkFoldSync();
+// ---- Marketplace: friends' shopping lists. They're built by the Friends tab code (renderFriends), then moved here, so
+// every listener that used to sit on #fr-list sits on both lists (frListen).
+function mkGoFriend(){
+  if (mkFold.friends){ mkFold.friends = false; LS.set("rb-mk-fold", mkFold); mkFoldSync(); }
+  showTab("shop"); setTimeout(() => { const b = document.querySelector("#mk-frlist .frdeck.new"); if (b) b.scrollIntoView({block: "start", behavior: "smooth"}); }, 400);
+}
+function frListen(type, fn, opt){ ["fr-list", "mk-frlist"].forEach(id => $(id).addEventListener(type, fn, opt)); }
+const mkf = {q: "", dom: "", type: "", rar: ""};
+function mkfOn(){ return !!(mkf.q || mkf.dom || mkf.type || mkf.rar); }
+function mkfMatch(x){ const c = frCard(x.key), nm = !mkf.q || norm(x.name).includes(norm(mkf.q));
+  if (!c) return nm && !mkf.dom && !mkf.type && !mkf.rar;
+  return nm && (!mkf.dom || (c.domains || []).includes(mkf.dom)) && (!mkf.type || c.type === mkf.type) && (!mkf.rar || c.rarity === mkf.rar); }
+function mkFriendsFill(shops){
+  const box = $("mk-frlist"); box.innerHTML = "";
+  if (shops.length) shops.forEach(a => box.append(a));
+  else box.innerHTML = mkfOn() ? `<div class="empty">No cards on your friends' shopping lists match these filters. <button class="btn" id="mkf-clear">Reset filters</button></div>`
+    : `<div class="empty">No friends' shopping lists yet. When a friend sends you a link to their shopping list, open it (or paste it in the <b>Friends</b> tab) and it shows up here, where you can send them an offer.</div>`;
+  $("mkf-count").textContent = shops.length ? `${shops.length} list${shops.length === 1 ? "" : "s"}` : "";
+}
+function mkfReset(){ Object.assign(mkf, {q: "", dom: "", type: "", rar: ""}); $("mkf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("mkf-" + k).value = ""); $("mkf-reset").disabled = true; renderFriends(); }
+let mkfT; $("mkf-q").addEventListener("input", e => { mkf.q = e.target.value.trim(); $("mkf-reset").disabled = !mkfOn(); clearTimeout(mkfT); mkfT = setTimeout(renderFriends, 150); });
+["dom", "type", "rar"].forEach(k => $("mkf-" + k).addEventListener("change", e => { mkf[k] = e.target.value; $("mkf-reset").disabled = !mkfOn(); renderFriends(); }));
+$("mkf-reset").addEventListener("click", mkfReset);
+$("mk-frlist").addEventListener("click", e => { if (e.target.id === "mkf-clear") mkfReset(); });
+$("mkf-sort").addEventListener("change", e => { st.frsort = e.target.value; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); renderFriends(); });
+["s","m","l"].forEach(k => $("mkfs-" + k).addEventListener("click", () => { st.size = k; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); frSize(); }));
 // ---- Marketplace filters for your shopping list (this visit only, not saved)
 const shf = {q: "", dom: "", type: "", rar: ""};
 function shfOn(){ return !!(shf.q || shf.dom || shf.type || shf.rar); }
@@ -1585,8 +1646,9 @@ function shfOpts(){
   const fill = (id, vals) => $(id).insertAdjacentHTML("beforeend", vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join(""));
   fill("shf-dom", uniq(c => c.domains || [])); fill("shf-type", uniq(c => [c.type]));
   fill("shf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
+  fill("mkf-dom", uniq(c => c.domains || [])); fill("mkf-type", uniq(c => [c.type])); fill("mkf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
 }
-function shopHead(n, all){ return `<div class="mk-hrow"><h2 class="mk-h">My Shopping List</h2>${all && shfOn() ? `<span class="meta">Showing ${n} of ${all} card${all === 1 ? "" : "s"}</span>` : ""}</div>`; }
+function shopHead(n, all){ return `<div class="mk-hrow"><h2 class="mk-h">${mkFoldBtn("list", "My Shopping List")}</h2>${all && shfOn() ? `<span class="meta">Showing ${n} of ${all} card${all === 1 ? "" : "s"}</span>` : ""}</div>`; }
 function shfReset(){ Object.assign(shf, {q: "", dom: "", type: "", rar: ""}); $("shf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("shf-" + k).value = ""); $("shf-reset").disabled = true; renderShop(); }
 $("shf-q").addEventListener("input", e => { shf.q = e.target.value.trim(); $("shf-reset").disabled = !shfOn(); renderShop(); });
 ["dom", "type", "rar"].forEach(k => $("shf-" + k).addEventListener("change", e => { shf[k] = e.target.value; $("shf-reset").disabled = !shfOn(); renderShop(); }));
@@ -1638,14 +1700,14 @@ function shopRowHTML(x, view, size){
 function renderShop(){
   const P = shopP(), all = allDecks(), view = st.sview === "grid" ? "grid" : "list", size = ["s","m","l"].includes(st.size) ? st.size : "m";
   if (!all.length && !Object.keys(P.extra || {}).length){
-    $("shop-summary").innerHTML = `<h3 class="of-h">Shopping List Overview</h3><p class="meta">Add a deck in <b>My Decks</b> and every card it still needs goes on your shopping list, after the cards in your collection. You can also add single cards just below, or tap <b>🛒 Buy</b> on any card in Collection.</p><div class="frow"><button class="btn primary" id="sh-go-decks">Go to My Decks</button></div>`;
+    $("shop-summary").innerHTML = `<h3 class="of-h">${mkFoldBtn("overview", "Shopping List Overview")}</h3><p class="meta">Add a deck in <b>My Decks</b> and every card it still needs goes on your shopping list, after the cards in your collection. You can also add single cards just below, or tap <b>🛒 Buy</b> on any card in Collection.</p><div class="frow"><button class="btn primary" id="sh-go-decks">Go to My Decks</button></div>`;
     $("shop-head").innerHTML = shopHead(0, 0); $("shop-tools").innerHTML = ""; $("sh-filtp").hidden = true;
     $("shop-body").innerHTML = `<div class="empty">Your shopping list is empty.</div>`; renderOffers(); loadOffers(); return;
   }
   const {items, decks, unknown} = shopItems(), skip = new Set(P.skip || []);
   const copies = items.reduce((a, x) => a + x.buy, 0), cost = items.reduce((a, x) => a + x.cost, 0), unpriced = items.filter(x => !x.cheap).length;
   const perDeck = d => { const s = dkStats(d); return s.need - s.have ? `${esc(money(s.cost))} to finish` : "complete"; };
-  $("shop-summary").innerHTML = `<h3 class="of-h">Shopping List Overview</h3>
+  $("shop-summary").innerHTML = `<h3 class="of-h">${mkFoldBtn("overview", "Shopping List Overview")}</h3>
     <p class="meta">Every card your decks still need, after the cards in your collection, plus cards you added. Use <b>−</b> and <b>+</b> to change how many to buy. Tap <b>+ Collected 1</b> when you get one: it's added to your collection and comes off this list.</p>
     <div class="dk-tiles">
       <div class="dk-stat"><span class="collect-k">Cards to buy</span><span class="v">${copies}</span><small>${copies ? `cop${copies === 1 ? "y" : "ies"} across ${items.filter(x => x.buy).length} different card${items.filter(x => x.buy).length === 1 ? "" : "s"}` : "Nothing left to buy"}</small></div>
@@ -1761,12 +1823,12 @@ function offerHTML(o){
 }
 function renderOffers(){
   const box = $("shop-offers");
-  const note = t => `<div class="panel of-panel"><h2 class="of-h mk-h">Incoming Offers</h2><p class="meta">${t}</p></div>`;
+  const note = t => `<div class="panel of-panel"><h2 class="of-h mk-h">${mkFoldBtn("offers", "Incoming Offers")}</h2><p class="meta">${t}</p></div>`;
   if (!cloudUser){ box.innerHTML = note("Sign in and share your shopping list, and friends can send you offers on the cards you need. They show up here."); return; }
   if (!shopP().shared && !(offers && offers.length)){ box.innerHTML = note("No offers yet. Share your shopping list (below) and friends can tick the cards they have and send you an offer: money, a trade, anything. It shows up here with their name."); return; }
   if (offersOff){ box.innerHTML = note("Offers need a quick database update before friends can send them. The site owner has the steps."); return; }
   if (!offers){ box.innerHTML = note("Checking for offers…"); return; }
-  box.innerHTML = `<div class="panel of-panel"><div class="of-hrow"><h2 class="of-h mk-h">Incoming Offers <small>${offers.length}</small></h2><span class="frow"><button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="Play a coin sound when a new offer comes in">${offerSound() ? "🔔 Sound on" : "🔕 Sound off"}</button><button class="btn" id="of-refresh">Check for new offers</button></span></div>
+  box.innerHTML = `<div class="panel of-panel"><div class="of-hrow"><h2 class="of-h mk-h">${mkFoldBtn("offers", `Incoming Offers <small>${offers.length}</small>`)}</h2><span class="frow"><button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="Play a coin sound when a new offer comes in">${offerSound() ? "🔔 Sound on" : "🔕 Sound off"}</button><button class="btn" id="of-refresh">Check for new offers</button></span></div>
     ${offers.length ? offers.map(offerHTML).join("") : `<p class="meta">No offers yet. When a friend opens your shopping list link, they can tick the cards they have and send you an offer: money, a trade, anything. It shows up here with their name.</p>`}</div>`;
 }
 $("shop-offers").addEventListener("input", e => { if (e.target.dataset.ofd) ownerDraft[e.target.dataset.ofd] = e.target.value; });
@@ -1866,9 +1928,9 @@ function myOffersHTML(listTok){
       ${open ? `<div class="of-reply"><input data-mo="text" maxlength="200" value="${esc(moDraft[o.reply_token] || "")}" placeholder="${last === "owner" ? "Reply to their counter offer…" : "Add a message…"}" aria-label="Your reply"><button class="btn" data-mo="reply">Send reply</button>${last === "owner" ? '<button class="btn ok" data-mo="accept">Accept their counter</button>' : ""}<button class="btn" data-mo="withdraw">${moArm === o.reply_token ? "Tap again to withdraw" : "Withdraw"}</button></div><p class="msg" data-mo-msg aria-live="polite"></p>` : ""}
     </div>`; }).join("")}</div>`;
 }
-$("fr-list").addEventListener("input", e => { if (e.target.dataset.mo === "text") moDraft[e.target.closest(".mo-card").dataset.reply] = e.target.value; });
-$("fr-list").addEventListener("keydown", e => { if (e.target.dataset.mo === "text" && e.key === "Enter"){ e.preventDefault(); e.target.closest(".mo-card").querySelector('[data-mo="reply"]').click(); } });
-$("fr-list").addEventListener("click", async e => {
+frListen("input", e => { if (e.target.dataset.mo === "text") moDraft[e.target.closest(".mo-card").dataset.reply] = e.target.value; });
+frListen("keydown", e => { if (e.target.dataset.mo === "text" && e.key === "Enter"){ e.preventDefault(); e.target.closest(".mo-card").querySelector('[data-mo="reply"]').click(); } });
+frListen("click", async e => {
   const b = e.target.closest("button[data-mo]"); if (!b) return;
   const card = b.closest(".mo-card"), code = card.dataset.reply, act = b.dataset.mo, msg = card.querySelector("[data-mo-msg]"), text = (moDraft[code] || "").trim();
   if (act === "withdraw" && moArm !== code){ moArm = code; renderFriends(); return; }
@@ -1908,8 +1970,8 @@ async function tradeAdd(input, i){
   await renderFriends();
   const again = document.querySelector(`.of-body[data-tok="${CSS.escape(tok)}"] [data-of="tq"]`); if (again) again.focus();
 }
-$("fr-list").addEventListener("input", e => { if (e.target.dataset.of === "tq") tradeSuggest(e.target); });
-$("fr-list").addEventListener("keydown", e => {
+frListen("input", e => { if (e.target.dataset.of === "tq") tradeSuggest(e.target); });
+frListen("keydown", e => {
   if (e.target.dataset.of !== "tq") return;
   const S = offerOf(e.target.closest(".of-body").dataset.tok), n = (S.tsug || []).length;
   if (e.key === "ArrowDown" && n){ S.tsel = (S.tsel + 1) % n; tradeDraw(e.target); e.preventDefault(); }
@@ -1917,8 +1979,8 @@ $("fr-list").addEventListener("keydown", e => {
   else if (e.key === "Enter"){ e.preventDefault(); tradeAdd(e.target, S.tsel || 0); }
   else if (e.key === "Escape"){ e.target.value = ""; S.tsug = []; tradeDraw(e.target); }
 });
-$("fr-list").addEventListener("mousedown", e => { const li = e.target.closest(".of-trade .sug li"); if (li){ e.preventDefault(); tradeAdd(li.closest(".of-trade").querySelector('[data-of="tq"]'), +li.dataset.i); } });
-$("fr-list").addEventListener("click", e => {
+frListen("mousedown", e => { const li = e.target.closest(".of-trade .sug li"); if (li){ e.preventDefault(); tradeAdd(li.closest(".of-trade").querySelector('[data-of="tq"]'), +li.dataset.i); } });
+frListen("click", e => {
   const b = e.target.closest("button[data-tx]"); if (!b) return;
   const S = offerOf(b.closest(".of-body").dataset.tok), id = b.dataset.tx;
   S.trade[id] = b.dataset.d === "x" ? 0 : Math.max(0, Math.min(99, (S.trade[id] || 0) + +b.dataset.d));
@@ -1954,18 +2016,18 @@ function frShopBody(r, rows, mine){
         <p class="msg${S.ok ? " ok" : ""}" data-of-msg aria-live="polite">${esc(S.msg || "")}</p></div>`;
   return `<div class="frbody of-body" data-tok="${esc(r.share_token)}">${mine ? "" : `<p class="meta of-help">Have some of these? Tick <b>I have this</b> and choose how many, then write your offer (money, anything) and/or add cards you'd trade, and your name. You can follow your offer here, and the owner can send you a counter offer. Only the owner of this list sees it.</p>`}${lines}${foot}</div>`;
 }
-$("fr-list").addEventListener("change", e => {
+frListen("change", e => {
   if (e.target.dataset.of !== "pick") return;
   const body = e.target.closest(".of-body"), row = e.target.closest(".of-row"), S = offerOf(body.dataset.tok), key = row.dataset.key, need = +row.dataset.need;
   if (e.target.checked) S.sel[key] = { q: Math.min(need, Math.max(1, ownedOf(key))) };
   else delete S.sel[key];
   S.msg = ""; S.ok = false; renderFriends();
 });
-$("fr-list").addEventListener("input", e => {
+frListen("input", e => {
   const of = e.target.dataset.of; if (of !== "offer" && of !== "name") return;
   offerOf(e.target.closest(".of-body").dataset.tok)[of] = e.target.value;
 });
-$("fr-list").addEventListener("click", async e => {
+frListen("click", async e => {
   const b = e.target.closest("button[data-of]"); if (!b) return;
   const body = b.closest(".of-body"), tok = body.dataset.tok, S = offerOf(tok);
   if (b.dataset.of === "q"){ const row = b.closest(".of-row"), p = S.sel[row.dataset.key]; if (p){ p.q = Math.max(1, Math.min(+row.dataset.need, p.q + +b.dataset.d)); renderFriends(); } return; }
@@ -2495,9 +2557,12 @@ async function loadShareProfile(){
 // split the shared lists into "Friends' Decks" and "Wish Lists"
 function groupFriends(){
   const list = $("fr-list"), arts = [...list.querySelectorAll(":scope > article.frdeck")];
-  if (!arts.length) return;
   const isWish = a => (a.querySelector("h3") || {}).textContent.trim().startsWith("♥"), isShop = a => (a.querySelector("h3") || {}).textContent.trim().startsWith("🛒");
   const wishes = arts.filter(isWish), shops = arts.filter(isShop), decks = arts.filter(a => !isWish(a) && !isShop(a)), q = $("fr-q").value.trim();
+  // two renders can overlap (e.g. opening a link); if an earlier one already sorted this list, leave it alone
+  if (!arts.length && list.querySelector(":scope > .frsec")) return;
+  mkFriendsFill(shops);
+  if (!arts.length) return;
   list.innerHTML = "";
   const section = (title, items, none) => {
     const h = document.createElement("h2"); h.className = "frsec"; h.innerHTML = `${title} <small>${items.length}</small>`; list.append(h);
@@ -2506,7 +2571,7 @@ function groupFriends(){
   };
   section("Friends' Decks", decks, q ? "No shared decks match this search." : "No deck links saved yet.");
   section("Wish Lists", wishes, q ? "No shared wish lists match this search." : "No wish list links saved yet.");
-  if (shops.length || !q) section("Shopping Lists", shops, q ? "No shared shopping lists match this search." : "No shopping list links saved yet.");
+  if (shops.length){ const p = document.createElement("p"); p.className = "meta frnone"; p.innerHTML = `Your friends' shopping lists (${shops.length}) are in the <b>Marketplace</b> tab, where you can send them offers.`; list.append(p); }
 }
 function frSortRows(rows){
   const by = st.frsort, cardIx = x => { const c = frCard(x.key); return c ? CARDS.indexOf(c) : 1e9; }, price = x => { const c = cheapestOf(x.key); return c ? c.price : -1; };
@@ -2519,7 +2584,8 @@ $("fr-sort").addEventListener("change", e => { st.frsort = e.target.value; LS.se
 function frSize(){
   const z = ["s","m","l"].includes(st.size) ? st.size : "m";
   $("fr-sort").value = st.frsort || "";
-  ["s","m","l"].forEach(k => { $("frs-" + k).setAttribute("aria-pressed", k === z); $("fr-list").classList.toggle("frsz-" + k, k === z); });
+  ["s","m","l"].forEach(k => { $("frs-" + k).setAttribute("aria-pressed", k === z); $("fr-list").classList.toggle("frsz-" + k, k === z); $("mkfs-" + k).setAttribute("aria-pressed", k === z); $("mk-frlist").classList.toggle("frsz-" + k, k === z); });
+  $("mkf-sort").value = st.frsort || "";
 }
 ["s","m","l"].forEach(k => $("frs-" + k).addEventListener("click", () => { st.size = k; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); frSize(); }));
 async function renderFriends(){ frSize(); await renderFriendsList(); groupFriends(); }
@@ -2564,7 +2630,7 @@ async function renderFriendsList(){
     const hits = words.length ? rows.filter(x => words.every(w => x.key.includes(w))) : [];
     const ok = !words.length || words.every(w => hay.includes(w));
     return { r, deck, secs, rows, hits, ok };
-  }).filter(x => x.ok);
+  }).filter(x => x.ok || x.r.deck_id === "__shop__");
   const dead = frMissing.length ? `<span class="frdead">${frMissing.length} saved link${frMissing.length === 1 ? " no longer works" : "s no longer work"}. The owner stopped sharing ${frMissing.length === 1 ? "it" : "them"}. <button class="btn" id="fr-prune">Remove</button></span>` : "";
   $("fr-count").innerHTML = (frCache.length ? `${items.length} of ${frCache.length} shared list${frCache.length===1?"":"s"}` : "") + dead;
   if (!frCache.length){ list.innerHTML = `<div class="empty">None of your saved links work any more. Ask your friend for a new link.</div>`; return; }
@@ -2572,9 +2638,11 @@ async function renderFriendsList(){
   list.innerHTML = items.map(({ r, deck, secs, rows, hits }) => {
     if (r.deck_id === "__wish__" || r.deck_id === "__shop__"){
       const shop = r.deck_id === "__shop__";
-      const mine = !!r.is_mine, open = frOpen.has(r.id);
+      const fRows = shop && mkfOn() ? rows.filter(mkfMatch) : rows;
+      if (shop && mkfOn() && !fRows.length) return "";
+      const mine = !!r.is_mine, open = frOpen.has(r.id) || (shop && mkfOn());
       const canGive = rows.filter(x => ownedOf(x.key) > 0);
-      const body = shop ? (open ? frShopBody(r, rows, mine) : "") : open ? `<div class="frbody">${frSortRows(rows).map(x => { const own = ownedOf(x.key); return `<div class="frrow"${frCardAttr(x.key)}>${frThumb(x.key)}<span class="q">${x.q}×</span><span class="frn">${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${own ? "ok" : "no"}">${own ? `✓ you have ${own}` : "you don't have it"}</span></div>`; }).join("")}</div>` : "";
+      const body = shop ? (open ? frShopBody(r, fRows, mine) : "") : open ? `<div class="frbody">${frSortRows(rows).map(x => { const own = ownedOf(x.key); return `<div class="frrow"${frCardAttr(x.key)}>${frThumb(x.key)}<span class="q">${x.q}×</span><span class="frn">${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${own ? "ok" : "no"}">${own ? `✓ you have ${own}` : "you don't have it"}</span></div>`; }).join("")}</div>` : "";
       return `<article class="frdeck${r.share_token === frFocus ? " new" : ""}" data-id="${esc(r.id)}">
         <div class="frhead"><div><h3>${shop ? "🛒" : "♥"} ${esc(r.name)}</h3><span class="meta">updated ${esc(fmtDate(String(r.updated_at).slice(0,10)))}</span></div>${mine ? `<span class="tag ok">Your ${shop ? "shopping" : "wish"} list</span>` : ""}</div>
         <div class="frstats"><span>${shop ? "Needs" : "Wants"} <b>${rows.length}</b> card${rows.length === 1 ? "" : "s"}${shop ? ` (${rows.reduce((a, x) => a + x.q, 0)} copies) for their decks` : ""}</span><span>${canGive.length ? `You have <b>${canGive.length}</b> of them to trade` : "You don't have any of them yet"}</span></div>
@@ -2601,7 +2669,7 @@ async function renderFriendsList(){
 const frCard = key => cheapestOf(key) || (groups[key] || [])[0] || CARDS.find(c => norm(c.name) === key) || null;   // tokens aren't in groups
 const frCardAttr = key => { const c = frCard(key); return c ? ` data-card="${esc(c.id)}" title="Show ${esc(c.name)}"` : ""; };
 const frThumb = key => { const c = frCard(key); return c ? thumbHTML(c, 160) : '<span class="thumb none" aria-hidden="true">No<br>image</span>'; };
-$("fr-list").addEventListener("click", e => {
+frListen("click", e => {
   const row = e.target.closest(".frrow[data-card]"); if (!row || e.target.closest("a, button, input, label, .of-ctl")) return;
   openCard(byId[row.dataset.card]);
 });
@@ -2612,9 +2680,9 @@ $("fr-add-form").addEventListener("submit", e => {
   const t = tokenFrom($("fr-add").value);
   if (!t){ $("fr-add-msg").textContent = "That doesn't look like a share link. Copy the whole link your friend sent, starting with https://"; return; }
   $("fr-add-msg").textContent = savedLinks().includes(t) ? "You already have that link. It's highlighted below." : "Added.";
-  $("fr-add").value = ""; addLink(t, true); renderFriends().then(() => { const a = document.querySelector(".frdeck.new"); if (a) a.scrollIntoView({block: "center"}); });
+  $("fr-add").value = ""; addLink(t, true); renderFriends().then(() => { const a = document.querySelector(".frdeck.new"); if (a && a.closest("#mk-frlist")){ $("fr-add-msg").textContent = "Added. It's a shopping list, so it's in the Marketplace tab."; return; } if (a) a.scrollIntoView({block: "center"}); });
 });
-$("fr-list").addEventListener("click", e => {
+frListen("click", e => {
   if (e.target.id === "fr-signin"){ $("acct-in").click(); return; }
   const b = e.target.closest("button[data-act]"); if (!b) return;
   const art = b.closest(".frdeck"), id = art.dataset.id, r = (frCache || frLast).find(x => x.id === id); if (!r) return;
@@ -2631,14 +2699,14 @@ async function loadShareTokens(){
   if (error && /share_token/i.test(error.message || "")){ linksOff = true; return; }
   if (cloudUser === me) (data || []).forEach(r => { if (r.share_token) shareTok[r.deck_id] = r.share_token; });
 }
-sb_onSignedIn = () => { loadShareProfile(); loadShareTokens(); loadOffers(true); setTimeout(() => loadMyOffers(true), 800); frCache = null; if (st.tab === "friends") renderFriends(); };
+sb_onSignedIn = () => { loadShareProfile(); loadShareTokens(); loadOffers(true); setTimeout(() => loadMyOffers(true), 800); frCache = null; if (st.tab === "friends" || st.tab === "shop") renderFriends(); };
 syncControls(); render(); showTab(["collection","packs","decks","friends","wish","shop"].includes(st.tab) ? st.tab : "collection"); connect(); cloudInit(); showAcct();
 function openSharedFromURL(){
   const t = tokenFrom(location.hash); if (!t) return;
   addLink(t, true);
   try { history.replaceState(null, "", location.pathname + location.search); } catch(e){}
   showTab("friends");
-  renderFriends().then(() => { const a = document.querySelector(".frdeck.new"); if (a) a.scrollIntoView({block: "start", behavior: "smooth"}); });
+  renderFriends().then(() => { const a = document.querySelector(".frdeck.new"); if (a && a.closest("#mk-frlist")) return mkGoFriend(); if (a) a.scrollIntoView({block: "start", behavior: "smooth"}); });
 }
 openSharedFromURL();
 addEventListener("hashchange", openSharedFromURL);
