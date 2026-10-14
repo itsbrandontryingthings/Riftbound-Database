@@ -478,6 +478,21 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
   .dkl-l .dk-card .thumb{max-width:260px;justify-self:center}
   .dk-stat .v{font-size:19px}
 }
+.frbody{gap:4px}
+.frrow{display:grid;grid-template-columns:38px 2.2em minmax(0,1fr) auto auto;gap:4px 10px;align-items:center;padding:4px 6px;border-radius:8px}
+.frrow[data-card]{cursor:zoom-in}
+.frrow[data-card]:hover{background:var(--row)}
+.frrow .frn{overflow-wrap:anywhere}
+.frrow .ok,.frrow .no{white-space:nowrap;justify-self:end}
+.frrow .pill.ban{justify-self:start}
+.frrow:not(:has(.pill.ban)){grid-template-columns:38px 2.2em minmax(0,1fr) auto}
+@media (max-width:520px){
+  .frrow,.frrow:not(:has(.pill.ban)){grid-template-columns:34px 2em minmax(0,1fr)}
+  .frrow .ok,.frrow .no,.frrow .pill.ban{grid-column:3;justify-self:start}
+  .frrow .thumb{grid-row:span 2;align-self:start}
+  .frrow .q{align-self:start;padding-top:2px}
+  .frrow .frn{align-self:end}
+}
 </style>
 
 <div class="wrap" id="app">
@@ -1818,7 +1833,7 @@ async function renderFriendsList(){
     if (r.deck_id === "__wish__"){
       const mine = !!r.is_mine, open = frOpen.has(r.id);
       const canGive = rows.filter(x => ownedOf(x.key) > 0);
-      const body = open ? `<div class="frbody">${rows.map(x => { const own = ownedOf(x.key); return `<div class="frrow"><span class="q">${x.q}×</span><span>${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${own ? "ok" : "no"}">${own ? `✓ you have ${own}` : "you don't have it"}</span></div>`; }).join("")}</div>` : "";
+      const body = open ? `<div class="frbody">${rows.map(x => { const own = ownedOf(x.key); return `<div class="frrow"${frCardAttr(x.key)}>${frThumb(x.key)}<span class="q">${x.q}×</span><span class="frn">${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${own ? "ok" : "no"}">${own ? `✓ you have ${own}` : "you don't have it"}</span></div>`; }).join("")}</div>` : "";
       return `<article class="frdeck${r.share_token === frFocus ? " new" : ""}" data-id="${esc(r.id)}">
         <div class="frhead"><div><h3>♥ ${esc(r.name)}</h3><span class="meta">updated ${esc(fmtDate(String(r.updated_at).slice(0,10)))}</span></div>${mine ? '<span class="tag ok">Your wish list</span>' : ""}</div>
         <div class="frstats"><span>Wants <b>${rows.length}</b> card${rows.length === 1 ? "" : "s"}</span><span>${canGive.length ? `You have <b>${canGive.length}</b> of them to trade` : "You don't have any of them yet"}</span></div>
@@ -1831,7 +1846,7 @@ async function renderFriendsList(){
     const legendSec = secs.find(x => /legend/i.test(x.label)), legend = legendSec && legendSec.rows[0] ? legendSec.rows[0].name : "";
     const banned = new Set(rows.filter(x => (groups[x.key]||[]).some(c => c.ban === "std")).map(x => x.key)).size;
     const open = frOpen.has(r.id);
-    const body = open ? `<div class="frbody">${s.secs.map(sec => `<h4>${esc(sec.label)}</h4>${sec.rows.map(x => `<div class="frrow"><span class="q">${x.q}×</span><span>${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${x.miss ? "no" : "ok"}">${x.miss ? `you have ${x.h}` : "✓ you have it"}</span></div>`).join("")}`).join("")}</div>` : "";
+    const body = open ? `<div class="frbody">${s.secs.map(sec => `<h4>${esc(sec.label)}</h4>${sec.rows.map(x => `<div class="frrow"${frCardAttr(x.key)}>${frThumb(x.key)}<span class="q">${x.q}×</span><span class="frn">${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${x.miss ? "no" : "ok"}">${x.miss ? `you have ${x.h}` : `✓ you have ${ownedOf(x.key)}`}</span></div>`).join("")}`).join("")}</div>` : "";
     return `<article class="frdeck${r.share_token === frFocus ? " new" : ""}" data-id="${esc(r.id)}">
       <div class="frhead"><div><h3>${esc(r.name)}</h3><span class="meta">updated ${esc(fmtDate(String(r.updated_at).slice(0,10)))}</span></div>${mine ? '<span class="tag ok">Your deck</span>' : ""}${banned ? `<span class="tag ban">⚠ ${banned} banned</span>` : ""}</div>
       <div class="frstats">${legend ? `<span>Legend: <b>${esc(legend)}</b></span>` : ""}<span>You own <b>${s.have} / ${s.need}</b></span><span>${s.need - s.have ? `<b>${esc(money(s.cost))}</b> to finish` : "<b>You own every card</b>"}</span></div>
@@ -1841,6 +1856,13 @@ async function renderFriendsList(){
     </article>`;
   }).join("");
 }
+const frCard = key => cheapestOf(key) || (groups[key] || [])[0] || CARDS.find(c => norm(c.name) === key) || null;   // tokens aren't in groups
+const frCardAttr = key => { const c = frCard(key); return c ? ` data-card="${esc(c.id)}" title="Show ${esc(c.name)}"` : ""; };
+const frThumb = key => { const c = frCard(key); return c ? thumbHTML(c, 160) : '<span class="thumb none" aria-hidden="true">No<br>image</span>'; };
+$("fr-list").addEventListener("click", e => {
+  const row = e.target.closest(".frrow[data-card]"); if (!row || e.target.closest("a, button")) return;
+  openCard(byId[row.dataset.card]);
+});
 let frT; $("fr-q").addEventListener("input", () => { clearTimeout(frT); frT = setTimeout(renderFriends, 150); });
 $("fr-count").addEventListener("click", e => { if (e.target.id === "fr-prune"){ setLinks(savedLinks().filter(t => !frMissing.includes(t))); frMissing = []; frCache = null; renderFriends(); } });
 $("fr-add-form").addEventListener("submit", e => {
