@@ -1751,17 +1751,27 @@ function audioCtx(){
 function coinChime(){
   const a = audioCtx(); if (!a || a.state !== "running") return;
   const t = a.currentTime + 0.02;
-  // soft, bubbly notes that each slide up a little ("bloop-bloop-bling")
-  const note = (f, at, dur, vol, type) => {
-    const o = a.createOscillator(), g = a.createGain();
-    o.type = type; o.frequency.setValueAtTime(f * 0.82, t + at); o.frequency.exponentialRampToValueAtTime(f, t + at + 0.045);
-    g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol, t + at + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
-    o.connect(g); g.connect(a.destination); o.start(t + at); o.stop(t + at + dur + 0.05);
+  // a tiny, squeaky Ewok-ish "yub-nub-ee!": a buzzy voice shaped into vowels by two filters (the mouth),
+  // with a fast flutter in the pitch so it chatters
+  const out = a.createDynamicsCompressor(); out.connect(a.destination);
+  const syl = (at, dur, f0a, f0b, f1, f2, vol) => {
+    const o = a.createOscillator(), lfo = a.createOscillator(), depth = a.createGain(), g = a.createGain();
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(f0a, t + at); o.frequency.exponentialRampToValueAtTime(f0b, t + at + dur);
+    lfo.frequency.value = 19; depth.gain.value = f0a * 0.06; lfo.connect(depth); depth.connect(o.frequency);
+    for (const [f, q, lv] of [[f1, 7, 1], [f2, 9, 0.6]]){
+      const bp = a.createBiquadFilter(), fg = a.createGain();
+      bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = q; fg.gain.value = lv;
+      o.connect(bp); bp.connect(fg); fg.connect(g);
+    }
+    g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol, t + at + 0.018);
+    g.gain.setValueAtTime(vol, t + at + dur * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+    g.connect(out);
+    o.start(t + at); lfo.start(t + at); o.stop(t + at + dur + 0.05); lfo.stop(t + at + dur + 0.05);
   };
-  note(1046.5, 0, 0.13, 0.12, "sine");        // C6 "bloop"
-  note(1318.5, 0.09, 0.13, 0.12, "sine");     // E6 "bloop"
-  note(2093, 0.18, 0.45, 0.11, "sine");       // C7 "bling"
-  note(4186, 0.18, 0.3, 0.018, "triangle");   // a little sparkle on top
+  syl(0,    0.15, 520, 720, 420, 950, 0.55);    // "yub" (rises)
+  syl(0.17, 0.17, 760, 600, 450, 1000, 0.55);   // "nub" (falls)
+  syl(0.37, 0.16, 880, 1250, 320, 2600, 0.45);  // "ee!" (squeaks up)
 }
 // check for offers every minute while the page is open (and when you come back to it)
 const offerPoll = () => { if (cloudUser && sb && shopP().shared && document.visibilityState === "visible") loadOffers(true); };
