@@ -509,8 +509,8 @@ function konbiniChime(){
       o.connect(g); g.connect(dry); o.start(t + at); o.stop(t + at + d + 0.05);
     }
   };
-  // ding-dong, ding-dong… then a bright two-note ending: G5 E5 C5 E5 · A5 G5 · C6 E6
-  [[784, 0], [659, 0.19], [523, 0.38], [659, 0.57], [880, 0.86], [784, 1.05], [1047, 1.34], [1319, 1.53]]
+  // ding-dong, ding-dong… then a bright two-note ending: D5 B4 G4 B4 · E5 D5 · G5 B5 (a fourth lower than at first)
+  [[587, 0], [494, 0.19], [392, 0.38], [494, 0.57], [659, 0.86], [587, 1.05], [784, 1.34], [988, 1.53]]
     .forEach(([f, at], i) => note(f, at, i === 7 ? 1.6 : 0.9, i >= 6 ? 0.2 : 0.17));
 }
 function poroCoin(){
