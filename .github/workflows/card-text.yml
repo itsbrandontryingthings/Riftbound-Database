@@ -1,0 +1,25 @@
+name: Card text
+# Refreshes text.js (rules text, stats, flavour, artists) from Riftcodex every Monday, or when run by hand.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 14 * * 1"
+  push:
+    branches: [main]
+    paths: [tools/fetch_text.py, .github/workflows/card-text.yml]
+permissions:
+  contents: write
+jobs:
+  text:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python3 tools/fetch_text.py text.js
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add text.js
+          git diff --cached --quiet || (git commit -m "Update card text from Riftcodex" && git pull --rebase -q origin main && git push)
