@@ -6,8 +6,8 @@
   sort / size / layout buttons, then the cards. The tab's click / change listeners sit on #shop-wrap around all three.
 - Sharing a shopping list starts with a blank name and a note asking for one friends will recognise.
 - Collection: a 🛒 Buy button next to ♡ Want on every card (list, grid and the enlarged preview). It adds one copy of
-  that printing to the shopping list (wish._shop.extra, the same as Add a Card); tap again to take it off. Hovering it
-  shows − n + to pick how many (on phones, which can't hover, − n + shows once the card is on the list).
+  that printing to the shopping list (wish._shop.extra, the same as Add a Card); tap again to take it off. Once a card
+  is on the list, a − n + sits right beside 🛒 (always shown, no hovering) to pick how many.
 - Each shopping list card: "To buy" − / + (deck cards keep the change in wish._shop.adj), "Need N · Have N", the decks
   that use it with their counts, and "+ Collected 1" (was "+ Bought 1"), which adds one to your collection and takes
   one off "to buy"; the collection, totals, decks and shared list all update from that.
@@ -39,12 +39,12 @@ rep('</style>\n\n<div class="wrap" id="app">', '''.mk-h{font-family:var(--displa
 .shopq.over{position:absolute;top:10px;right:46px;z-index:3}
 .shopq .wishbtn.shopbtn.over{position:static;font-size:14px}
 .wishbtn.shopbtn.over[aria-pressed="true"]{color:#5fd08a}
-.shopstep{display:none;position:absolute;left:0;top:100%;z-index:6;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px;box-shadow:0 6px 18px rgb(0 0 0 / .45);white-space:nowrap}
-.shopstep button{width:26px;height:26px}
-.shopstep output{min-width:22px;text-align:center}
-.shopq.over .shopstep{left:auto;right:calc(100% + 2px);top:0}
-.shopq:hover .shopstep,.shopq:focus-within .shopstep{display:inline-flex;align-items:center}
-@media (hover:none){.shopq.on .shopstep{display:inline-flex;align-items:center;position:static;box-shadow:none;margin-left:4px}.shopq.over.on .shopstep{order:-1;margin:0 4px 0 0;background:rgb(10 12 18 / .85)}}
+.shopstep{display:none;align-items:center;margin-left:4px;background:var(--panel);border:1px solid color-mix(in srgb,#5fd08a 45%,var(--line));border-radius:8px;padding:1px;white-space:nowrap}
+.shopq.on .shopstep{display:inline-flex}
+.shopq:not(.over){flex-wrap:wrap;row-gap:4px;max-width:100%}
+.shopstep button{width:28px;height:28px;font-size:16px}
+.shopstep output{min-width:22px;text-align:center;font-weight:700}
+.shopq.over.on .shopstep{order:-1;margin:0 4px 0 0;background:rgb(10 12 18 / .88)}
 </style>
 
 <div class="wrap" id="app">''')
@@ -153,7 +153,7 @@ rep('''shareTarget === "shop" ? (shopP().name || "My Shopping List") : (shareDec
 # ---------- 🛒 Buy button beside ♡ Want on every card; hover it (or, on a phone, once it's on the list) for − n +
 rep('''function wishBtn(c, over){ const on = !!wish[c.id];''', '''const shopN = id => +(((wish._shop || {}).extra || {})[id]) || 0;
 const shopLbl = (n, over) => over ? "🛒" : n ? `🛒 ${n} on list` : "🛒 Buy";
-const shopTip = n => n ? `${n} on your shopping list (tap to remove, or use − + to change)` : "Add to your shopping list (hover for − + to pick how many)";
+const shopTip = n => n ? `${n} on your shopping list (use − + to change, or tap to take it off)` : "Add to your shopping list";
 function shopBtn(c, over){ const n = shopN(c.id);
   return `<span class="shopq${over ? " over" : ""}${n ? " on" : ""}" data-sq="${esc(c.id)}"><button class="wishbtn shopbtn${over ? " over" : ""}" data-shopadd="${esc(c.id)}" aria-pressed="${n > 0}" title="${shopTip(n)}" aria-label="${n ? "Remove " + esc(c.name) + " from" : "Add " + esc(c.name) + " to"} your shopping list">${shopLbl(n, over)}</button><span class="step shopstep" role="group" aria-label="Copies of ${esc(c.name)} on your shopping list"><button data-shopq="-1" aria-label="One fewer" ${n ? "" : "disabled"}>−</button><output>${n}</output><button data-shopq="1" aria-label="One more" ${n >= 99 ? "disabled" : ""}>+</button></span></span>`; }
 function wishBtn(c, over){ return wishBtn0(c, over) + shopBtn(c, over); }
