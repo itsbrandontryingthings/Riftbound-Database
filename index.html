@@ -590,7 +590,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .of-lab small{color:var(--muted);font-weight:400}
 .of-trade .qa-box .search{font-size:15px;padding:9px 12px}
 .of-chips{display:flex;flex-wrap:wrap;gap:6px}
-.of-chip{display:inline-grid;grid-template-columns:30px auto auto auto;gap:8px;align-items:center;background:var(--row);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:8px;padding:4px 6px}
+.of-chip{display:inline-grid;grid-template-columns:48px auto auto auto;gap:8px;align-items:center;background:var(--row);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:8px;padding:4px 6px}
 .of-chn{display:grid;font-size:13.5px;line-height:1.2}
 .of-chn small{font-size:11.5px;color:var(--muted)}
 .of-chip .step button{width:28px;height:28px}
@@ -634,6 +634,13 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 #view-shop.fold-friends #mkf-filtp,#view-shop.fold-friends #mk-frlist{display:none}
 #mk-friends{margin-top:8px}
 #mk-friends .mk-hrow{margin-top:22px}
+.of-card.folded > :not(.of-top){display:none}
+.of-preview{flex-basis:100%;display:grid;gap:6px;background:color-mix(in srgb,var(--accent) 6%,var(--row));border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:10px;padding:10px 12px}
+.of-pv{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.of-pvc{position:relative;display:grid;gap:4px;align-content:start}
+.of-pvc small{font-size:12px;line-height:1.25;color:var(--fg)}
+.of-pvq{position:absolute;top:6px;left:6px;z-index:3;background:rgb(10 12 18 / .85);color:#fff;font-weight:700;font-size:13px;border-radius:6px;padding:1px 7px;pointer-events:none}
+@media (max-width:520px){.of-pv{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
 
 <div class="wrap" id="app">
@@ -807,7 +814,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
       <div class="mk-hrow"><h2 class="mk-h"><button type="button" class="mk-fold" data-fold="friends" aria-expanded="true"><span class="mk-car" aria-hidden="true"></span>Friends' Shopping Lists</button></h2><span class="meta" id="mkf-count"></span></div>
       <div class="panel sh-filt" id="mkf-filtp" role="search" aria-label="Filter your friends' shopping lists">
         <div class="frow">
-          <input class="search" id="mkf-q" type="search" placeholder="Search your friends' shopping lists, e.g. Jinx" aria-label="Search your friends' shopping lists" autocomplete="off">
+          <input class="search" id="mkf-q" type="search" placeholder="Search a list name or card, e.g. Sam or Jinx" aria-label="Search your friends' shopping lists by list name or card" autocomplete="off">
           <select id="mkf-dom" aria-label="Domain"><option value="">All domains</option></select>
           <select id="mkf-type" aria-label="Card type"><option value="">All types</option></select>
           <select id="mkf-rar" aria-label="Rarity"><option value="">All rarities</option></select>
@@ -1599,6 +1606,15 @@ function renderDecks(){
       <button class="btn primary" id="dk-addgo">Add</button><span class="meta" id="dk-addmsg" aria-live="polite"></span></form>`;
   if (!$("dk-names")) document.body.insertAdjacentHTML("beforeend", `<datalist id="dk-names">${Object.values(groups).map(g => `<option value="${esc(g[0].name)}">`).join("")}</datalist>`);
 }
+// ---- Marketplace: each incoming offer folds by tapping the sender's name
+const offFold = new Set(Array.isArray(LS.get("rb-offer-fold")) ? LS.get("rb-offer-fold") : []);
+$("shop-offers").addEventListener("click", e => {
+  const b = e.target.closest("[data-offold]"); if (!b) return;
+  const id = b.dataset.offold, art = b.closest(".of-card");
+  offFold.has(id) ? offFold.delete(id) : offFold.add(id);
+  if (offers) [...offFold].forEach(x => { if (!offers.some(o => o.id === x)) offFold.delete(x); });   // forget removed offers
+  LS.set("rb-offer-fold", [...offFold]); art.classList.toggle("folded", offFold.has(id)); b.setAttribute("aria-expanded", !offFold.has(id));
+}, true);
 // ---- Marketplace: fold / unfold a section by tapping its header
 const mkFold = Object.assign({}, LS.get("rb-mk-fold") || {});
 function mkFoldBtn(k, html){ return `<button type="button" class="mk-fold" data-fold="${k}" aria-expanded="${!mkFold[k]}"><span class="mk-car" aria-hidden="true"></span>${html}</button>`; }
@@ -1617,13 +1633,13 @@ function mkGoFriend(){
 function frListen(type, fn, opt){ ["fr-list", "mk-frlist"].forEach(id => $(id).addEventListener(type, fn, opt)); }
 const mkf = {q: "", dom: "", type: "", rar: ""};
 function mkfOn(){ return !!(mkf.q || mkf.dom || mkf.type || mkf.rar); }
-function mkfMatch(x){ const c = frCard(x.key), nm = !mkf.q || norm(x.name).includes(norm(mkf.q));
+function mkfMatch(x, nameHit){ const c = frCard(x.key), nm = nameHit || !mkf.q || norm(x.name).includes(norm(mkf.q));
   if (!c) return nm && !mkf.dom && !mkf.type && !mkf.rar;
   return nm && (!mkf.dom || (c.domains || []).includes(mkf.dom)) && (!mkf.type || c.type === mkf.type) && (!mkf.rar || c.rarity === mkf.rar); }
 function mkFriendsFill(shops){
   const box = $("mk-frlist"); box.innerHTML = "";
   if (shops.length) shops.forEach(a => box.append(a));
-  else box.innerHTML = mkfOn() ? `<div class="empty">No cards on your friends' shopping lists match these filters. <button class="btn" id="mkf-clear">Reset filters</button></div>`
+  else box.innerHTML = mkfOn() ? `<div class="empty">No friends' shopping lists or cards match these filters. <button class="btn" id="mkf-clear">Reset filters</button></div>`
     : `<div class="empty">No friends' shopping lists yet. When a friend sends you a link to their shopping list, open it (or paste it in the <b>Friends</b> tab) and it shows up here, where you can send them an offer.</div>`;
   $("mkf-count").textContent = shops.length ? `${shops.length} list${shops.length === 1 ? "" : "s"}` : "";
 }
@@ -1809,8 +1825,8 @@ function showOfferBadge(){
 function offerHTML(o){
   const items = Array.isArray(o.items) ? o.items : [], n = items.reduce((a, i) => a + (+i.q || 0), 0);
   const worth = items.reduce((a, i) => { const c = cheapestOf(norm(i.name)); return a + (c ? c.price * (+i.q || 0) : 0); }, 0);
-  return `<article class="of-card" data-offer="${esc(o.id)}">
-    <div class="of-top"><div>${offersNew.has(o.id) ? '<span class="of-new">New</span>' : ""}${threadsOff ? "" : statusPill(o, true)}<b class="of-from">${esc(o.from_name)}</b> <span class="meta">sent ${esc(fmtDate(String(o.created_at).slice(0, 10)))}</span></div><span class="of-sum">${n} card${n === 1 ? "" : "s"}${worth ? ` · market ${esc(money(worth))}` : ""}</span></div>
+  return `<article class="of-card${offFold.has(o.id) ? " folded" : ""}" data-offer="${esc(o.id)}">
+    <div class="of-top"><div>${offersNew.has(o.id) ? '<span class="of-new">New</span>' : ""}${threadsOff ? "" : statusPill(o, true)}<button type="button" class="mk-fold" data-offold="${esc(o.id)}" aria-expanded="${!offFold.has(o.id)}" title="Show or hide this offer"><span class="mk-car" aria-hidden="true"></span><b class="of-from">${esc(o.from_name)}</b></button> <span class="meta">sent ${esc(fmtDate(String(o.created_at).slice(0, 10)))}</span></div><span class="of-sum">${n} card${n === 1 ? "" : "s"}${worth ? ` · market ${esc(money(worth))}` : ""}</span></div>
     ${o.offer ? `<div class="of-said"><span class="collect-k">Their offer</span><span class="of-text">${esc(o.offer)}</span></div>` : ""}
     ${o.trade.length ? `<div class="of-trade-in"><span class="collect-k">They'd also trade you</span>${tradeRows(o.trade)}</div>` : ""}
     <span class="collect-k">Cards they have for you</span>
@@ -1987,6 +2003,14 @@ frListen("click", e => {
   if (!S.trade[id]) delete S.trade[id];
   renderFriends();
 });
+// the cards in your offer, as pictures: the ones you ticked (a printing you own, if you have one) and the ones you'd trade
+function offerPreview(S){
+  const give = Object.entries(S.sel || {}).map(([key, p]) => ({c: (groups[key] || []).find(c => counts[c.id]) || frCard(key), q: p.q})).filter(x => x.c);
+  const trade = Object.entries(S.trade || {}).filter(([id]) => byId[id]).map(([id, q]) => ({c: byId[id], q}));
+  if (!give.length && !trade.length) return "";
+  const tiles = list => `<div class="of-pv">${list.map(x => `<span class="of-pvc">${thumbHTML(x.c, 480)}<span class="of-pvq">${x.q}×</span><small>${esc(x.c.name)}</small></span>`).join("")}</div>`;
+  return `<div class="of-preview"><span class="of-lab">Your Offer Preview <small>(tap a card to see it bigger)</small></span>${give.length ? `<span class="collect-k">Cards you're giving them</span>${tiles(give)}` : ""}${trade.length ? `<span class="collect-k">Cards you'd trade them</span>${tiles(trade)}` : ""}</div>`;
+}
 function tradeChips(S){
   const ids = Object.keys(S.trade || {}).filter(id => byId[id]);
   return ids.length ? `<div class="of-chips">${ids.map(id => { const c = byId[id];
@@ -2009,6 +2033,7 @@ function frShopBody(r, rows, mine){
     : `<div class="of-foot"><div class="of-trade"><span class="of-lab">Cards you'd trade <small>(optional, your cards come up first)</small></span>
           <div class="qa-box"><input class="search" data-of="tq" placeholder="Add a card you'd trade, e.g. Jinx…" aria-label="Add a card you'd trade" autocomplete="off" role="combobox" aria-expanded="false"><ul class="sug" role="listbox" aria-label="Matching cards"></ul></div>
           ${tradeChips(S)}</div>
+        ${offerPreview(S)}
         <label class="of-offer">Your offer <input data-of="offer" maxlength="200" value="${esc(S.offer)}" autocomplete="off" placeholder="${Object.keys(S.trade || {}).length ? "Optional: add money or a note" : "Anything: $20, a trade, a McChicken…"}"></label>
         <label class="of-name">Your name <input data-of="name" maxlength="40" value="${esc(S.name)}" autocomplete="nickname" placeholder="So they know who it's from"></label>
         <span class="of-total">${n ? `Offering <b>${copies}</b> card${copies === 1 ? "" : "s"}` : "Tick the cards you have to make an offer."}</span>
@@ -2638,7 +2663,8 @@ async function renderFriendsList(){
   list.innerHTML = items.map(({ r, deck, secs, rows, hits }) => {
     if (r.deck_id === "__wish__" || r.deck_id === "__shop__"){
       const shop = r.deck_id === "__shop__";
-      const fRows = shop && mkfOn() ? rows.filter(mkfMatch) : rows;
+      const nameHit = shop && !!mkf.q && norm(r.name + " " + (r.owner_name || "")).includes(norm(mkf.q));
+      const fRows = shop && mkfOn() ? rows.filter(x => mkfMatch(x, nameHit)) : rows;
       if (shop && mkfOn() && !fRows.length) return "";
       const mine = !!r.is_mine, open = frOpen.has(r.id) || (shop && mkfOn());
       const canGive = rows.filter(x => ownedOf(x.key) > 0);
