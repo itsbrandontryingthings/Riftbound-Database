@@ -31,7 +31,7 @@
 - Every "Stop sharing" button (deck, wish list, shopping list) asks "Are you sure…?" first (stopShareOK).
 - Each incoming offer folds to its top line by tapping the sender's name (localStorage "rb-offer-fold").
 - Making an offer: "Your Offer Preview" shows pictures of the cards you're giving (ticked) and trading, with counts;
-  the trade chips' pictures are bigger.
+  the trade chips' pictures are bigger. "Your offers on this list" shows "Cards you're giving them" with pictures.
 Usage: patch_marketplace.py in.html out.html"""
 import sys
 
@@ -656,6 +656,14 @@ rep('</style>\n\n<div class="wrap" id="app">', '''#wish-head .mk-hrow{margin:14p
 </style>
 
 <div class="wrap" id="app">''')
+
+# ---------- "Your offers on this list" (friends' shopping lists): the cards you're giving them get pictures too,
+# like the cards you'd trade, instead of only "1 card: 1× Vilemaw" in the corner
+rep('''<span class="of-sum">${n} card${n === 1 ? "" : "s"}: ${esc((o.items || []).map(i => `${i.q}× ${i.name}`).join(", "))}</span></div>
+      ${o.offer ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${esc(o.offer)}</span></div>` : ""}''',
+    '''<span class="of-sum">Giving them ${n} card${n === 1 ? "" : "s"}</span></div>
+      ${o.offer ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${esc(o.offer)}</span></div>` : ""}
+      ${(o.items || []).length ? `<span class="collect-k">Cards you're giving them</span>${tradeRows(o.items)}` : ""}''')
 
 open(out, "w", encoding="utf-8").write(h)
 print("patch_marketplace: ok ->", out)

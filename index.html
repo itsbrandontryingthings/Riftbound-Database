@@ -2078,8 +2078,9 @@ function myOffersHTML(listTok){
   return `<div class="mo-box"><span class="collect-k">Your offers on this list</span>${mine.map(o => {
     const n = (o.items || []).reduce((a, i) => a + (+i.q || 0), 0), last = (o.thread[o.thread.length - 1] || {}).by, open = o.status === "open";
     return `<div class="mo-card" data-reply="${esc(o.reply_token)}">
-      <div class="of-top"><div>${moNew.has(o.reply_token) ? '<span class="of-new">New</span>' : ""}${statusPill(o, false)}<span class="meta">sent ${esc(fmtWhen(o.created_at))}</span></div><span class="of-sum">${n} card${n === 1 ? "" : "s"}: ${esc((o.items || []).map(i => `${i.q}× ${i.name}`).join(", "))}</span></div>
+      <div class="of-top"><div>${moNew.has(o.reply_token) ? '<span class="of-new">New</span>' : ""}${statusPill(o, false)}<span class="meta">sent ${esc(fmtWhen(o.created_at))}</span></div><span class="of-sum">Giving them ${n} card${n === 1 ? "" : "s"}</span></div>
       ${o.offer ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${esc(o.offer)}</span></div>` : ""}
+      ${(o.items || []).length ? `<span class="collect-k">Cards you're giving them</span>${tradeRows(o.items)}` : ""}
       ${o.trade.length ? `<span class="collect-k">Cards you'd trade</span>${tradeRows(o.trade)}` : ""}
       ${threadHTML(o.thread, false)}
       ${open ? `<div class="of-reply"><input data-mo="text" maxlength="200" value="${esc(moDraft[o.reply_token] || "")}" placeholder="${last === "owner" ? "Reply to their counter offer…" : "Add a message…"}" aria-label="Your reply"><button class="btn" data-mo="reply">Send reply</button>${last === "owner" ? '<button class="btn ok" data-mo="accept">Accept their counter</button>' : ""}<button class="btn" data-mo="withdraw">${moArm === o.reply_token ? "Tap again to withdraw" : "Withdraw"}</button></div><p class="msg" data-mo-msg aria-live="polite"></p>` : ""}
