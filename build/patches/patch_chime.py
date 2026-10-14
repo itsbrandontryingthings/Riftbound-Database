@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Chime for new shopping-list offers (website; runs last, after patch_fixes.py).
 - While the page is open, you're signed in and your shopping list is shared, offers are checked every minute (and
-  when you come back to the tab). An offer you haven't seen before plays a short coin "cha-ching" made with the
+  when you come back to the tab). An offer you haven't seen before plays a short, cute "bloop-bloop-bling" made with the
   Web Audio API (no sound file), and shows a "New" tag. Seen offer ids are kept in localStorage "rb-offers-seen".
 - Offers panel has a "Sound on / Sound off" button (localStorage "rb-offer-sound"); turning it on plays the chime.
 - Browsers only allow sound after you've clicked or typed on the page once, so the sound is unlocked on the
@@ -46,15 +46,17 @@ function audioCtx(){
 function coinChime(){
   const a = audioCtx(); if (!a || a.state !== "running") return;
   const t = a.currentTime + 0.02;
+  // soft, bubbly notes that each slide up a little ("bloop-bloop-bling")
   const note = (f, at, dur, vol, type) => {
     const o = a.createOscillator(), g = a.createGain();
-    o.type = type; o.frequency.setValueAtTime(f, t + at);
-    g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol, t + at + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+    o.type = type; o.frequency.setValueAtTime(f * 0.82, t + at); o.frequency.exponentialRampToValueAtTime(f, t + at + 0.045);
+    g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol, t + at + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
     o.connect(g); g.connect(a.destination); o.start(t + at); o.stop(t + at + dur + 0.05);
   };
-  note(1318.5, 0, 0.11, 0.16, "square");      // E6 "cha"
-  note(1975.5, 0.075, 0.42, 0.14, "triangle"); // B6 "ching"
-  note(3951, 0.075, 0.28, 0.035, "sine");      // sparkle on top
+  note(1046.5, 0, 0.13, 0.12, "sine");        // C6 "bloop"
+  note(1318.5, 0.09, 0.13, 0.12, "sine");     // E6 "bloop"
+  note(2093, 0.18, 0.45, 0.11, "sine");       // C7 "bling"
+  note(4186, 0.18, 0.3, 0.018, "triangle");   // a little sparkle on top
 }
 // check for offers every minute while the page is open (and when you come back to it)
 const offerPoll = () => { if (cloudUser && sb && shopP().shared && document.visibilityState === "visible") loadOffers(true); };
