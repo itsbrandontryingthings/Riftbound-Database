@@ -353,6 +353,7 @@ button.thumb:hover{border-color:var(--muted)}
 #lb .rules{font-size:15px;line-height:1.6}
 #lb .rem{color:var(--muted)}
 #lb .flav{font-style:italic;color:var(--muted)}
+#lb .who{color:var(--muted);font-size:13px;margin-top:2px;text-align:right}
 .kw{display:inline-block;font-family:var(--display);font-weight:700;font-size:12.5px;line-height:1.5;padding:0 7px;border-radius:4px;color:#fff;background:#4a6fb5;vertical-align:1px;border:0}
 .kw.t{background:#2f9a55}.kw.d{background:#8d4bb8}
 button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter:brightness(1.15)}
@@ -744,6 +745,11 @@ function openCard(c){
   try { $("lb").showModal(); } catch(e){ $("lb").setAttribute("open", ""); }
 }
 
+// flavour: a quote with "\n— Speaker" gets quote marks and the speaker underneath; other lines show as written
+function flavHTML(f){
+  const i = f.lastIndexOf("\n— "), who = i >= 0 ? f.slice(i + 3) : "", q = (i >= 0 ? f.slice(0, i) : f).replace(/^["“”]+|["“”]+$/g, "");
+  return `<div class="flav">${who ? "“" : ""}${esc(q).replace(/\n/g, "<br>")}${who ? "”" : ""}</div>${who ? `<div class="who">— ${esc(who)}</div>` : ""}`;
+}
 // ---- info sheet beside the enlarged card
 let lbCard = null;
 function renderInfo(c){
@@ -768,7 +774,7 @@ function renderInfo(c){
     ${stats ? `<div class="istats">${stats}</div>` : ""}
     <div class="istats three"><div class="st"><span class="k">Domain</span><span class="v sm">${dom}</span></div><div class="st"><span class="k">Type</span><span class="v sm">${esc(c.type)}</span></div><div class="st"><span class="k">Rarity</span><span class="v sm r-${c.rarity}">${esc(c.rarity)}</span></div></div>
     ${t.text ? `<div class="isec"><div class="k">Effect</div><div class="rules">${rulesHTML(t.text)}</div></div>` : (RBT.updated ? "" : `<div class="isec meta">Card text isn't loaded yet.</div>`)}
-    ${t.fl ? `<div class="isec"><div class="k">Flavor</div><div class="flav">“${esc(t.fl)}”</div></div>` : ""}
+    ${t.fl ? `<div class="isec"><div class="k">Flavor</div>${flavHTML(t.fl)}</div>` : ""}
     ${kws.length ? `<div class="isec"><div class="k">Keywords</div><div class="kws">${kws.map(k => `<button class="${kwClass(k)}" data-kwf="${esc(k)}" title="Show every card with ${esc(k)}">${esc(k)}</button>`).join("")}</div></div>` : ""}
     ${t.tags.length ? `<div class="isec"><div class="k">Tags</div><div class="kws">${t.tags.map(g => `<button class="tagc" data-tgf="${esc(g)}" title="Show every card tagged ${esc(g)}">${esc(g)}</button>`).join("")}</div></div>` : ""}
     <div class="iboxes">${priceBox}${mine}</div>`;
