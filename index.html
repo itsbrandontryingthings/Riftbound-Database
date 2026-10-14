@@ -597,6 +597,16 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .mo-box{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:8px}
 .mo-card{display:grid;gap:8px;background:var(--row);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .mo-card .msg{margin:0;font-size:13.5px;color:var(--fury)} .mo-card .msg:empty{display:none}
+.mk-h{font-family:var(--display);font-size:22px;margin:0}
+.of-panel > .mk-h{margin-bottom:6px}
+.mk-hrow{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:18px 0 6px}
+.sh-filt{display:grid;gap:8px}
+.sh-filt .frow{margin:0}
+.sh-filt .search{flex:1 1 220px;min-width:0}
+#shop-body > .dk-tools{margin-top:0}
+.shopbtn[aria-pressed="true"]{color:#5fd08a;border-color:color-mix(in srgb,#5fd08a 55%,var(--line));background:color-mix(in srgb,#5fd08a 12%,transparent)}
+.wishbtn.shopbtn.over{right:46px;font-size:14px}
+.wishbtn.shopbtn.over[aria-pressed="true"]{color:#5fd08a}
 </style>
 
 <div class="wrap" id="app">
@@ -630,7 +640,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
     <button role="tab" id="t-packs" aria-selected="false" aria-controls="view-packs">Open Packs</button>
     <button role="tab" id="t-decks" aria-selected="false" aria-controls="view-decks">My Decks</button>
     <button role="tab" id="t-wish" aria-selected="false" aria-controls="view-wish">Wish List</button>
-    <button role="tab" id="t-shop" aria-selected="false" aria-controls="view-shop">Shopping List</button>
+    <button role="tab" id="t-shop" aria-selected="false" aria-controls="view-shop">Marketplace</button>
     <button role="tab" id="t-friends" aria-selected="false" aria-controls="view-friends">Friends</button>
   </nav>
 
@@ -723,6 +733,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
     <h2 id="share-title">Share This Deck</h2>
     <p class="meta" id="share-intro">You'll get a private link to send to friends. Only people with the link can see it, under the name below. It isn't listed anywhere, and your email is never shown.</p>
     <label><span id="share-name-label">Name This Shared Deck</span> <input id="share-name" maxlength="40" autocomplete="off" required></label>
+    <p class="meta" id="share-name-note" hidden>Name your shopping list so your friends can easily tell whose it is, e.g. "Sam's Kai'Sa Deck".</p>
     <p class="msg" id="share-msg" aria-live="polite"></p>
     <div class="frow"><button type="submit" class="btn primary" id="share-go">Create link</button><button type="button" class="btn" id="share-x">Cancel</button></div>
   </form>
@@ -740,6 +751,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
   </section>
 
   <section class="view" id="view-shop" role="tabpanel" aria-labelledby="t-shop" hidden>
+    <div id="shop-offers"></div>
     <div class="panel" id="shop-summary"></div>
     <div class="panel sh-addp">
       <h3 class="of-h">Add a Card</h3>
@@ -750,7 +762,16 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
       </div>
       <p class="meta" id="sh-addmsg" aria-live="polite"></p>
     </div>
-    <div id="shop-offers"></div>
+    <div class="panel sh-filt" role="search" aria-label="Filter your shopping list">
+      <h3 class="of-h">Filters</h3>
+      <div class="frow">
+        <input class="search" id="shf-q" type="search" placeholder="Search your shopping list, e.g. Jinx" aria-label="Search your shopping list" autocomplete="off">
+        <select id="shf-dom" aria-label="Domain"><option value="">All domains</option></select>
+        <select id="shf-type" aria-label="Card type"><option value="">All types</option></select>
+        <select id="shf-rar" aria-label="Rarity"><option value="">All rarities</option></select>
+        <button class="btn reset" id="shf-reset" type="button" disabled>Reset filters</button>
+      </div>
+    </div>
     <div id="shop-body"></div>
   </section>
 
@@ -838,7 +859,10 @@ counts = LS.get("rb-counts") || {};
 let wish = LS.get("rb-wish") || {};          // card id -> copies wanted; wish._shared = shared with friends
 const wishIds = () => Object.keys(wish).filter(k => k[0] !== "_" && wish[k] > 0);
 function saveWish(){ LS.set("rb-wish", wish); if (typeof cloudSave === "function") cloudSave(); if (typeof syncShared === "function") syncShared(); }
-function wishBtn(c, over){ const on = !!wish[c.id]; return `<button class="wishbtn${over ? " over" : ""}" data-wish="${esc(c.id)}" aria-pressed="${on}" title="${on ? "On your wish list (tap to remove)" : "Add to your wish list"}" aria-label="${on ? "Remove " + esc(c.name) + " from" : "Add " + esc(c.name) + " to"} your wish list">${on ? "♥" : "♡"}${over ? "" : (on ? " Wanted" : " Want")}</button>`; }
+function shopBtn(c, over){ const on = !!(((wish._shop || {}).extra || {})[c.id] > 0);
+  return `<button class="wishbtn shopbtn${over ? " over" : ""}" data-shopadd="${esc(c.id)}" aria-pressed="${on}" title="${on ? "On your shopping list (tap to remove)" : "Add to your shopping list"}" aria-label="${on ? "Remove " + esc(c.name) + " from" : "Add " + esc(c.name) + " to"} your shopping list">🛒${over ? "" : (on ? " On list" : " Buy")}</button>`; }
+function wishBtn(c, over){ return wishBtn0(c, over) + shopBtn(c, over); }
+function wishBtn0(c, over){ const on = !!wish[c.id]; return `<button class="wishbtn${over ? " over" : ""}" data-wish="${esc(c.id)}" aria-pressed="${on}" title="${on ? "On your wish list (tap to remove)" : "Add to your wish list"}" aria-label="${on ? "Remove " + esc(c.name) + " from" : "Add " + esc(c.name) + " to"} your wish list">${on ? "♥" : "♡"}${over ? "" : (on ? " Wanted" : " Want")}</button>`; }
 const savedF = LS.get("rb-filters"); if (savedF) { Object.assign(st, savedF, {doms:new Set(savedF.doms||[]), limit:PAGE}); }
 const PHONE = () => matchMedia("(max-width:640px)").matches;
 if (st.view !== "grid" && st.view !== "list") st.view = PHONE() ? "grid" : "list";
@@ -1154,8 +1178,18 @@ document.addEventListener("click", e => {
   const id = b.dataset.wish;
   if (wish[id]) delete wish[id]; else wish[id] = 1;
   saveWish();
-  document.querySelectorAll(`button[data-wish="${CSS.escape(id)}"]`).forEach(x => { x.outerHTML = wishBtn(byId[id], x.classList.contains("over")); });
+  document.querySelectorAll(`button[data-wish="${CSS.escape(id)}"]`).forEach(x => { x.outerHTML = wishBtn0(byId[id], x.classList.contains("over")); });
   if (st.tab === "wish") renderWish();
+}, true);
+// 🛒 on any card: one copy of that printing on the shopping list, or off again
+document.addEventListener("click", e => {
+  const b = e.target.closest("button[data-shopadd]"); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const id = b.dataset.shopadd, P = wish._shop || {}, ex = {...(P.extra || {})};
+  if (ex[id] > 0) delete ex[id]; else ex[id] = 1;
+  wish._shop = {...P, extra: ex}; saveWish();
+  document.querySelectorAll(`button[data-shopadd="${CSS.escape(id)}"]`).forEach(x => { x.outerHTML = shopBtn(byId[id], x.classList.contains("over")); });
+  if (st.tab === "shop") renderShop();
 }, true);
 let shown = [];
 function renderList(){
@@ -1501,6 +1535,25 @@ function renderDecks(){
       <button class="btn primary" id="dk-addgo">Add</button><span class="meta" id="dk-addmsg" aria-live="polite"></span></form>`;
   if (!$("dk-names")) document.body.insertAdjacentHTML("beforeend", `<datalist id="dk-names">${Object.values(groups).map(g => `<option value="${esc(g[0].name)}">`).join("")}</datalist>`);
 }
+// ---- Marketplace filters for your shopping list (this visit only, not saved)
+const shf = {q: "", dom: "", type: "", rar: ""};
+function shfOn(){ return !!(shf.q || shf.dom || shf.type || shf.rar); }
+function shfMatch(x){ const c = x.show;
+  return (!shf.q || norm(x.name).includes(norm(shf.q))) && (!shf.dom || (c.domains || []).includes(shf.dom)) && (!shf.type || c.type === shf.type) && (!shf.rar || c.rarity === shf.rar); }
+let shfReady = false;
+function shfOpts(){
+  if (shfReady) return; shfReady = true;
+  const uniq = f => [...new Set(CARDS.flatMap(f))].filter(Boolean).sort();
+  const fill = (id, vals) => $(id).insertAdjacentHTML("beforeend", vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join(""));
+  fill("shf-dom", uniq(c => c.domains || [])); fill("shf-type", uniq(c => [c.type]));
+  fill("shf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
+}
+function shopHead(n, all){ return `<div class="mk-hrow"><h2 class="mk-h">My Shopping List</h2>${all && shfOn() ? `<span class="meta">Showing ${n} of ${all} card${all === 1 ? "" : "s"}</span>` : ""}</div>`; }
+function shfReset(){ Object.assign(shf, {q: "", dom: "", type: "", rar: ""}); $("shf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("shf-" + k).value = ""); $("shf-reset").disabled = true; renderShop(); }
+$("shf-q").addEventListener("input", e => { shf.q = e.target.value.trim(); $("shf-reset").disabled = !shfOn(); renderShop(); });
+["dom", "type", "rar"].forEach(k => $("shf-" + k).addEventListener("change", e => { shf[k] = e.target.value; $("shf-reset").disabled = !shfOn(); renderShop(); }));
+$("shf-reset").addEventListener("click", shfReset);
+$("shop-body").addEventListener("click", e => { if (e.target.id === "shf-clear") shfReset(); });
 // ---- Shopping List: what your decks still need after your collection
 const shopP = () => wish._shop || {};
 function setShop(ch){ wish._shop = {...shopP(), ...ch}; saveWish(); renderShop(); }
@@ -1544,14 +1597,14 @@ function shopRowHTML(x, view, size){
 function renderShop(){
   const P = shopP(), all = allDecks(), view = st.sview === "grid" ? "grid" : "list", size = ["s","m","l"].includes(st.size) ? st.size : "m";
   if (!all.length && !Object.keys(P.extra || {}).length){
-    $("shop-summary").innerHTML = `<h2>Shopping List</h2><p class="meta">Add a deck in <b>My Decks</b> and every card it still needs shows up here, after the cards in your collection. You can also add single cards just below.</p><div class="frow"><button class="btn primary" id="sh-go-decks">Go to My Decks</button></div>`;
-    $("shop-body").innerHTML = ""; return;
+    $("shop-summary").innerHTML = `<h3 class="of-h">Shopping List Overview</h3><p class="meta">Add a deck in <b>My Decks</b> and every card it still needs goes on your shopping list, after the cards in your collection. You can also add single cards just below, or tap <b>🛒 Buy</b> on any card in Collection.</p><div class="frow"><button class="btn primary" id="sh-go-decks">Go to My Decks</button></div>`;
+    $("shop-body").innerHTML = shopHead(0, 0) + `<div class="empty">Your shopping list is empty.</div>`; renderOffers(); loadOffers(); return;
   }
   const {items, decks, unknown} = shopItems(), skip = new Set(P.skip || []);
   const copies = items.reduce((a, x) => a + x.buy, 0), cost = items.reduce((a, x) => a + x.cost, 0), unpriced = items.filter(x => !x.cheap).length;
   const perDeck = d => { const s = dkStats(d); return s.need - s.have ? `${esc(money(s.cost))} to finish` : "complete"; };
-  $("shop-summary").innerHTML = `<h2>Shopping List</h2>
-    <p class="meta">Every card your decks still need, after the cards in your collection. Tap a picture to see the card; tap <b>+ Bought 1</b> when you get one and it's added to your collection.</p>
+  $("shop-summary").innerHTML = `<h3 class="of-h">Shopping List Overview</h3>
+    <p class="meta">Every card your decks still need, after the cards in your collection, plus cards you added. Tap a picture to see the card; tap <b>+ Bought 1</b> when you get one and it's added to your collection.</p>
     <div class="dk-tiles">
       <div class="dk-stat"><span class="collect-k">Cards to buy</span><span class="v">${copies}</span><small>${copies ? `cop${copies === 1 ? "y" : "ies"} across ${items.length} different card${items.length === 1 ? "" : "s"}` : "Nothing left to buy"}</small></div>
       <div class="dk-stat"><span class="collect-k">Total cost</span><span class="v${cost ? " warn" : ""}">${moneyHTML(cost)}</span><small>Cheapest printing of each${unpriced ? ` · ${unpriced} without a price` : ""}</small></div>
@@ -1561,7 +1614,7 @@ function renderShop(){
     <div class="sh-decksel" role="group" aria-label="Decks to shop for">${all.map(d => `<button data-deck="${esc(d.id)}" aria-pressed="${!skip.has(d.id)}"><b>${esc(d.name)}</b><small>${perDeck(d)}</small></button>`).join("")}</div>
     <div class="frow">
       <button class="btn" id="sh-copy" ${items.length ? "" : "disabled"}>Copy shopping list</button>
-      ${P.shared ? `<span class="tag ok">✓ Shared by link</span><button class="btn" id="sh-link">Copy share link</button><button class="btn" id="sh-unshare">Stop sharing</button>` : `<button class="btn" id="sh-share" ${items.length ? "" : "disabled"}>Share with friends</button>`}
+      ${P.shared ? `<span class="tag ok">✓ Shared by link</span><button class="btn" id="sh-link">Copy share link</button><button class="btn" id="sh-unshare">Stop sharing</button>` : `<button class="btn primary" id="sh-share" ${items.length ? "" : "disabled"}>Share my shopping list</button>`}
     </div>
     ${unknown ? `<p class="meta">${unknown} card name${unknown === 1 ? " in your decks isn't" : "s in your decks aren't"} in the database, so ${unknown === 1 ? "it's" : "they're"} not on this list. Check the spelling in My Decks.</p>` : ""}`;
   const tools = `<div class="dk-tools" role="toolbar" aria-label="How to show the shopping list">
@@ -1571,9 +1624,11 @@ function renderShop(){
       <select id="sh-sort" aria-label="Sort"><option value="cost" ${(P.sort || "cost") === "cost" ? "selected" : ""}>Sort: cost, high to low</option><option value="name" ${P.sort === "name" ? "selected" : ""}>Sort: name</option><option value="set" ${P.sort === "set" ? "selected" : ""}>Sort: set order</option></select>
       <label class="chk"><input type="checkbox" id="sh-side" ${P.noSide ? "" : "checked"}> Include sideboards</label>
     </div>`;
-  renderOffers(); loadOffers();
-  $("shop-body").innerHTML = tools + (items.length
-    ? `<div class="${view === "grid" ? `list grid dkg${size !== "s" ? " sz-" + size : ""}` : "dkl dkl-" + size}">${items.map(x => shopRowHTML(x, view, size)).join("")}</div>`
+  renderOffers(); loadOffers(); shfOpts();
+  const vis = items.filter(shfMatch);
+  $("shop-body").innerHTML = tools + shopHead(vis.length, items.length) + (items.length ? (vis.length
+    ? `<div class="${view === "grid" ? `list grid dkg${size !== "s" ? " sz-" + size : ""}` : "dkl dkl-" + size}">${vis.map(x => shopRowHTML(x, view, size)).join("")}</div>`
+    : `<div class="empty">No cards on your shopping list match these filters. <button class="btn" id="shf-clear">Reset filters</button></div>`)
     : `<div class="empty">✓ You have every card ${decks.length === 1 ? "this deck needs" : decks.length ? "these decks need" : "… pick at least one deck above"}.</div>`);
 }
 $("shop-summary").addEventListener("click", e => {
@@ -1633,7 +1688,7 @@ async function loadOffers(force){
 }
 function showOfferBadge(){
   const n = offers ? offers.filter(o => o.status === "open" && (o.thread[o.thread.length - 1] || {by: "them"}).by === "them").length : 0;
-  $("t-shop").innerHTML = `Shopping List${n ? `<span class="fcount" title="${n} offer${n === 1 ? "" : "s"} waiting">${n}</span>` : ""}`;
+  $("t-shop").innerHTML = `Marketplace${n ? `<span class="fcount" title="${n} offer${n === 1 ? "" : "s"} waiting">${n}</span>` : ""}`;
 }
 function offerHTML(o){
   const items = Array.isArray(o.items) ? o.items : [], n = items.reduce((a, i) => a + (+i.q || 0), 0);
@@ -1652,10 +1707,12 @@ function offerHTML(o){
 }
 function renderOffers(){
   const box = $("shop-offers");
-  if (!cloudUser || (!shopP().shared && !(offers && offers.length))){ box.innerHTML = ""; return; }
-  if (offersOff){ box.innerHTML = `<div class="panel of-panel"><h3 class="of-h">Offers</h3><p class="meta">Offers need a quick database update before friends can send them. The site owner has the steps.</p></div>`; return; }
-  if (!offers){ box.innerHTML = ""; return; }
-  box.innerHTML = `<div class="panel of-panel"><div class="of-hrow"><h3 class="of-h">Offers <small>${offers.length}</small></h3><span class="frow"><button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="Play a coin sound when a new offer comes in">${offerSound() ? "🔔 Sound on" : "🔕 Sound off"}</button><button class="btn" id="of-refresh">Check for new offers</button></span></div>
+  const note = t => `<div class="panel of-panel"><h2 class="of-h mk-h">Incoming Offers</h2><p class="meta">${t}</p></div>`;
+  if (!cloudUser){ box.innerHTML = note("Sign in and share your shopping list, and friends can send you offers on the cards you need. They show up here."); return; }
+  if (!shopP().shared && !(offers && offers.length)){ box.innerHTML = note("No offers yet. Share your shopping list (below) and friends can tick the cards they have and send you an offer: money, a trade, anything. It shows up here with their name."); return; }
+  if (offersOff){ box.innerHTML = note("Offers need a quick database update before friends can send them. The site owner has the steps."); return; }
+  if (!offers){ box.innerHTML = note("Checking for offers…"); return; }
+  box.innerHTML = `<div class="panel of-panel"><div class="of-hrow"><h2 class="of-h mk-h">Incoming Offers <small>${offers.length}</small></h2><span class="frow"><button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="Play a coin sound when a new offer comes in">${offerSound() ? "🔔 Sound on" : "🔕 Sound off"}</button><button class="btn" id="of-refresh">Check for new offers</button></span></div>
     ${offers.length ? offers.map(offerHTML).join("") : `<p class="meta">No offers yet. When a friend opens your shopping list link, they can tick the cards they have and send you an offer: money, a trade, anything. It shows up here with their name.</p>`}</div>`;
 }
 $("shop-offers").addEventListener("input", e => { if (e.target.dataset.ofd) ownerDraft[e.target.dataset.ofd] = e.target.value; });
@@ -1832,7 +1889,7 @@ function frShopBody(r, rows, mine){
     return `<div class="frrow of-row${pick ? " on" : ""}" data-key="${esc(x.key)}" data-need="${x.q}"${frCardAttr(x.key)}>${frThumb(x.key)}<span class="q">${x.q}×</span><span class="frn">${esc(x.name)}${cardSub(x.key)}</span><span class="${own ? "ok" : "no"}">${own ? `✓ you have ${own}` : "you don't have it"}</span>${ctl}</div>`;
   }).join("");
   const n = Object.keys(S.sel).length, copies = Object.values(S.sel).reduce((a, p) => a + p.q, 0);
-  const foot = mine ? `<p class="meta">This is your shopping list. Offers friends send show up in your Shopping List tab.</p>`
+  const foot = mine ? `<p class="meta">This is your shopping list. Offers friends send show up in your Marketplace tab.</p>`
     : `<div class="of-foot"><div class="of-trade"><span class="of-lab">Cards you'd trade <small>(optional, your cards come up first)</small></span>
           <div class="qa-box"><input class="search" data-of="tq" placeholder="Add a card you'd trade, e.g. Jinx…" aria-label="Add a card you'd trade" autocomplete="off" role="combobox" aria-expanded="false"><ul class="sug" role="listbox" aria-label="Matching cards"></ul></div>
           ${tradeChips(S)}</div>
@@ -2329,7 +2386,8 @@ function openShare(target){
   const already = shareTarget === "wish" ? !!wish._shared : shareTarget === "shop" ? !!shopP().shared : !!(customDecks.find(x => x.id === curDeck) || {}).shared;
   if (already) return openShareLink();
   $("share-form").hidden = false; $("share-done").hidden = true;
-  $("share-name").value = shareTarget === "wish" ? (wish._shareName || "My Wish List") : shareTarget === "shop" ? (shopP().name || "My Shopping List") : (shareDeckName(customDecks.find(x => x.id === curDeck)) || ""); $("share-msg").textContent = "";
+  $("share-name").value = shareTarget === "wish" ? (wish._shareName || "My Wish List") : shareTarget === "shop" ? (shopP().name || "") : (shareDeckName(customDecks.find(x => x.id === curDeck)) || ""); $("share-msg").textContent = "";
+  $("share-name").placeholder = shareTarget === "shop" ? "Name your shopping list" : ""; $("share-name-note").hidden = shareTarget !== "shop";
   try { $("share").showModal(); } catch(e){ $("share").setAttribute("open", ""); }
   $("share-name").focus();
 }
