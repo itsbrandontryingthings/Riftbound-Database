@@ -6,8 +6,9 @@
   sort / size / layout buttons, then the cards. The tab's click / change listeners sit on #shop-wrap around all three.
 - Sharing a shopping list starts with a blank name and a note asking for one friends will recognise.
 - Collection: a 🛒 Buy button next to ♡ Want on every card (list, grid and the enlarged preview). It adds one copy of
-  that printing to the shopping list (wish._shop.extra, the same as Add a Card); tap again to take it off. Once a card
-  is on the list, a − n + sits right beside 🛒 (always shown, no hovering) to pick how many.
+  that printing to the shopping list (wish._shop.extra, the same as Add a Card); every tap adds one more (up to 99) and
+  the button shows how many are on the list, and a note pops up at the bottom ("✓ Gust added to your shopping list ·
+  3 on it", updated on each tap). Lower or remove it in Marketplace.
 - Each shopping list card: "To buy" − / + (deck cards keep the change in wish._shop.adj), "Need N · Have N", the decks
   that use it with their counts, and "+ Collected 1" (was "+ Bought 1"), which adds one to your collection and takes
   one off "to buy"; the collection, totals, decks and shared list all update from that.
@@ -39,12 +40,13 @@ rep('</style>\n\n<div class="wrap" id="app">', '''.mk-h{font-family:var(--displa
 .shopq.over{position:absolute;top:10px;right:46px;z-index:3}
 .shopq .wishbtn.shopbtn.over{position:static;font-size:14px}
 .wishbtn.shopbtn.over[aria-pressed="true"]{color:#5fd08a}
-.shopstep{display:none;align-items:center;margin-left:4px;background:var(--panel);border:1px solid color-mix(in srgb,#5fd08a 45%,var(--line));border-radius:8px;padding:1px;white-space:nowrap}
-.shopq.on .shopstep{display:inline-flex}
-.shopq:not(.over){flex-wrap:wrap;row-gap:4px;max-width:100%}
-.shopstep button{width:28px;height:28px;font-size:16px}
-.shopstep output{min-width:22px;text-align:center;font-weight:700}
-.shopq.over.on .shopstep{order:-1;margin:0 4px 0 0;background:rgb(10 12 18 / .88)}
+.shopq.over.on .wishbtn.shopbtn{width:auto;padding:0 9px}
+#shop-toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,16px);z-index:1000;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;background:#14231a;color:#e8f6ec;border:1px solid #5fd08a;border-radius:10px;padding:10px 16px;font-size:14px;box-shadow:0 10px 28px rgb(0 0 0 / .5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+#shop-toast.show{opacity:1;transform:translate(-50%,0)}
+#shop-toast.bump{animation:shopbump .25s}
+#shop-toast b{color:#5fd08a}
+@keyframes shopbump{40%{transform:translate(-50%,0) scale(1.04)}}
+@media (prefers-reduced-motion: reduce){#shop-toast,#shop-toast.bump{transition:none;animation:none}}
 </style>
 
 <div class="wrap" id="app">''')
@@ -150,12 +152,12 @@ rep('''shareTarget === "shop" ? (shopP().name || "My Shopping List") : (shareDec
     '''shareTarget === "shop" ? (shopP().name || "") : (shareDeckName(customDecks.find(x => x.id === curDeck)) || ""); $("share-msg").textContent = "";
   $("share-name").placeholder = shareTarget === "shop" ? "Name your shopping list" : ""; $("share-name-note").hidden = shareTarget !== "shop";''')
 
-# ---------- 🛒 Buy button beside ♡ Want on every card; hover it (or, on a phone, once it's on the list) for − n +
+# ---------- 🛒 Buy button beside ♡ Want on every card: each tap adds one more copy (change or remove in Marketplace)
 rep('''function wishBtn(c, over){ const on = !!wish[c.id];''', '''const shopN = id => +(((wish._shop || {}).extra || {})[id]) || 0;
-const shopLbl = (n, over) => over ? "🛒" : n ? `🛒 ${n} on list` : "🛒 Buy";
-const shopTip = n => n ? `${n} on your shopping list (use − + to change, or tap to take it off)` : "Add to your shopping list";
+const shopLbl = (n, over) => over ? (n ? `🛒 ${n}` : "🛒") : n ? `🛒 ${n} on list` : "🛒 Buy";
+const shopTip = n => (n ? `${n} on your shopping list. ` : "") + "Tap to add one more. Change how many in Marketplace.";
 function shopBtn(c, over){ const n = shopN(c.id);
-  return `<span class="shopq${over ? " over" : ""}${n ? " on" : ""}" data-sq="${esc(c.id)}"><button class="wishbtn shopbtn${over ? " over" : ""}" data-shopadd="${esc(c.id)}" aria-pressed="${n > 0}" title="${shopTip(n)}" aria-label="${n ? "Remove " + esc(c.name) + " from" : "Add " + esc(c.name) + " to"} your shopping list">${shopLbl(n, over)}</button><span class="step shopstep" role="group" aria-label="Copies of ${esc(c.name)} on your shopping list"><button data-shopq="-1" aria-label="One fewer" ${n ? "" : "disabled"}>−</button><output>${n}</output><button data-shopq="1" aria-label="One more" ${n >= 99 ? "disabled" : ""}>+</button></span></span>`; }
+  return `<span class="shopq${over ? " over" : ""}${n ? " on" : ""}" data-sq="${esc(c.id)}"><button class="wishbtn shopbtn${over ? " over" : ""}" data-shopadd="${esc(c.id)}" aria-pressed="${n > 0}" title="${shopTip(n)}" aria-label="Add one ${esc(c.name)} to your shopping list${n ? ` (${n} on it now)` : ""}">${shopLbl(n, over)}</button></span>`; }
 function wishBtn(c, over){ return wishBtn0(c, over) + shopBtn(c, over); }
 function wishBtn0(c, over){ const on = !!wish[c.id];''')
 rep('''x.outerHTML = wishBtn(byId[id], x.classList.contains("over")); });
@@ -163,8 +165,7 @@ rep('''x.outerHTML = wishBtn(byId[id], x.classList.contains("over")); });
 }, true);''', '''x.outerHTML = wishBtn0(byId[id], x.classList.contains("over")); });
   if (st.tab === "wish") renderWish();
 }, true);
-// 🛒 on any card: tap = one copy of that printing on the shopping list (or off again); − / + = how many.
-// The buttons are updated in place (not redrawn) so the − + box stays open under the pointer.
+// 🛒 on any card: every tap puts one more copy of that printing on the shopping list (up to 99)
 function setShopN(id, q){
   const P = wish._shop || {}, ex = {...(P.extra || {})}, c = byId[id];
   if (q > 0) ex[id] = Math.min(99, q); else delete ex[id];
@@ -173,16 +174,23 @@ function setShopN(id, q){
   document.querySelectorAll(`.shopq[data-sq="${CSS.escape(id)}"]`).forEach(w => {
     const b = w.querySelector("[data-shopadd]"); w.classList.toggle("on", n > 0);
     b.setAttribute("aria-pressed", n > 0); b.title = shopTip(n); b.textContent = shopLbl(n, w.classList.contains("over"));
-    b.setAttribute("aria-label", `${n ? "Remove " + c.name + " from" : "Add " + c.name + " to"} your shopping list`);
-    w.querySelector("output").textContent = n; w.querySelector('[data-shopq="-1"]').disabled = !n; w.querySelector('[data-shopq="1"]').disabled = n >= 99;
+    b.setAttribute("aria-label", `Add one ${c.name} to your shopping list${n ? ` (${n} on it now)` : ""}`);
   });
   if (st.tab === "shop") renderShop();
 }
+// a small note at the bottom of the screen; tapping again updates it and keeps it up
+let shopToastT = 0;
+function shopToast(c, n){
+  let t = $("shop-toast");
+  if (!t){ document.body.insertAdjacentHTML("beforeend", '<div id="shop-toast" role="status" aria-live="polite"></div>'); t = $("shop-toast"); }
+  t.innerHTML = `✓ <b>${esc(c.name)}</b> added to your shopping list · <b>${n}</b> on it`;
+  t.classList.remove("bump"); void t.offsetWidth; t.classList.add("show", "bump");
+  clearTimeout(shopToastT); shopToastT = setTimeout(() => t.classList.remove("show"), 2500);
+}
 document.addEventListener("click", e => {
-  const b = e.target.closest("button[data-shopadd],button[data-shopq]"); if (!b) return;
+  const b = e.target.closest("button[data-shopadd]"); if (!b) return;
   e.preventDefault(); e.stopPropagation();
-  const id = b.closest("[data-sq]").dataset.sq, n = shopN(id);
-  setShopN(id, b.dataset.shopq ? n + +b.dataset.shopq : (n ? 0 : 1));
+  const id = b.dataset.shopadd; setShopN(id, shopN(id) + 1); shopToast(byId[id], shopN(id));
 }, true);''')
 
 # ---------- My Shopping List cards: − / + for how many to buy, Need / Have, decks, "+ Collected 1"
