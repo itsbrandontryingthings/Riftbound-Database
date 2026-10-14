@@ -353,7 +353,9 @@ button.thumb:hover{border-color:var(--muted)}
 .kw.t{background:#2f9a55}.kw.d{background:#8d4bb8}
 button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter:brightness(1.15)}
 #lb .kws{display:flex;gap:6px;flex-wrap:wrap}
-#lb .tagc{border:1px solid var(--line);border-radius:12px;padding:0 9px;font-size:12.5px;color:var(--muted)}
+#lb .tagc{border:1px solid var(--line);border-radius:12px;padding:2px 10px;font-size:13px;color:var(--fg);background:var(--row);cursor:pointer}
+#lb .lbleft .lbf:has(#lb-note:empty){display:none}
+#lb .tagc:hover{border-color:var(--accent);color:var(--accent)}
 .sym{display:inline-grid;place-items:center;vertical-align:-3px;font-style:normal}
 .sym.en{width:19px;height:19px;border-radius:50%;background:#f1f1f1;color:#111;font:700 11.5px/1 var(--display)}
 .sym.en.big{display:none}
@@ -431,6 +433,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
       <select id="type" aria-label="Card type"><option value="">All types</option></select>
       <select id="rarity" aria-label="Rarity"><option value="">All rarities</option></select>
       <select id="kw" aria-label="Keyword"><option value="">All keywords</option></select>
+      <select id="tg" aria-label="Champion or region tag"><option value="">All tags</option></select>
       <div class="seg" role="group" aria-label="Currency">
         <button id="c-both" aria-pressed="true">CAD + USD</button>
         <button id="c-cad" aria-pressed="false">CAD</button>
@@ -642,13 +645,17 @@ $("type").insertAdjacentHTML("beforeend", `<option value="__token">Token</option
 { const kc = {}; CARDS.forEach(c => kwOf(c).forEach(k => kc[k] = (kc[k] || 0) + 1));
   const ks = Object.keys(kc).sort((a, b) => a.localeCompare(b));
   ks.forEach(k => $("kw").insertAdjacentHTML("beforeend", `<option value="${esc(k)}">${esc(k)} (${kc[k]})</option>`));
-  if (!ks.length) $("kw").hidden = true; }
+  if (!ks.length) $("kw").hidden = true;
+  const tc = {}; CARDS.forEach(c => { const t = txOf(c); if (t) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1); });
+  const ts = Object.keys(tc).sort((a, b) => a.localeCompare(b));
+  ts.forEach(g => $("tg").insertAdjacentHTML("beforeend", `<option value="${esc(g)}">${esc(g)} (${tc[g]})</option>`));
+  if (!ts.length) $("tg").hidden = true; }
 RAR.filter(r => CARDS.some(c => c.rarity === r)).forEach(r => $("rarity").insertAdjacentHTML("beforeend", `<option value="${r}">${r}</option>`));
 $("doms").innerHTML = DOMS.map(([d,v]) => `<button data-d="${d}" aria-pressed="false"><span class="dot" style="background:var(${v})"></span>${d}</button>`).join("") + `<button class="banchip" data-ban="1" aria-pressed="false" title="Show only cards banned from competitive play"><span class="dot"></span>Banned</button>`;
 if (META.updated) $("c-updated").textContent = `Card list updated ${META.updated} · ${CARDS.length.toLocaleString()} printings across ${META.sets.length} sets` + (META.pricesUpdated ? ` · Prices are TCGplayer market prices (USD), updated ${META.pricesUpdated}` : "") + (FX ? ` · CAD at the Bank of Canada rate of ${FX.toFixed(4)} (${META.fx.date})` : "");
 
 function syncControls(){
-  $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("kw").value = st.kw || ""; $("variants").checked = st.variants; $("sort").value = st.sort || "set";
+  $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("kw").value = st.kw || ""; $("tg").value = st.tg || ""; $("variants").checked = st.variants; $("sort").value = st.sort || "set";
   ["all","have","need"].forEach(k => $("s-"+k).setAttribute("aria-pressed", st.show===k));
   ["both","cad","usd"].forEach(k => $("c-"+k).setAttribute("aria-pressed", st.cur===k));
   document.querySelectorAll("#doms button").forEach(b => b.setAttribute("aria-pressed", b.dataset.ban ? !!st.banned : st.doms.has(b.dataset.d)));
@@ -661,6 +668,7 @@ function matches(c, ignoreSet){
   if (st.type === "__token" ? !c.token : (st.type && c.type !== st.type)) return false;
   if (st.rarity && c.rarity !== st.rarity) return false;
   if (st.kw && !kwOf(c).includes(st.kw)) return false;
+  if (st.tg && !(txOf(c) && txOf(c).tags.includes(st.tg))) return false;
   if (st.doms.size && !c.domains.some(d => st.doms.has(d))) return false;
   if (st.banned && !c.ban) return false;
   if (st.q){ const q = st.q.toLowerCase(); if (!(c.name.toLowerCase().includes(q) || c.id.includes(q) || findOf(c).includes(q))) return false; }
@@ -725,7 +733,7 @@ function openCard(c){
   im.removeAttribute("src"); im.alt = c.name; im.classList.toggle("land", c.type === "Battlefield");
   if (quick) im.src = quick;
   if (full && full !== quick){ const pre = new Image(); pre.referrerPolicy = "no-referrer"; pre.onload = () => { if (token === lbToken) im.src = full; }; pre.src = full; }
-  $("lb-note").textContent = c.imgBase ? "Regular printing's art. There's no image of this exact printing yet." : c.imgTcg ? "Image: TCGplayer" : "Image: Riot Games, via Riftcodex";
+  $("lb-note").textContent = c.imgBase ? "Regular printing's art. There's no image of this exact printing yet." : "";
   $("lb-link").innerHTML = viewLink(c);
   renderInfo(c); $("lb-info").scrollTop = 0;
   $("lb-fx").classList.toggle("foil", !!c.foil); $("lb-fx").style.transform = ""; $("lb-fx").classList.remove("live");
@@ -758,15 +766,14 @@ function renderInfo(c){
     ${t.text ? `<div class="isec"><div class="k">Effect</div><div class="rules">${rulesHTML(t.text)}</div></div>` : (RBT.updated ? "" : `<div class="isec meta">Card text isn't loaded yet.</div>`)}
     ${t.fl ? `<div class="isec"><div class="k">Flavor</div><div class="flav">“${esc(t.fl)}”</div></div>` : ""}
     ${kws.length ? `<div class="isec"><div class="k">Keywords</div><div class="kws">${kws.map(k => `<button class="${kwClass(k)}" data-kwf="${esc(k)}" title="Show every card with ${esc(k)}">${esc(k)}</button>`).join("")}</div></div>` : ""}
-    ${t.tags.length ? `<div class="isec"><div class="k">Tags</div><div class="kws">${t.tags.map(g => `<span class="tagc">${esc(g)}</span>`).join("")}</div></div>` : ""}
-    ${t.art ? `<div class="isec"><div class="k">Artist</div><div>${esc(t.art)}</div></div>` : ""}
+    ${t.tags.length ? `<div class="isec"><div class="k">Tags</div><div class="kws">${t.tags.map(g => `<button class="tagc" data-tgf="${esc(g)}" title="Show every card tagged ${esc(g)}">${esc(g)}</button>`).join("")}</div></div>` : ""}
     <div class="iboxes">${priceBox}${mine}</div>`;
 }
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-lbadj]");
   if (b && lbCard){ const n = adjust(lbCard.id, Number(b.dataset.lbadj)); const box = b.closest(".iown"); box.querySelector("output").textContent = n; box.querySelector("#lb-n").textContent = n; box.querySelector('[data-lbadj="-1"]').disabled = !n; if (st.tab === "wish") renderWish(); return; }
-  const k = e.target.closest("[data-kwf]");
-  if (k){ st.kw = k.dataset.kwf; st.q = ""; st.limit = PAGE; st.page = 0; $("lb").close(); if (st.tab !== "collection" && typeof showTab === "function") showTab("collection"); syncControls(); render(); $("list").scrollIntoView({behavior: "smooth", block: "start"}); }
+  const k = e.target.closest("[data-kwf],[data-tgf]");
+  if (k){ if (k.dataset.kwf) { st.kw = k.dataset.kwf; st.tg = ""; } else { st.tg = k.dataset.tgf; st.kw = ""; } st.q = ""; st.limit = PAGE; st.page = 0; $("lb").close(); if (st.tab !== "collection" && typeof showTab === "function") showTab("collection"); syncControls(); render(); $("list").scrollIntoView({behavior: "smooth", block: "start"}); }
 });
 document.addEventListener("click", e => { const t = e.target.closest("button.thumb[data-img]"); if (t){ e.preventDefault(); e.stopPropagation(); openCard(CARDS.find(x => x.id === t.dataset.img)); } }, true);
 $("lb-x").addEventListener("click", () => $("lb").close());
@@ -920,7 +927,7 @@ function renderList(){
     : `<div class="empty">${st.show==="have" && !Object.keys(counts).length ? "You haven't marked any cards yet. Switch to All and tap + on the cards you own." : "No cards match these filters. Try clearing the search or a filter."}</div>`;
   $("more").hidden = true; renderPager(pages);
   $("v-list").setAttribute("aria-pressed", st.view === "list"); $("v-grid").setAttribute("aria-pressed", st.view === "grid");
-  const nf = st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1);
+  const nf = st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1);
   $("fcount").textContent = nf ? nf : "";
   $("count").textContent = `${shown.length.toLocaleString()} card${shown.length===1?"":"s"}` + (st.set ? ` in ${setName[st.set]}` : "");
 }
@@ -936,6 +943,7 @@ $("doms").addEventListener("click", e => { const b = e.target.closest("button");
 let qT; $("q").addEventListener("input", e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); st.limit = PAGE; st.page = 0; render(); }, 120); });
 ["all","have","need"].forEach(k => $("s-"+k).addEventListener("click", () => { st.show = k; st.limit = PAGE; st.page = 0; syncControls(); render(); }));
 $("type").addEventListener("change", e => { st.type = e.target.value; st.limit = PAGE; st.page = 0; render(); });
+$("tg").addEventListener("change", e => { st.tg = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("kw").addEventListener("change", e => { st.kw = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("rarity").addEventListener("change", e => { st.rarity = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("variants").addEventListener("change", e => { st.variants = e.target.checked; st.limit = PAGE; st.page = 0; render(); });
