@@ -32,9 +32,11 @@ window.supabase = { createClient(){ let session = L("__sess"); const subs=[]; co
     async rpc(fn,args){
       if(fn==="make_offer"){ const d=db(), s=d.shared_decks.find(r=>r.share_token===args.p_token&&r.deck_id==="__shop__");
         if(!s) return {data:null,error:{message:"link"}};
-        if(!String(args.p_name||"").trim()||!Array.isArray(args.p_items)||!args.p_items.length) return {data:null,error:{message:"items"}};
-        const total=args.p_items.reduce((a,i)=>a+i.q*i.price,0), id="o"+Math.random().toString(36).slice(2,8);
-        d.shop_offers.push({id,owner:s.owner,share_token:args.p_token,from_name:args.p_name.trim(),items:args.p_items,currency:args.p_currency,total,created_at:new Date().toISOString()}); P("__db",d); return {data:id,error:null}; }
+        if(!String(args.p_name||"").trim()) return {data:null,error:{message:"name"}};
+        if(!String(args.p_offer||"").trim()) return {data:null,error:{message:"offer"}};
+        if(!Array.isArray(args.p_items)||!args.p_items.length) return {data:null,error:{message:"items"}};
+        const id="o"+Math.random().toString(36).slice(2,8);
+        d.shop_offers.push({id,owner:s.owner,share_token:args.p_token,from_name:args.p_name.trim(),items:args.p_items.map(i=>({name:i.name,q:i.q})),offer:String(args.p_offer).trim(),created_at:new Date().toISOString()}); P("__db",d); return {data:id,error:null}; }
       if(fn!=="get_shared") return {error:{message:"no function"}}; const uid=session&&session.user.id; window.__rpcCalls=(window.__rpcCalls||0)+1;
       const rows=db().shared_decks.filter(r=>args.p_tokens.includes(r.share_token)).map(({owner,...r})=>({...r,is_mine:owner===uid})); return {data:rows,error:null}; },
     auth:{ onAuthStateChange(f){subs.push(f); setTimeout(()=>f("INITIAL_SESSION",session),0); return {data:{subscription:{unsubscribe(){}}}}},
