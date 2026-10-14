@@ -549,6 +549,26 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .dk-tile .sh-xq{justify-content:space-between}
 .uisize{margin-left:auto;display:inline-flex;gap:8px;align-items:center;text-transform:none;letter-spacing:.02em;font-family:var(--body-font);font-size:13px}
 .uisize .seg button{padding:4px 10px;font-size:13px;font-family:var(--display)}
+.fr-tools{gap:8px}
+#fr-sort{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--fg);margin-right:6px}
+#fr-list.frsz-m .frrow{grid-template-columns:64px 2.4em minmax(0,1fr) auto auto;gap:6px 12px;padding:6px 8px}
+#fr-list.frsz-m .frrow:not(:has(.pill.ban)){grid-template-columns:64px 2.4em minmax(0,1fr) auto}
+#fr-list.frsz-m .frrow .frn{font-size:16px}
+#fr-list.frsz-m .frrow .q{font-size:16px}
+#fr-list.frsz-m .frrow .ok,#fr-list.frsz-m .frrow .no{font-size:13.5px}
+#fr-list.frsz-l .frrow{grid-template-columns:104px 2.6em minmax(0,1fr) auto auto;gap:8px 14px;padding:8px 10px}
+#fr-list.frsz-l .frrow:not(:has(.pill.ban)){grid-template-columns:104px 2.6em minmax(0,1fr) auto}
+#fr-list.frsz-l .frrow .frn{font-size:18.5px;font-weight:600}
+#fr-list.frsz-l .frrow .q{font-size:18px}
+#fr-list.frsz-l .frrow .ok,#fr-list.frsz-l .frrow .no{font-size:14.5px}
+#fr-list.frsz-l .of-sub,#fr-list.frsz-l .of-mkt{font-size:13.5px}
+#fr-list.frsz-l .frdeck h3{font-size:19px}
+#fr-list.frsz-l .frstats{font-size:15px}
+@media (max-width:520px){
+  #fr-list.frsz-m .frrow,#fr-list.frsz-m .frrow:not(:has(.pill.ban)){grid-template-columns:56px 2em minmax(0,1fr)}
+  #fr-list.frsz-l .frrow,#fr-list.frsz-l .frrow:not(:has(.pill.ban)){grid-template-columns:84px 2.2em minmax(0,1fr)}
+  #fr-list.frsz-l .frrow .frn{font-size:16.5px}
+}
 </style>
 
 <div class="wrap" id="app">
@@ -665,6 +685,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
       <form class="linkrow" id="fr-add-form" novalidate><input id="fr-add" type="text" inputmode="url" placeholder="Paste a share link, e.g. https://rbdatabase.pages.dev/#share=…" aria-label="Paste a share link" autocomplete="off"><button class="btn primary" id="fr-add-go">Add</button></form>
       <p class="meta" id="fr-add-msg" aria-live="polite"></p>
       <input class="search" id="fr-q" type="search" placeholder="Search your friends' decks and wish lists, e.g. Jinx" aria-label="Search shared decks" autocomplete="off">
+      <div class="frow fr-tools"><select id="fr-sort" aria-label="Sort the cards in friends' lists"><option value="">Sort: list order</option><option value="set">Sort: set order</option><option value="name">Sort: name A–Z</option><option value="price">Sort: price, high to low</option></select><span class="meta">Card size</span><div class="seg sizeseg" role="group" aria-label="Card size"><button id="frs-s" aria-pressed="false" title="Small cards">S</button><button id="frs-m" aria-pressed="false" title="Medium cards">M</button><button id="frs-l" aria-pressed="false" title="Large cards">L</button></div></div>
       <span class="meta" id="fr-count" aria-live="polite"></span>
     </div>
     <div class="frlist" id="fr-list"></div>
@@ -1612,7 +1633,7 @@ const offerSt = {};   // share token -> {sel: {card key: {q}}, name, offer, msg}
 const offerOf = tok => offerSt[tok] ||= { sel: {}, name: LS.get("rb-offer-name") || "", offer: "", msg: "" };
 function frShopBody(r, rows, mine){
   const S = offerOf(r.share_token);
-  const lines = rows.map(x => {
+  const lines = frSortRows(rows).map(x => {
     const own = ownedOf(x.key), pick = !mine && S.sel[x.key];
     const ctl = mine || !groups[x.key] ? "" : `<div class="of-ctl"><label class="of-pick"><input type="checkbox" data-of="pick" ${pick ? "checked" : ""}> I have this</label>${pick ? `
       <span class="step" role="group" aria-label="How many ${esc(x.name)} you're offering"><button type="button" data-of="q" data-d="-1" aria-label="One fewer" ${pick.q > 1 ? "" : "disabled"}>−</button><output>${pick.q}</output><button type="button" data-of="q" data-d="1" aria-label="One more" ${pick.q < x.q ? "" : "disabled"}>+</button></span>` : ""}</div>`;
@@ -2116,7 +2137,21 @@ function groupFriends(){
   section("Wish Lists", wishes, q ? "No shared wish lists match this search." : "No wish list links saved yet.");
   if (shops.length || !q) section("Shopping Lists", shops, q ? "No shared shopping lists match this search." : "No shopping list links saved yet.");
 }
-async function renderFriends(){ await renderFriendsList(); groupFriends(); }
+function frSortRows(rows){
+  const by = st.frsort, cardIx = x => { const c = frCard(x.key); return c ? CARDS.indexOf(c) : 1e9; }, price = x => { const c = cheapestOf(x.key); return c ? c.price : -1; };
+  if (by === "set") return rows.slice().sort((a, b) => cardIx(a) - cardIx(b));
+  if (by === "name") return rows.slice().sort((a, b) => a.name.localeCompare(b.name));
+  if (by === "price") return rows.slice().sort((a, b) => price(b) - price(a) || a.name.localeCompare(b.name));
+  return rows;
+}
+$("fr-sort").addEventListener("change", e => { st.frsort = e.target.value; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); renderFriends(); });
+function frSize(){
+  const z = ["s","m","l"].includes(st.size) ? st.size : "m";
+  $("fr-sort").value = st.frsort || "";
+  ["s","m","l"].forEach(k => { $("frs-" + k).setAttribute("aria-pressed", k === z); $("fr-list").classList.toggle("frsz-" + k, k === z); });
+}
+["s","m","l"].forEach(k => $("frs-" + k).addEventListener("click", () => { st.size = k; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); frSize(); }));
+async function renderFriends(){ frSize(); await renderFriendsList(); groupFriends(); }
 // links you've opened or pasted: kept in this browser and, when signed in, with your account (inside the wish list row)
 const TOKEN_RE = /^[A-Za-z0-9_-]{20,64}$/;
 function savedLinks(){
@@ -2168,7 +2203,7 @@ async function renderFriendsList(){
       const shop = r.deck_id === "__shop__";
       const mine = !!r.is_mine, open = frOpen.has(r.id);
       const canGive = rows.filter(x => ownedOf(x.key) > 0);
-      const body = shop ? (open ? frShopBody(r, rows, mine) : "") : open ? `<div class="frbody">${rows.map(x => { const own = ownedOf(x.key); return `<div class="frrow"${frCardAttr(x.key)}>${frThumb(x.key)}<span class="q">${x.q}×</span><span class="frn">${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${own ? "ok" : "no"}">${own ? `✓ you have ${own}` : "you don't have it"}</span></div>`; }).join("")}</div>` : "";
+      const body = shop ? (open ? frShopBody(r, rows, mine) : "") : open ? `<div class="frbody">${frSortRows(rows).map(x => { const own = ownedOf(x.key); return `<div class="frrow"${frCardAttr(x.key)}>${frThumb(x.key)}<span class="q">${x.q}×</span><span class="frn">${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${own ? "ok" : "no"}">${own ? `✓ you have ${own}` : "you don't have it"}</span></div>`; }).join("")}</div>` : "";
       return `<article class="frdeck${r.share_token === frFocus ? " new" : ""}" data-id="${esc(r.id)}">
         <div class="frhead"><div><h3>${shop ? "🛒" : "♥"} ${esc(r.name)}</h3><span class="meta">updated ${esc(fmtDate(String(r.updated_at).slice(0,10)))}</span></div>${mine ? `<span class="tag ok">Your ${shop ? "shopping" : "wish"} list</span>` : ""}</div>
         <div class="frstats"><span>${shop ? "Needs" : "Wants"} <b>${rows.length}</b> card${rows.length === 1 ? "" : "s"}${shop ? ` (${rows.reduce((a, x) => a + x.q, 0)} copies) for their decks` : ""}</span><span>${canGive.length ? `You have <b>${canGive.length}</b> of them to trade` : "You don't have any of them yet"}</span></div>
@@ -2181,7 +2216,7 @@ async function renderFriendsList(){
     const legendSec = secs.find(x => /legend/i.test(x.label)), legend = legendSec && legendSec.rows[0] ? legendSec.rows[0].name : "";
     const banned = new Set(rows.filter(x => (groups[x.key]||[]).some(c => c.ban === "std")).map(x => x.key)).size;
     const open = frOpen.has(r.id);
-    const body = open ? `<div class="frbody">${s.secs.map(sec => `<h4>${esc(sec.label)}</h4>${sec.rows.map(x => `<div class="frrow"${frCardAttr(x.key)}>${frThumb(x.key)}<span class="q">${x.q}×</span><span class="frn">${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${x.miss ? "no" : "ok"}">${x.miss ? `you have ${x.h}` : `✓ you have ${ownedOf(x.key)}`}</span></div>`).join("")}`).join("")}</div>` : "";
+    const body = open ? `<div class="frbody">${s.secs.map(sec => `<h4>${esc(sec.label)}</h4>${frSortRows(sec.rows).map(x => `<div class="frrow"${frCardAttr(x.key)}>${frThumb(x.key)}<span class="q">${x.q}×</span><span class="frn">${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${x.miss ? "no" : "ok"}">${x.miss ? `you have ${x.h}` : `✓ you have ${ownedOf(x.key)}`}</span></div>`).join("")}`).join("")}</div>` : "";
     return `<article class="frdeck${r.share_token === frFocus ? " new" : ""}" data-id="${esc(r.id)}">
       <div class="frhead"><div><h3>${esc(r.name)}</h3><span class="meta">updated ${esc(fmtDate(String(r.updated_at).slice(0,10)))}</span></div>${mine ? '<span class="tag ok">Your deck</span>' : ""}${banned ? `<span class="tag ban">⚠ ${banned} banned</span>` : ""}</div>
       <div class="frstats">${legend ? `<span>Legend: <b>${esc(legend)}</b></span>` : ""}<span>You own <b>${s.have} / ${s.need}</b></span><span>${s.need - s.have ? `<b>${esc(money(s.cost))}</b> to finish` : "<b>You own every card</b>"}</span></div>
