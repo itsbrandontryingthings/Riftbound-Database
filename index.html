@@ -310,6 +310,23 @@ button.thumb:hover{border-color:var(--muted)}
   .step button{width:30px;height:32px}
   h1{font-size:22px}
 }
+
+/* foil shine (cards that only come as foil) */
+@keyframes foilmove{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.thumb .sheen,.lbwrap .sheen{position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;mix-blend-mode:color-dodge;opacity:.55;
+  background-image:linear-gradient(115deg,transparent 0%,rgb(255 0 150 / .24) 18%,rgb(255 220 0 / .24) 30%,rgb(0 255 170 / .24) 42%,rgb(0 180 255 / .24) 54%,rgb(150 80 255 / .24) 66%,rgb(255 0 150 / .24) 78%,transparent 100%);
+  background-size:300% 300%;animation:foilmove 7s ease-in-out infinite}
+.thumb.foil:hover .sheen{opacity:.8}
+.lbwrap{position:relative;width:fit-content;max-width:100%;margin:0 auto;border-radius:10px;overflow:hidden;transition:transform .25s ease-out;will-change:transform;touch-action:pinch-zoom}
+.lbwrap .sheen,.lbwrap .glare{display:none}
+.lbwrap.foil .sheen{display:block;opacity:.6}
+.lbwrap.foil.live .sheen{animation:none;opacity:.75;background-position:var(--mx,50%) var(--my,50%);transition:background-position .08s linear}
+.lbwrap .glare{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;mix-blend-mode:overlay;opacity:0;transition:opacity .2s;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgb(255 255 255 / .55),rgb(255 255 255 / 0) 45%)}
+.lbwrap.foil .glare{display:block}
+.lbwrap.foil.live .glare{opacity:1}
+.lbwrap.foil.live{transition:transform .08s linear}
+@media (prefers-reduced-motion:reduce){.thumb .sheen,.lbwrap .sheen{animation:none;background-position:50% 50%}}
 </style>
 
 <div class="wrap" id="app">
@@ -388,7 +405,7 @@ button.thumb:hover{border-color:var(--muted)}
   <nav class="pager" id="pager-bot" aria-label="Pages"></nav>
   <button class="btn totop" id="totop" hidden aria-label="Back to top">↑ Top</button>
   <button class="btn more" id="more" hidden>Show more</button>
-  <dialog id="lb" aria-labelledby="lb-name"><div class="lbh"><div><h2 id="lb-name"></h2><div class="sub" id="lb-sub"></div></div><button class="lbx" id="lb-x" aria-label="Close">×</button></div><img class="lbimg" id="lb-img" alt="" referrerpolicy="no-referrer"><div class="lbf"><span class="meta" id="lb-note"></span><span style="flex:1"></span><span id="lb-link"></span></div></dialog>
+  <dialog id="lb" aria-labelledby="lb-name"><div class="lbh"><div><h2 id="lb-name"></h2><div class="sub" id="lb-sub"></div></div><button class="lbx" id="lb-x" aria-label="Close">×</button></div><div class="lbwrap" id="lb-fx"><img class="lbimg" id="lb-img" alt="" referrerpolicy="no-referrer"><span class="sheen" aria-hidden="true"></span><span class="glare" aria-hidden="true"></span></div><div class="lbf"><span class="meta" id="lb-note"></span><span style="flex:1"></span><span id="lb-link"></span></div></dialog>
   </section>
 
   <section class="view" id="view-packs" role="tabpanel" aria-labelledby="t-packs" hidden>
@@ -598,7 +615,7 @@ function imgURL(c, w){
 function thumbHTML(c, w){
   const u = imgURL(c, w || 160);
   if (!u) return `<span class="thumb none" title="No picture of this printing exists yet" aria-hidden="true">No<br>image</span>`;
-  return `<button class="thumb" data-img="${esc(c.id)}" aria-label="Enlarge ${esc(c.name)}"${c.imgBase ? ' title="Regular printing\'s art; no image of this exact printing yet"' : ""}><img src="${u}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">${c.imgBase ? '<span class="bm">BASE ART</span>' : ""}</button>`;
+  return `<button class="thumb${c.foil ? " foil" : ""}" data-img="${esc(c.id)}" aria-label="Enlarge ${esc(c.name)}"${c.imgBase ? ' title="Regular printing\'s art; no image of this exact printing yet"' : ""}><img src="${u}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">${c.foil ? '<span class="sheen" aria-hidden="true"></span>' : ""}${c.imgBase ? '<span class="bm">BASE ART</span>' : ""}</button>`;
 }
 let lbToken = 0;
 function openCard(c){
@@ -614,10 +631,30 @@ function openCard(c){
   if (full && full !== quick){ const pre = new Image(); pre.referrerPolicy = "no-referrer"; pre.onload = () => { if (token === lbToken) im.src = full; }; pre.src = full; }
   $("lb-note").textContent = c.imgBase ? "Regular printing's art. There's no image of this exact printing yet." : c.imgTcg ? "Image: TCGplayer" : "Image: Riot Games, via Riftcodex";
   $("lb-link").innerHTML = viewLink(c);
+  $("lb-fx").classList.toggle("foil", !!c.foil); $("lb-fx").style.transform = ""; $("lb-fx").classList.remove("live");
   try { $("lb").showModal(); } catch(e){ $("lb").setAttribute("open", ""); }
 }
 document.addEventListener("click", e => { const t = e.target.closest("button.thumb[data-img]"); if (t){ e.preventDefault(); e.stopPropagation(); openCard(CARDS.find(x => x.id === t.dataset.img)); } }, true);
 $("lb-x").addEventListener("click", () => $("lb").close());
+// foil preview: the light moves with the mouse or finger, and the card tilts slightly toward it
+(function(){
+  const fx = $("lb-fx"); if (!fx) return;
+  const calm = matchMedia("(prefers-reduced-motion: reduce)");
+  function move(e){
+    if (!fx.classList.contains("foil")) return;
+    const r = fx.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+    fx.classList.add("live");
+    fx.style.setProperty("--mx", (x * 100).toFixed(1) + "%");
+    fx.style.setProperty("--my", (y * 100).toFixed(1) + "%");
+    fx.style.transform = calm.matches ? "" : `perspective(900px) rotateY(${((x - .5) * 10).toFixed(2)}deg) rotateX(${((.5 - y) * 10).toFixed(2)}deg)`;
+  }
+  function leave(){ fx.classList.remove("live"); fx.style.transform = ""; }
+  fx.addEventListener("pointermove", move);
+  fx.addEventListener("pointerleave", leave);
+  fx.addEventListener("pointercancel", leave);
+})();
+
 $("lb").addEventListener("click", e => { if (e.target === $("lb")) $("lb").close(); });
 // a picture that fails to load is retried twice (after a pause, then at full size) before showing "No image"
 document.addEventListener("error", e => {
