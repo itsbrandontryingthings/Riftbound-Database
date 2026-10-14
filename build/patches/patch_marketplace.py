@@ -235,6 +235,11 @@ rep('</style>\n\n<div class="wrap" id="app">', '''.sh-nh{font-size:13px;color:va
 
 <div class="wrap" id="app">''')
 
+# Collection + / −: each card now also holds the 🛒 − n + box, so "the first <output>" on a card is that box, not
+# your count. Point at the count's own stepper (the one with the data-a buttons).
+rep('''row.querySelector("output").textContent = n; row.querySelector('button[data-a="-1"]').disabled = !n;''',
+    '''row.querySelector('button[data-a="-1"]').parentElement.querySelector("output").textContent = n; row.querySelector('button[data-a="-1"]').disabled = !n;''')
+
 # ---------- My Decks: no Need − / + on deck cards, just "I have 0 1 2 …" (the "3×" still shows what the deck runs;
 # change it with Edit list as text)
 rep('''const ctl = `<div class="dk-ctl"><span class="dk-pair">${dkNeedCtl(r)}</span><span class="dk-pair">${r.known ? dkHaveCtl(r, view === "grid") : ""}</span></div>`;''',

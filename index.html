@@ -1326,7 +1326,7 @@ function adjust(id, d){
   const n = Math.max(0, (counts[id]||0) + d);
   if (n) counts[id] = n; else delete counts[id];
   const row = document.querySelector(`#list .card[data-id="${CSS.escape(id)}"]`);
-  if (row){ row.classList.toggle("got", n>0); row.querySelector("output").textContent = n; row.querySelector('button[data-a="-1"]').disabled = !n; row.querySelector(".price").outerHTML = priceHTML(byId[id], n); }
+  if (row){ row.classList.toggle("got", n>0); row.querySelector('button[data-a="-1"]').parentElement.querySelector("output").textContent = n; row.querySelector('button[data-a="-1"]').disabled = !n; row.querySelector(".price").outerHTML = priceHTML(byId[id], n); }
   renderSummary(); queueSave();
   if (st.tab === "decks") renderDecks();
   if (st.tab === "shop") renderShop();
