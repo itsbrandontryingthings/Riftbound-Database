@@ -27,7 +27,7 @@ and keep the site working on phones.
 python3 build/tests/smoke.py         # needs playwright + Chromium
 ```
 Website pipeline (order matters):
-`patch_local → patch_bans → patch_web → patch_accounts → patch_sharing → patch_mobile → patch_wish → patch_polish → patch_foil → patch_info → patch_links → patch_share_tidy → patch_decks_ui → patch_friends_ui`
+`patch_local → patch_bans → patch_web → patch_accounts → patch_sharing → patch_mobile → patch_wish → patch_polish → patch_foil → patch_info → patch_links → patch_share_tidy → patch_decks_ui → patch_friends_ui → patch_shop`
 
 To change the site: edit the right patch (usually add to the latest one — `patch_info.py` for card/filter UI,
 `patch_links.py` for sharing — or start a new `patch_<name>.py` appended to the end of the pipeline in
@@ -38,7 +38,7 @@ What each patch does: local = thumbnails + enlarged preview (lightbox) + image U
 web = website wording; accounts = Supabase sign-in + cloud save; sharing = shared decks + Friends tab; mobile = grid view,
 pager, S/M/L sizes, phone layout; wish = Token filter + Wish List tab; polish = tab names, My Decks intro, deck import,
 list sizes, Friends sections; foil = rainbow shine on foil-only cards; info = card info sheet in the preview, keyword
-and tag filters, ability search, page-number box, Reset filters; links = private share links; share_tidy = no trades-contact field, share name = "Name This Shared Deck/Wishlist" (the title friends see, no "by …"), no sharing an empty wish list; decks_ui = My Decks workspace (Need taps edit the list, I have taps change the collection, list/grid S-M-L via st.dview + st.size, rule checks, add a card); friends_ui = Friends card lines with picture, "you have N", tap to preview.
+and tag filters, ability search, page-number box, Reset filters; links = private share links; share_tidy = no trades-contact field, share name = "Name This Shared Deck/Wishlist" (the title friends see, no "by …"), no sharing an empty wish list; decks_ui = My Decks workspace (Need taps edit the list, I have taps change the collection, list/grid S-M-L via st.dview + st.size, rule checks, add a card); friends_ui = Friends card lines with picture, "you have N", tap to preview; shop = Shopping List tab (missing cards across decks, settings in wish._shop, shared as deck_id "__shop__").
 
 ## How the site works (key facts)
 
@@ -74,5 +74,5 @@ with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` he
 ## Conventions
 
 - Commit as `itsbrandontryingthings`; fetch + rebase on `origin/main` before pushing (the Action and weekly task also push).
-- Keep wording friendly and plain; headings in Title Case; tab names: Collection, Open Packs, My Decks, Wish List, Friends.
+- Keep wording friendly and plain; headings in Title Case; tab names: Collection, Open Packs, My Decks, Wish List, Shopping List, Friends.
 - After a change, tell Brandon in a couple of sentences what changed and where to see it.
