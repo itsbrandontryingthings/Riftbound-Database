@@ -31,7 +31,9 @@
 - Every "Stop sharing" button (deck, wish list, shopping list) asks "Are you sure…?" first (stopShareOK).
 - Each incoming offer folds to its top line by tapping the sender's name (localStorage "rb-offer-fold").
 - Making an offer: "Your Offer Preview" shows pictures of the cards you're giving (ticked) and trading, with counts;
-  the trade chips' pictures are bigger. "Your offers on this list" shows "Cards you're giving them" with pictures.
+  the trade chips' pictures are bigger. "Your offers on this list" shows "Cards you're giving them" with pictures, and
+  "You offered" lists the cards you'd trade inline as card names (cardRef): hover for a preview (#card-pop: picture,
+  set, type, stats, abilities, price), tap / click for the full card.
 Usage: patch_marketplace.py in.html out.html"""
 import sys
 
@@ -664,6 +666,65 @@ rep('''<span class="of-sum">${n} card${n === 1 ? "" : "s"}: ${esc((o.items || []
     '''<span class="of-sum">Giving them ${n} card${n === 1 ? "" : "s"}</span></div>
       ${o.offer ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${esc(o.offer)}</span></div>` : ""}
       ${(o.items || []).length ? `<span class="collect-k">Cards you're giving them</span>${tradeRows(o.items)}` : ""}''')
+
+# ---------- "You offered" holds the cards you'd trade too ("$2 + 1× Teemo - Scout"); each card name can be hovered for a
+# preview (picture, set, type, stats, abilities, price) or tapped / clicked for the full card. The separate
+# "Cards you'd trade" rows under it are gone.
+rep('''      ${o.offer ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${esc(o.offer)}</span></div>` : ""}''',
+    '''      ${o.offer || o.trade.length ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${o.offer ? esc(o.offer) : ""}${o.offer && o.trade.length ? " <span class=\\"of-plus\\">+</span> " : ""}${o.trade.map(i => cardRef(i.id && byId[i.id] ? byId[i.id] : frCard(norm(i.name)), +i.q || 0, i.name)).join(", ")}</span></div>` : ""}''')
+rep('''      ${o.trade.length ? `<span class="collect-k">Cards you'd trade</span>${tradeRows(o.trade)}` : ""}\n''', '')
+rep('''// ---- Marketplace: each incoming offer folds by tapping the sender's name''', '''// ---- card names you can hover for a preview, or tap / click for the full card
+function cardRef(c, q, name){
+  const label = `${q ? `<b>${q}×</b> ` : ""}${esc(name || (c && c.name) || "")}`;
+  return c ? `<button type="button" class="cardref" data-cref="${esc(c.id)}" aria-label="${q ? q + " × " : ""}${esc(c.name)}: show the card">${label}</button>` : label;
+}
+function cardPopHTML(c){
+  const t = txOf(c) || {text: "", tags: [], sup: ""};
+  const stats = [["Energy", t.e], ["Might", t.m], ["Power", t.p]].filter(x => x[1] != null).map(([k, v]) => `<span><small>${k}</small><b>${esc(String(v))}</b></span>`).join("");
+  return `<div class="cp-img">${thumbHTML(c, 480)}</div><div class="cp-info"><b class="cp-name">${esc(c.name)}</b>
+    <span class="cp-set"><b>${esc(codeOf(c))}</b> · ${esc(setName[c.set] || c.set)}${c.variant ? ` · ${esc(c.variant)}` : ""}</span>
+    <span class="cp-sub">${esc(c.type)}${t.sup ? " · " + esc(t.sup) : ""} · <span class="r-${c.rarity}">${esc(c.rarity)}</span> · ${c.domains.length ? esc(c.domains.join(", ")) : "Colorless"}</span>
+    ${stats ? `<span class="cp-stats">${stats}</span>` : ""}${t.text ? `<div class="rules cp-rules">${rulesHTML(t.text)}</div>` : ""}
+    <span class="cp-price">${c.price != null ? `Market ${esc(money(c.price))}` : "No price yet"}</span></div>`;
+}
+(function(){
+  const canHover = matchMedia("(hover: hover) and (pointer: fine)");
+  let pop = null, cur = null;
+  const hide = () => { if (pop) pop.hidden = true; cur = null; };
+  const show = el => {
+    const c = byId[el.dataset.cref]; if (!c) return;
+    if (!pop){ document.body.insertAdjacentHTML("beforeend", '<div id="card-pop" role="tooltip" hidden></div>'); pop = $("card-pop"); }
+    cur = el; pop.innerHTML = cardPopHTML(c); pop.hidden = false;
+    const r = el.getBoundingClientRect(), w = pop.offsetWidth, hgt = pop.offsetHeight;
+    const x = Math.max(8, Math.min(r.left, innerWidth - w - 8)), below = r.bottom + 8 + hgt < innerHeight;
+    pop.style.left = x + "px"; pop.style.top = (below ? r.bottom + 8 : Math.max(8, r.top - hgt - 8)) + "px";
+  };
+  document.addEventListener("mouseover", e => { const el = e.target.closest(".cardref"); if (el && canHover.matches && el !== cur) show(el); });
+  document.addEventListener("mouseout", e => { const el = e.target.closest(".cardref"); if (el && !el.contains(e.relatedTarget)) hide(); });
+  document.addEventListener("focusin", e => { const el = e.target.closest(".cardref"); if (el && canHover.matches) show(el); });
+  document.addEventListener("focusout", e => { if (e.target.closest(".cardref")) hide(); });
+  addEventListener("scroll", hide, true);
+  document.addEventListener("click", e => { const el = e.target.closest(".cardref"); if (!el) return; e.preventDefault(); e.stopPropagation(); hide(); openCard(byId[el.dataset.cref]); }, true);
+})();
+// ---- Marketplace: each incoming offer folds by tapping the sender's name''')
+rep('</style>\n\n<div class="wrap" id="app">', '''.cardref{all:unset;cursor:pointer;color:var(--accent);font-weight:600;text-decoration:underline dotted;text-underline-offset:3px;border-radius:3px}
+.cardref:hover{text-decoration-style:solid}
+.cardref:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cardref b{color:var(--fg)}
+.of-plus{color:var(--muted);font-weight:700}
+#card-pop{position:fixed;z-index:2000;width:440px;max-width:calc(100vw - 16px);display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:0 14px 36px rgb(0 0 0 / .55);pointer-events:none}
+#card-pop[hidden]{display:none}
+#card-pop .cp-info{display:grid;gap:5px;align-content:start;font-size:13px;line-height:1.35}
+#card-pop .cp-name{font-size:15.5px}
+#card-pop .cp-set,#card-pop .cp-sub,#card-pop .cp-price{color:var(--muted)}
+#card-pop .cp-stats{display:flex;gap:12px}
+#card-pop .cp-stats span{display:grid}
+#card-pop .cp-stats small{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+#card-pop .cp-stats b{font-size:16px}
+#card-pop .cp-rules{font-size:12.5px;max-height:190px;overflow:hidden}
+</style>
+
+<div class="wrap" id="app">''')
 
 open(out, "w", encoding="utf-8").write(h)
 print("patch_marketplace: ok ->", out)
