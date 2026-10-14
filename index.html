@@ -2040,7 +2040,7 @@ function cloudInit(){
 // ---- sharing by private link (table "shared_decks": owners manage their own rows; others open one only with its secret link, via get_shared)
 let shareProfile = LS.get("rb-share-profile") || {name:""};
 const shareDeckName = d => d ? String(d.shareName || d.name || "").trim() : "";
-let shareTimer = null, frCache = null, frLoadedAt = 0, frOpen = new Set();
+let shareTimer = null, frCache = null, frLoadedAt = 0, frOpen = new Set(), frLast = [];   // frLast: the lists on screen
 let shareTarget = "deck", shareTok = {}, linksOff = false;
 const SHARE_BASE = location.origin + location.pathname;
 const shareURL = t => `${SHARE_BASE}#share=${t}`;
@@ -2181,7 +2181,7 @@ async function renderFriendsList(){
     list.innerHTML = `<div class="empty">Loading shared links…</div>`;
     const { data, error } = await sb.rpc("get_shared", { p_tokens: tokens });
     if (error){ list.innerHTML = `<div class="empty">${/get_shared|function/i.test(error.message || "") ? "Shared links aren't switched on yet. They need a quick database update." : "Couldn't load shared links right now. Check your connection and open this tab again."}</div>`; return; }
-    frCache = (data || []).sort((a, b) => tokens.indexOf(a.share_token) - tokens.indexOf(b.share_token)); frLoadedAt = Date.now();
+    frCache = (data || []).sort((a, b) => tokens.indexOf(a.share_token) - tokens.indexOf(b.share_token)); frLoadedAt = Date.now(); frLast = frCache;
     frMissing = tokens.filter(t => !frCache.some(r => r.share_token === t));
     if (frFocus){ const r = frCache.find(x => x.share_token === frFocus); if (r) frOpen.add(r.id); }
   }
@@ -2245,9 +2245,9 @@ $("fr-add-form").addEventListener("submit", e => {
 $("fr-list").addEventListener("click", e => {
   if (e.target.id === "fr-signin"){ $("acct-in").click(); return; }
   const b = e.target.closest("button[data-act]"); if (!b) return;
-  const art = b.closest(".frdeck"), id = art.dataset.id, r = (frCache || []).find(x => x.id === id); if (!r) return;
+  const art = b.closest(".frdeck"), id = art.dataset.id, r = (frCache || frLast).find(x => x.id === id); if (!r) return;
   if (b.dataset.act === "toggle"){ frOpen.has(id) ? frOpen.delete(id) : frOpen.add(id); renderFriends(); }
-  if (b.dataset.act === "forget"){ setLinks(savedLinks().filter(t => t !== r.share_token)); frCache = frCache.filter(x => x !== r); frOpen.delete(id); renderFriends(); }
+  if (b.dataset.act === "forget"){ setLinks(savedLinks().filter(t => t !== r.share_token)); frCache = (frCache || frLast).filter(x => x !== r); frLast = frCache; frOpen.delete(id); renderFriends(); }
   if (b.dataset.act === "copy"){
     customDecks.push({ id: "d" + Date.now().toString(36), name: String(r.name).slice(0, 80), sub: "Copied from a friend's link", text: r.list });
     saveDecks(); art.querySelector("[data-msg]").textContent = "Copied. It's in My Decks now.";
