@@ -77,7 +77,8 @@ with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` he
 ## Conventions
 
 - Commit as `itsbrandontryingthings`; fetch + rebase on `origin/main` before pushing (the Action and weekly task also push).
-- Keep wording friendly and plain; headings in Title Case; tab names: Collection, Open Packs, My Decks, Wish List, Marketplace, Friends.
+- Keep wording friendly and plain; headings in Title Case; tab names (in this order): Collection, Open Packs, My Decks, Marketplace, Wish List, Friends. The Wish List has
+  its own Add a Card box and filters (`wlf`, `wlAdd`, in patch_marketplace).
 - On a Windows PC (Git for Windows + Python from python.org) there's no `python3`: run the build as
   `bash -c 'python3(){ python "$@"; }; export -f python3; ./build/make.sh'` and the tests with `python -X utf8`.
 - After a change, tell Brandon in a couple of sentences what changed and where to see it.

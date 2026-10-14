@@ -25,6 +25,9 @@
   and the dates there and in the line under the values use the long format (October 12, 2026).
 - New-offer sound: pick "Konbini chime" (new default, an original vibraphone-style door chime) or "Poro coin" (the old
   sound) next to Sound on/off (localStorage "rb-offer-chime").
+- Tabs: Collection, Open Packs, My Decks, Marketplace, Wish List, Friends.
+- Wish List works like Collection: Add a Card to Wish List (type, ↑ ↓, Enter adds one), a "My Wish List" bar (count,
+  S M L, List / Grid), then search / domain / type / rarity / All-I have-Missing / sort / Reset (wlf, this visit only).
 - Every "Stop sharing" button (deck, wish list, shopping list) asks "Are you sure…?" first (stopShareOK).
 - Each incoming offer folds to its top line by tapping the sender's name (localStorage "rb-offer-fold").
 - Making an offer: "Your Offer Preview" shows pictures of the cards you're giving (ticked) and trading, with counts;
@@ -520,6 +523,136 @@ rep('''<button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="P
 rep('''$("shop-offers").addEventListener("input", e => {''', '''$("shop-offers").addEventListener("change", e => { if (e.target.id === "of-chime"){ LS.set("rb-offer-chime", e.target.value); coinChime(); } });
 $("shop-offers").addEventListener("input", e => {''')
 rep('</style>\n\n<div class="wrap" id="app">', '''#of-chime{padding:5px 8px;font-size:13px}
+</style>
+
+<div class="wrap" id="app">''')
+
+# ---------- tab order: Collection, Open Packs, My Decks, Marketplace, Wish List, Friends
+rep('''    <button role="tab" id="t-wish" aria-selected="false" aria-controls="view-wish">Wish List</button>
+    <button role="tab" id="t-shop" aria-selected="false" aria-controls="view-shop">Marketplace</button>''',
+    '''    <button role="tab" id="t-shop" aria-selected="false" aria-controls="view-shop">Marketplace</button>
+    <button role="tab" id="t-wish" aria-selected="false" aria-controls="view-wish">Wish List</button>''')
+
+# ---------- Wish List works like Collection: Add a Card to Wish List (type, ↑ ↓, Enter), then one box with search,
+# domain, type, rarity, own it / don't, sort and Reset (this visit only), a "My Wish List" bar with the count, S M L and
+# List / Grid, then the cards
+rep('''    <div class="panel" id="wish-summary"></div>
+    <div class="wlist" id="wish-list"></div>''', '''    <div class="panel" id="wish-summary"></div>
+    <div class="panel sh-addp">
+      <h3 class="of-h">Add a Card to Wish List</h3>
+      <p class="meta">Type part of a card name, then press Enter to add one copy to your wish list. Use ↑ ↓ to pick a different printing.</p>
+      <div class="qa-box">
+        <input class="search" id="wl-q" type="search" placeholder="Start typing a card name…" aria-label="Card name to add to your wish list" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="wl-sug" aria-autocomplete="list">
+        <ul class="sug" id="wl-sug" role="listbox" aria-label="Matching cards"></ul>
+      </div>
+      <p class="meta" id="wl-addmsg" aria-live="polite"></p>
+    </div>
+    <div id="wish-head"></div>
+    <div class="panel sh-filt" id="wlf-p" role="search" aria-label="Filter your wish list">
+      <div class="frow">
+        <input class="search" id="wlf-q" type="search" placeholder="Search name, keyword or ability, e.g. Jinx, draw" aria-label="Search your wish list" autocomplete="off">
+        <select id="wlf-dom" aria-label="Domain"><option value="">All domains</option></select>
+        <select id="wlf-type" aria-label="Card type"><option value="">All types</option></select>
+        <select id="wlf-rar" aria-label="Rarity"><option value="">All rarities</option></select>
+      </div>
+      <div class="frow">
+        <div class="seg" role="group" aria-label="Which cards to show"><button id="wlf-all" aria-pressed="true">All</button><button id="wlf-have" aria-pressed="false">I have</button><button id="wlf-need" aria-pressed="false">Missing</button></div>
+        <select id="wlf-sort" aria-label="Sort your wish list"><option value="">Sort: set order</option><option value="name">Sort: name</option><option value="price">Sort: price, high to low</option><option value="cost">Sort: total cost, high to low</option></select>
+        <button class="btn reset" id="wlf-reset" type="button" disabled>Reset filters</button>
+      </div>
+    </div>
+    <div class="wlist" id="wish-list"></div>''')
+rep('''<div class="seg" role="group" aria-label="Wish list layout"><button id="wv-list" aria-pressed="${wv === "list"}">List</button><button id="wv-grid" aria-pressed="${wv === "grid"}">Grid</button></div><button class="btn" id="wish-copy">Copy wish list</button>''',
+    '''<button class="btn" id="wish-copy">Copy wish list</button>''')
+rep('''"Tap ♡ Want on any card in Collection to add it here, even if it's not in one of your decks."''',
+    '''"Tap ♡ Want on any card in Collection, or add one just below. It doesn't have to be in one of your decks."''')
+rep('''  $("wish-list").className = wv === "grid" ?''', '''  const vis = wlfSort(ids.filter(wlfMatch)), z = ["s","m","l"].includes(st.size) ? st.size : "s";
+  $("wlf-p").hidden = !ids.length; wlfOpts();
+  $("wish-head").innerHTML = `<div class="mk-hrow wl-hrow"><h2 class="mk-h">My Wish List</h2>${ids.length ? `<span class="meta">${wlfOn() ? `Showing ${vis.length} of ${ids.length}` : `${ids.length}`} card${ids.length === 1 ? "" : "s"}</span><span class="grow"></span>
+    <div class="seg sizeseg" role="group" aria-label="Card size"><button id="wls-s" aria-pressed="${z === "s"}" title="Small cards">S</button><button id="wls-m" aria-pressed="${z === "m"}" title="Medium cards">M</button><button id="wls-l" aria-pressed="${z === "l"}" title="Large cards">L</button></div>
+    <div class="seg" role="group" aria-label="Wish list layout"><button id="wv-list" aria-pressed="${wv === "list"}">List</button><button id="wv-grid" aria-pressed="${wv === "grid"}">Grid</button></div>` : ""}</div>`;
+  $("wish-list").className = wv === "grid" ?''')
+rep('''  $("wish-list").innerHTML = ids.map(id => { const c = byId[id], q = wish[id], have = counts[id] || 0;''',
+    '''  $("wish-list").innerHTML = (ids.length && !vis.length ? `<div class="empty">No cards on your wish list match these filters. <button class="btn" id="wlf-clear">Reset filters</button></div>` : "")
+    + vis.map(id => { const c = byId[id], q = wish[id], have = counts[id] || 0;''')
+rep('''// ---- Marketplace: each incoming offer folds by tapping the sender's name''', '''// ---- Wish List: filters (this visit only) and Add a Card
+const wlf = {q: "", dom: "", type: "", rar: "", own: "", sort: ""};
+function wlfOn(){ return !!(wlf.q || wlf.dom || wlf.type || wlf.rar || wlf.own); }
+function wlfMatch(id){
+  const c = byId[id], n = counts[id] || 0;
+  if (wlf.q){ const q = wlf.q.toLowerCase(); if (!(c.name.toLowerCase().includes(q) || c.id.includes(q) || findOf(c).includes(q))) return false; }
+  return (!wlf.dom || c.domains.includes(wlf.dom)) && (!wlf.type || c.type === wlf.type) && (!wlf.rar || c.rarity === wlf.rar) && (wlf.own !== "have" || n > 0) && (wlf.own !== "need" || !n);
+}
+function wlfSort(ids){
+  const p = id => byId[id].price ?? -1;
+  if (wlf.sort === "name") return ids.slice().sort((a, b) => byId[a].name.localeCompare(byId[b].name));
+  if (wlf.sort === "price") return ids.slice().sort((a, b) => p(b) - p(a));
+  if (wlf.sort === "cost") return ids.slice().sort((a, b) => wish[b] * Math.max(0, p(b)) - wish[a] * Math.max(0, p(a)));
+  return ids;
+}
+let wlfReady = false;
+function wlfOpts(){
+  if (wlfReady) return; wlfReady = true;
+  const uniq = f => [...new Set(CARDS.flatMap(f))].filter(Boolean).sort();
+  const fill = (id, vals) => $(id).insertAdjacentHTML("beforeend", vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join(""));
+  fill("wlf-dom", uniq(c => c.domains || [])); fill("wlf-type", uniq(c => [c.type])); fill("wlf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
+}
+function wlfSync(){ $("wlf-reset").disabled = !wlfOn(); ["all", "have", "need"].forEach(k => $("wlf-" + k).setAttribute("aria-pressed", (wlf.own || "all") === k)); }
+function wlfReset(){ Object.assign(wlf, {q: "", dom: "", type: "", rar: "", own: ""}); $("wlf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("wlf-" + k).value = ""); wlfSync(); renderWish(); }
+let wlfT; $("wlf-q").addEventListener("input", e => { wlf.q = e.target.value.trim(); wlfSync(); clearTimeout(wlfT); wlfT = setTimeout(renderWish, 120); });
+["dom", "type", "rar"].forEach(k => $("wlf-" + k).addEventListener("change", e => { wlf[k] = e.target.value; wlfSync(); renderWish(); }));
+$("wlf-sort").addEventListener("change", e => { wlf.sort = e.target.value; renderWish(); });
+["all", "have", "need"].forEach(k => $("wlf-" + k).addEventListener("click", () => { wlf.own = k === "all" ? "" : k; wlfSync(); renderWish(); }));
+$("wlf-reset").addEventListener("click", wlfReset);
+$("wish-list").addEventListener("click", e => { if (e.target.id === "wlf-clear") wlfReset(); });
+$("wish-head").addEventListener("click", e => {
+  const id = e.target.id;
+  if (id === "wv-list" || id === "wv-grid"){ st.wview = id === "wv-grid" ? "grid" : "list"; }
+  else if (/^wls-[sml]$/.test(id)){ st.size = id.slice(4); }
+  else return;
+  LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); renderWish();
+});
+let wlSug = [], wlSel = 0;
+function wlSuggest(){
+  const q = norm($("wl-q").value);
+  if (!q) wlSug = [];
+  else {
+    const words = q.split(" ");
+    wlSug = CARDS.filter(c => words.every(w => norm(c.name).includes(w)))
+      .map(c => ({c, s: (norm(c.name) === q ? -5 : 0) + (norm(c.name).startsWith(q) ? 0 : 10) + (c.variant ? 3 : 0) + (c.token ? 6 : 0) + (["OPP","PR","JDG"].includes(c.set) ? 2 : 0) + META.sets.findIndex(x => x.code === c.set) * 0.1}))
+      .sort((a, b) => a.s - b.s || a.c.name.localeCompare(b.c.name)).slice(0, 8).map(x => x.c);
+  }
+  wlSel = 0; wlDraw();
+}
+function wlDraw(){
+  $("wl-q").setAttribute("aria-expanded", wlSug.length > 0);
+  $("wl-sug").innerHTML = wlSug.map((c, i) => `<li role="option" id="wlsug-${i}" data-i="${i}" aria-selected="${i === wlSel}">
+    ${thumbHTML(c, 100).replace("<button", "<span").replace("</button>", "</span>").replace(/ data-img="[^"]*"/, "")}
+    <span class="code"><b>${c.set}</b>${esc(codeOf(c).split(" ")[1])}</span>
+    <span class="info"><span class="name">${esc(c.name)}</span><span class="sub"><span class="r-${c.rarity}">${c.rarity}</span>${c.variant ? `<span class="pill var">${esc(c.variant)}</span>` : ""}${banPill(c)}<span>${c.price != null ? esc(money(c.price)) : "No price"}</span></span></span>
+    <span class="own">${wish[c.id] ? `wanted ${wish[c.id]}` : counts[c.id] ? `own ${counts[c.id]}` : ""}</span></li>`).join("");
+  $("wl-q").setAttribute("aria-activedescendant", wlSug.length ? "wlsug-" + wlSel : "");
+}
+function wlAdd(i){
+  const c = wlSug[i]; if (!c) return;
+  wish[c.id] = Math.min(99, (wish[c.id] || 0) + 1); saveWish(); renderWish();
+  document.querySelectorAll(`button[data-wish="${CSS.escape(c.id)}"]`).forEach(x => { x.outerHTML = wishBtn0(c, x.classList.contains("over")); });
+  $("wl-addmsg").textContent = `Added ${c.name} (${codeOf(c)}${c.variant ? ` · ${c.variant}` : ""}). You want ${wish[c.id]}.`;
+  $("wl-q").value = ""; wlSug = []; wlDraw(); $("wl-q").focus();
+}
+$("wl-q").addEventListener("input", wlSuggest);
+$("wl-q").addEventListener("keydown", e => {
+  if (e.key === "ArrowDown" && wlSug.length){ wlSel = (wlSel + 1) % wlSug.length; wlDraw(); e.preventDefault(); }
+  else if (e.key === "ArrowUp" && wlSug.length){ wlSel = (wlSel - 1 + wlSug.length) % wlSug.length; wlDraw(); e.preventDefault(); }
+  else if (e.key === "Enter"){ wlAdd(wlSel); e.preventDefault(); }
+  else if (e.key === "Escape"){ $("wl-q").value = ""; wlSug = []; wlDraw(); }
+});
+$("wl-q").addEventListener("blur", () => setTimeout(() => { wlSug = []; wlDraw(); }, 150));
+$("wl-sug").addEventListener("mousedown", e => { const li = e.target.closest("li"); if (li){ e.preventDefault(); wlAdd(+li.dataset.i); } });
+// ---- Marketplace: each incoming offer folds by tapping the sender's name''')
+rep('</style>\n\n<div class="wrap" id="app">', '''#wish-head .mk-hrow{margin:14px 0 8px;align-items:center}
+#wish-head .seg{flex:0 0 auto}
+#wlf-p{margin-bottom:10px}
 </style>
 
 <div class="wrap" id="app">''')
