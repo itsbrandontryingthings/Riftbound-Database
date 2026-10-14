@@ -1751,27 +1751,43 @@ function audioCtx(){
 function coinChime(){
   const a = audioCtx(); if (!a || a.state !== "running") return;
   const t = a.currentTime + 0.02;
-  // a tiny, squeaky Ewok-ish "yub-nub-ee!": a buzzy voice shaped into vowels by two filters (the mouth),
-  // with a fast flutter in the pitch so it chatters
+  // a cute poro "brrr-eep!", then a mystical "ca-ching" (a bell with a shimmering echo and sparkles)
   const out = a.createDynamicsCompressor(); out.connect(a.destination);
-  const syl = (at, dur, f0a, f0b, f1, f2, vol) => {
-    const o = a.createOscillator(), lfo = a.createOscillator(), depth = a.createGain(), g = a.createGain();
+  // the poro: a soft voice shaped into "oo" then "ee" by two filters, fluttering ("brrr") then squeaking up ("eep!")
+  const voice = (at, dur, f0a, f0b, f1, f2, vol, flutter) => {
+    const o = a.createOscillator(), g = a.createGain(), trem = a.createGain(), lfo = a.createOscillator(), lg = a.createGain();
     o.type = "sawtooth";
     o.frequency.setValueAtTime(f0a, t + at); o.frequency.exponentialRampToValueAtTime(f0b, t + at + dur);
-    lfo.frequency.value = 19; depth.gain.value = f0a * 0.06; lfo.connect(depth); depth.connect(o.frequency);
-    for (const [f, q, lv] of [[f1, 7, 1], [f2, 9, 0.6]]){
+    for (const [f, q, lv] of [[f1, 6, 1], [f2, 8, 0.5]]){
       const bp = a.createBiquadFilter(), fg = a.createGain();
       bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = q; fg.gain.value = lv;
-      o.connect(bp); bp.connect(fg); fg.connect(g);
+      o.connect(bp); bp.connect(fg); fg.connect(trem);
     }
-    g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol, t + at + 0.018);
-    g.gain.setValueAtTime(vol, t + at + dur * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+    trem.gain.value = 1 - flutter; lfo.frequency.value = 32; lg.gain.value = flutter; lfo.connect(lg); lg.connect(trem.gain);
+    trem.connect(g);
+    g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol, t + at + 0.02);
+    g.gain.setValueAtTime(vol, t + at + dur * 0.65); g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
     g.connect(out);
     o.start(t + at); lfo.start(t + at); o.stop(t + at + dur + 0.05); lfo.stop(t + at + dur + 0.05);
   };
-  syl(0,    0.15, 520, 720, 420, 950, 0.55);    // "yub" (rises)
-  syl(0.17, 0.17, 760, 600, 450, 1000, 0.55);   // "nub" (falls)
-  syl(0.37, 0.16, 880, 1250, 320, 2600, 0.45);  // "ee!" (squeaks up)
+  voice(0,    0.16, 560, 640, 380, 900, 0.75, 0.45);    // "brrr" (soft "oo", fluttering)
+  voice(0.15, 0.15, 900, 1500, 330, 2500, 0.62, 0.1);  // "eep!" (squeaks up)
+  // the mystical ca-ching rings through a shimmering echo
+  const echo = a.createDelay(1), fb = a.createGain(), tone = a.createBiquadFilter(), wet = a.createGain(), bell = a.createGain();
+  echo.delayTime.value = 0.12; fb.gain.value = 0.38; tone.type = "lowpass"; tone.frequency.value = 5000; wet.gain.value = 0.45;
+  bell.connect(out); bell.connect(echo); echo.connect(tone); tone.connect(fb); fb.connect(echo); tone.connect(wet); wet.connect(out);
+  const ring = (f, at, dur, vol, type) => {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol, t + at + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+    o.connect(g); g.connect(bell); o.start(t + at); o.stop(t + at + dur + 0.05);
+  };
+  ring(1568, 0.36, 0.09, 0.07, "triangle");   // "ca" (G6)
+  ring(2093, 0.44, 0.75, 0.085, "sine");       // "ching" (C7)...
+  ring(5776, 0.44, 0.35, 0.018, "sine");      // ...with a bell-like overtone
+  ring(2637, 0.52, 0.35, 0.022, "sine");       // sparkles drifting up
+  ring(3136, 0.58, 0.32, 0.018, "sine");
+  ring(4186, 0.64, 0.30, 0.015, "sine");
 }
 // check for offers every minute while the page is open (and when you come back to it)
 const offerPoll = () => { if (cloudUser && sb && shopP().shared && document.visibilityState === "visible") loadOffers(true); };
