@@ -70,7 +70,7 @@ with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` he
 
 - All SQL files have been run in Supabase as of Oct 14, 2026: `supabase_links.sql`, `supabase_offers.sql`,
   `supabase_offer_threads.sql` and `supabase_offer_revise.sql` (revise offers, delete messages). A new SQL file is
-  something Brandon runs himself in Supabase → SQL Editor; note it here until he confirms "Success".
+  something Brandon runs in Supabase → SQL Editor; note it here until Brandon confirms "Success".
 - 26 printings have no text in `text.js` (Kennen – Heart of the Tempest, double-sided tokens like "Bird // Buff").
 - The site is tested with a fake Supabase; real-database behaviour should be checked after SQL changes
   (share a deck, open its link in a private window).
