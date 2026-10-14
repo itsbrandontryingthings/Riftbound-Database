@@ -11,6 +11,7 @@
 - Each shopping list card: "To buy" − / + (deck cards keep the change in wish._shop.adj), "Need N · Have N", the decks
   that use it with their counts, and "+ Collected 1" (was "+ Bought 1"), which adds one to your collection and takes
   one off "to buy"; the collection, totals, decks and shared list all update from that.
+- My Decks: the Need − / + on each deck card is gone; only "I have" stays.
 Usage: patch_marketplace.py in.html out.html"""
 import sys
 
@@ -233,6 +234,13 @@ rep('</style>\n\n<div class="wrap" id="app">', '''.sh-nh{font-size:13px;color:va
 </style>
 
 <div class="wrap" id="app">''')
+
+# ---------- My Decks: no Need − / + on deck cards, just "I have 0 1 2 …" (the "3×" still shows what the deck runs;
+# change it with Edit list as text)
+rep('''const ctl = `<div class="dk-ctl"><span class="dk-pair">${dkNeedCtl(r)}</span><span class="dk-pair">${r.known ? dkHaveCtl(r, view === "grid") : ""}</span></div>`;''',
+    '''const ctl = r.known ? `<div class="dk-ctl"><span class="dk-pair">${dkHaveCtl(r, view === "grid")}</span></div>` : "";''')
+rep('''tap <b>Need</b> to change how many of a card the deck runs, tap <b>I have</b> to update your collection (it's the same count you see in Collection), add or remove cards,''',
+    '''tap <b>I have</b> to update your collection (it's the same count you see in Collection), add or remove cards, change how many of a card the deck runs with <b>Edit list as text</b>,''')
 
 open(out, "w", encoding="utf-8").write(h)
 print("patch_marketplace: ok ->", out)

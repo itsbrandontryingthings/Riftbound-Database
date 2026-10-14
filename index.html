@@ -802,7 +802,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
         <li><b>Cost to finish</b>: what the missing cards cost, using the cheapest printing of each, in CAD and USD.</li>
         <li><b>Total deck value</b>: what the whole deck is worth at TCGplayer market prices.</li>
         <li><b>Tournament legality</b>: any banned card is flagged, and decks with a Legend are checked against the deck rules.</li>
-        <li><b>Make it yours</b>: tap <b>Need</b> to change how many of a card the deck runs, tap <b>I have</b> to update your collection (it's the same count you see in Collection), add or remove cards, and switch between list and grid at S, M or L size.</li>
+        <li><b>Make it yours</b>: tap <b>I have</b> to update your collection (it's the same count you see in Collection), add or remove cards, change how many of a card the deck runs with <b>Edit list as text</b>, and switch between list and grid at S, M or L size.</li>
       </ul>
       <p class="meta">Copy a shopping list of what's missing, edit the deck any time, or share it with friends. Add a deck at the bottom of this page.</p>
     </div>
@@ -1498,7 +1498,7 @@ function dkRowHTML(r, view, size){
   const set = c ? `<span class="dk-set" style="--sc:var(--${(setCol[c.set] || "line")})">${esc(setName[c.set] || c.set)} · ${esc(codeOf(c))}</span>` : "";
   const ban = c ? banPill((groups[r.key] || []).find(x => x.ban)) : "";
   const price = r.cheap ? `<span class="dk-price"><b>${esc(m1(r.q * r.cheap.price))}</b>${FX && st.cur === "both" ? `<small>${esc(usd(r.q * r.cheap.price))}</small>` : ""}<small>${esc(m1(r.cheap.price))} ea</small></span>` : "";
-  const ctl = `<div class="dk-ctl"><span class="dk-pair">${dkNeedCtl(r)}</span><span class="dk-pair">${r.known ? dkHaveCtl(r, view === "grid") : ""}</span></div>`;
+  const ctl = r.known ? `<div class="dk-ctl"><span class="dk-pair">${dkHaveCtl(r, view === "grid")}</span></div>` : "";
   const rm = `<button class="dk-rm" data-act="rm" aria-label="Remove ${esc(r.name)} from this deck" title="Remove from this deck">✕</button>`;
   if (view === "grid") return `<div class="card tile dk-tile${r.miss ? "" : " done"}" data-s="${r.si}" data-r="${r.ri}" style="${dom}">${thumb}${c && (groups[r.key] || []).some(x => x.ban === "std") ? '<span class="tban">BANNED</span>' : ""}${rm}
     <span class="tname">${name}</span><div class="tsub"><b class="dk-q">${r.q}×</b> ${set || esc(r.name)}</div><div class="dk-st">${dkStatus(r)}${price}</div>${ctl}</div>`;
