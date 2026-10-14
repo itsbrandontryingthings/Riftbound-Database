@@ -16,6 +16,7 @@ async def main():
             await r.continue_()
         await ctx.route("**/*", h)
         pg = await ctx.new_page(); pg.on("pageerror", lambda e: errs.append(str(e)+" @ "+(e.stack or "")[:300]))
+        pg.on("dialog", lambda d: asyncio.ensure_future(d.accept()))   # "Are you sure you want to stop sharing?" -> OK
         await pg.goto(BASE); await pg.wait_for_timeout(500)
         async def signup(email):
             await pg.click("#acct-in"); await pg.click("#auth-switch"); await pg.fill("#auth-email",email); await pg.fill("#auth-pass","secret12"); await pg.click("#auth-go"); await pg.wait_for_timeout(700)

@@ -613,7 +613,10 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .wishbtn.shopbtn.over[aria-pressed="true"]{color:#5fd08a}
 .shopq.over.on .wishbtn.shopbtn{width:auto;padding:0 9px}
 #shop-toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,16px);z-index:1000;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;background:#14231a;color:#e8f6ec;border:1px solid #5fd08a;border-radius:10px;padding:10px 16px;font-size:14px;box-shadow:0 10px 28px rgb(0 0 0 / .5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
-#shop-toast.show{opacity:1;transform:translate(-50%,0)}
+#shop-toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#shop-toast .toast-undo{margin-left:10px;padding:3px 12px;font-size:13.5px;border-color:#5fd08a;color:#5fd08a;background:transparent}
+.mk-hrow .grow{flex:1}
+.sh-undo{align-self:center;padding:5px 12px;font-size:13.5px}
 #shop-toast.bump{animation:shopbump .25s}
 #shop-toast b{color:#5fd08a}
 @keyframes shopbump{40%{transform:translate(-50%,0) scale(1.04)}}
@@ -641,11 +644,15 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .of-pvc small{font-size:12px;line-height:1.25;color:var(--fg)}
 .of-pvq{position:absolute;top:6px;left:6px;z-index:3;background:rgb(10 12 18 / .85);color:#fff;font-weight:700;font-size:13px;border-radius:6px;padding:1px 7px;pointer-events:none}
 @media (max-width:520px){.of-pv{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.updnote{margin:8px 0 2px;font-size:13.5px;color:var(--muted);line-height:1.45}
+.updnote b{color:var(--fg);font-weight:600}
+#of-chime{padding:5px 8px;font-size:13px}
 </style>
 
 <div class="wrap" id="app">
   <div class="top">
     <div class="eyebrow">Collection tracker <span class="tag" id="sync">Loading your collection…</span><span class="uisize"><span>Page size</span><span class="seg" role="group" aria-label="Page size"><button id="ui-s" aria-pressed="true" title="Normal size">S</button><button id="ui-m" aria-pressed="false" title="Bigger">M</button><button id="ui-l" aria-pressed="false" title="Biggest">L</button></span></span></div>
+    <div class="updnote" id="c-sched" hidden></div>
     <h1>Riftbound - Complete Database</h1>
     <div class="acct" id="acct"><button class="btn primary" id="acct-in">Sign in or create an account</button><span class="who" id="acct-who"></span><button class="btn" id="acct-out" hidden>Sign out</button></div>
     <div class="collect-row">
@@ -976,7 +983,16 @@ $("type").insertAdjacentHTML("beforeend", `<option value="__token">Token</option
   if (!ts.length) $("tg").hidden = true; }
 RAR.filter(r => CARDS.some(c => c.rarity === r)).forEach(r => $("rarity").insertAdjacentHTML("beforeend", `<option value="${r}">${r}</option>`));
 $("doms").innerHTML = DOMS.map(([d,v]) => `<button data-d="${d}" aria-pressed="false"><span class="dot" style="background:var(${v})"></span>${d}</button>`).join("") + `<button class="banchip" data-ban="1" aria-pressed="false" title="Show only cards banned from competitive play"><span class="dot"></span>Banned</button>`;
-if (META.updated) $("c-updated").textContent = `Card list updated ${META.updated} · ${CARDS.length.toLocaleString()} printings across ${META.sets.length} sets` + (META.pricesUpdated ? ` · Prices are TCGplayer market prices (USD), updated ${META.pricesUpdated}` : "") + (FX ? ` · CAD at the Bank of Canada rate of ${FX.toFixed(4)} (${META.fx.date})` : "");
+const longDate = d => { try { return new Date(d + "T12:00:00").toLocaleDateString("en-US", {month: "long", day: "numeric", year: "numeric"}); } catch(e){ return d; } };
+if (META.updated){
+  // next Monday after the last update; if that has already passed (an update ran late or was missed), the coming Monday
+  const iso = x => x.toISOString().slice(0, 10), next = new Date(META.updated + "T12:00:00"), today = new Date(); today.setHours(12, 0, 0, 0);
+  do next.setDate(next.getDate() + 1); while (next.getDay() !== 1);
+  while (next < today) next.setDate(next.getDate() + 7);
+  $("c-sched").innerHTML = `<span aria-hidden="true">🔄</span> The card list and prices are updated <b>every Monday</b>. Last updated <b>${esc(longDate(META.updated))}</b> · next update <b>${iso(next) === iso(today) ? "today" : "Monday, " + esc(longDate(iso(next)))}</b>`;
+  $("c-sched").hidden = false;
+}
+if (META.updated) $("c-updated").textContent = `Card list updated ${longDate(META.updated)} · ${CARDS.length.toLocaleString()} printings across ${META.sets.length} sets` + (META.pricesUpdated ? ` · Prices are TCGplayer market prices (USD), updated ${longDate(META.pricesUpdated)}` : "") + (FX ? ` · CAD at the Bank of Canada rate of ${FX.toFixed(4)} (${longDate(META.fx.date)})` : "");
 
 function syncControls(){
   $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("kw").value = st.kw || ""; $("tg").value = st.tg || ""; $("variants").checked = st.variants; $("sort").value = st.sort || "set";
@@ -1223,7 +1239,7 @@ $("wish-summary").addEventListener("click", e => {
   if (e.target.id === "wv-list" || e.target.id === "wv-grid"){ st.wview = e.target.id === "wv-grid" ? "grid" : "list"; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); renderWish(); return; }
   if (e.target.id === "wish-copy"){ const ids = wishIds().filter(id => byId[id]); copy(wishText() + `\n\nTotal: ${money(ids.reduce((a, id) => a + wish[id] * (byId[id].price || 0), 0))}`, "wish list"); }
   if ((e.target.id === "wish-share" || e.target.id === "wish-link") && typeof openShare === "function") openShare("wish");
-  if (e.target.id === "wish-unshare"){ delete wish._shared; saveWish(); renderWish(); }
+  if (e.target.id === "wish-unshare"){ if (!stopShareOK("wish list")) return; delete wish._shared; saveWish(); renderWish(); }
 });
 // ♡ / ♥ on any card
 document.addEventListener("click", e => {
@@ -1250,13 +1266,14 @@ function setShopN(id, q){
 }
 // a small note at the bottom of the screen; tapping again updates it and keeps it up
 let shopToastT = 0;
-function shopToast(c, n){
+function toast(html, ms){
   let t = $("shop-toast");
   if (!t){ document.body.insertAdjacentHTML("beforeend", '<div id="shop-toast" role="status" aria-live="polite"></div>'); t = $("shop-toast"); }
-  t.innerHTML = `✓ <b>${esc(c.name)}</b> added to your shopping list · <b>${n}</b> on it`;
+  t.innerHTML = html;
   t.classList.remove("bump"); void t.offsetWidth; t.classList.add("show", "bump");
-  clearTimeout(shopToastT); shopToastT = setTimeout(() => t.classList.remove("show"), 2500);
+  clearTimeout(shopToastT); shopToastT = setTimeout(() => t.classList.remove("show"), ms || 2500);
 }
+function shopToast(c, n){ toast(`✓ <b>${esc(c.name)}</b> added to your shopping list · <b>${n}</b> on it`); }
 document.addEventListener("click", e => {
   const b = e.target.closest("button[data-shopadd]"); if (!b) return;
   e.preventDefault(); e.stopPropagation();
@@ -1606,6 +1623,9 @@ function renderDecks(){
       <button class="btn primary" id="dk-addgo">Add</button><span class="meta" id="dk-addmsg" aria-live="polite"></span></form>`;
   if (!$("dk-names")) document.body.insertAdjacentHTML("beforeend", `<datalist id="dk-names">${Object.values(groups).map(g => `<option value="${esc(g[0].name)}">`).join("")}</datalist>`);
 }
+function stopShareOK(what){
+  return confirm(`Are you sure you want to stop sharing your ${what}?\n\nThe link will stop working for everyone you sent it to. You can share it again later, but that makes a new link.`);
+}
 // ---- Marketplace: each incoming offer folds by tapping the sender's name
 const offFold = new Set(Array.isArray(LS.get("rb-offer-fold")) ? LS.get("rb-offer-fold") : []);
 $("shop-offers").addEventListener("click", e => {
@@ -1664,7 +1684,21 @@ function shfOpts(){
   fill("shf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
   fill("mkf-dom", uniq(c => c.domains || [])); fill("mkf-type", uniq(c => [c.type])); fill("mkf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
 }
-function shopHead(n, all){ return `<div class="mk-hrow"><h2 class="mk-h">${mkFoldBtn("list", "My Shopping List")}</h2>${all && shfOn() ? `<span class="meta">Showing ${n} of ${all} card${all === 1 ? "" : "s"}</span>` : ""}</div>`; }
+// "+ Collected 1" can be undone: each tap keeps the card it added and the shopping list as it was (until the page reloads)
+const shUndo = [];
+function collected(id, snap){
+  shUndo.push({id, snap}); if (shUndo.length > 30) shUndo.shift();
+  toast(`✓ <b>1 ${esc(byId[id].name)}</b> added to your collection <button type="button" class="btn toast-undo" data-undo>Undo</button>`, 7000);
+  if (st.tab === "shop") renderShop();
+}
+function undoCollected(){
+  const u = shUndo.pop(); if (!u) return;
+  wish._shop = JSON.parse(u.snap); saveWish(); adjust(u.id, -1);
+  if (st.tab === "shop") renderShop();
+  toast(`↶ Undone: <b>${esc(byId[u.id].name)}</b> is back on your shopping list`);
+}
+document.addEventListener("click", e => { if (e.target.closest("[data-undo]")){ e.preventDefault(); undoCollected(); } });
+function shopHead(n, all){ return `<div class="mk-hrow"><h2 class="mk-h">${mkFoldBtn("list", "My Shopping List")}</h2>${all && shfOn() ? `<span class="meta">Showing ${n} of ${all} card${all === 1 ? "" : "s"}</span>` : ""}${shUndo.length ? `<span class="grow"></span><button type="button" class="btn sh-undo" data-undo title="Takes back the last + Collected 1: removes that card from your collection and puts it back on this list">↶ Undo Collected${shUndo.length > 1 ? ` (${shUndo.length})` : ""}</button>` : ""}</div>`; }
 function shfReset(){ Object.assign(shf, {q: "", dom: "", type: "", rar: ""}); $("shf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("shf-" + k).value = ""); $("shf-reset").disabled = true; renderShop(); }
 $("shf-q").addEventListener("input", e => { shf.q = e.target.value.trim(); $("shf-reset").disabled = !shfOn(); renderShop(); });
 ["dom", "type", "rar"].forEach(k => $("shf-" + k).addEventListener("change", e => { shf[k] = e.target.value; $("shf-reset").disabled = !shfOn(); renderShop(); }));
@@ -1758,7 +1792,7 @@ $("shop-summary").addEventListener("click", e => {
   if (dk){ const skip = new Set(shopP().skip || []); skip.has(dk.dataset.deck) ? skip.delete(dk.dataset.deck) : skip.add(dk.dataset.deck); return setShop({skip: [...skip]}); }
   if (id === "sh-copy"){ const items = shopItems().items.filter(x => x.buy > 0); copy(items.map(x => `${x.buy} ${x.name}` + (x.cheap ? ` — ${money(x.cost)} (${codeOf(x.cheap)})` : "")).join("\n") + `\n\nTotal: ${money(items.reduce((a, x) => a + x.cost, 0))}`, "shopping list"); }
   if (id === "sh-share" || id === "sh-link") openShare("shop");
-  if (id === "sh-unshare") setShop({shared: false});
+  if (id === "sh-unshare" && stopShareOK("shopping list")) setShop({shared: false});
 });
 $("shop-wrap").addEventListener("click", e => {
   const id = e.target.id;
@@ -1768,7 +1802,7 @@ $("shop-wrap").addEventListener("click", e => {
   const xb = e.target.closest("[data-xq],[data-xrm],[data-gotx]");
   if (xb){
     const ex = {...(shopP().extra || {})}, id = xb.dataset.x || xb.dataset.xrm || xb.dataset.gotx;
-    if (xb.dataset.gotx){ ex[id] = (ex[id] || 0) - 1; if (!(ex[id] > 0)) delete ex[id]; wish._shop = {...shopP(), extra: ex}; saveWish(); adjust(id, 1); return; }
+    if (xb.dataset.gotx){ const snap = JSON.stringify(shopP()); ex[id] = (ex[id] || 0) - 1; if (!(ex[id] > 0)) delete ex[id]; wish._shop = {...shopP(), extra: ex}; saveWish(); adjust(id, 1); collected(id, snap); return; }
     else if (xb.dataset.xrm) ex[id] = 0;
     else ex[id] = Math.max(0, Math.min(99, (ex[id] || 0) + +xb.dataset.xq));
     if (!(ex[id] > 0)) delete ex[id];
@@ -1783,9 +1817,9 @@ $("shop-wrap").addEventListener("click", e => {
   const g = e.target.closest("[data-got]");
   if (g){
     // collecting one always takes one off "to buy": when the decks are already covered, it comes off the extra copies
-    const x = shopItems().items.find(i => !i.extra && i.key === g.dataset.got);
+    const snap = JSON.stringify(shopP()), x = shopItems().items.find(i => !i.extra && i.key === g.dataset.got);
     if (x && x.base === 0 && x.adj > 0){ const a = {...(shopP().adj || {})}; a[x.key] = x.adj - 1; if (!a[x.key]) delete a[x.key]; wish._shop = {...shopP(), adj: a}; saveWish(); }
-    const c = cheapestOf(g.dataset.got) || groups[g.dataset.got][0]; adjust(c.id, 1);
+    const c = cheapestOf(g.dataset.got) || groups[g.dataset.got][0]; adjust(c.id, 1); collected(c.id, snap);
   }
 });
 $("shop-wrap").addEventListener("change", e => {
@@ -1844,9 +1878,10 @@ function renderOffers(){
   if (!shopP().shared && !(offers && offers.length)){ box.innerHTML = note("No offers yet. Share your shopping list (below) and friends can tick the cards they have and send you an offer: money, a trade, anything. It shows up here with their name."); return; }
   if (offersOff){ box.innerHTML = note("Offers need a quick database update before friends can send them. The site owner has the steps."); return; }
   if (!offers){ box.innerHTML = note("Checking for offers…"); return; }
-  box.innerHTML = `<div class="panel of-panel"><div class="of-hrow"><h2 class="of-h mk-h">${mkFoldBtn("offers", `Incoming Offers <small>${offers.length}</small>`)}</h2><span class="frow"><button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="Play a coin sound when a new offer comes in">${offerSound() ? "🔔 Sound on" : "🔕 Sound off"}</button><button class="btn" id="of-refresh">Check for new offers</button></span></div>
+  box.innerHTML = `<div class="panel of-panel"><div class="of-hrow"><h2 class="of-h mk-h">${mkFoldBtn("offers", `Incoming Offers <small>${offers.length}</small>`)}</h2><span class="frow"><button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="Play a sound when a new offer comes in">${offerSound() ? "🔔 Sound on" : "🔕 Sound off"}</button><select id="of-chime" aria-label="New offer sound" title="Pick the new-offer sound (it plays when you choose)" ${offerSound() ? "" : "disabled"}><option value="konbini" ${LS.get("rb-offer-chime") === "poro" ? "" : "selected"}>Konbini chime</option><option value="poro" ${LS.get("rb-offer-chime") === "poro" ? "selected" : ""}>Poro coin</option></select><button class="btn" id="of-refresh">Check for new offers</button></span></div>
     ${offers.length ? offers.map(offerHTML).join("") : `<p class="meta">No offers yet. When a friend opens your shopping list link, they can tick the cards they have and send you an offer: money, a trade, anything. It shows up here with their name.</p>`}</div>`;
 }
+$("shop-offers").addEventListener("change", e => { if (e.target.id === "of-chime"){ LS.set("rb-offer-chime", e.target.value); coinChime(); } });
 $("shop-offers").addEventListener("input", e => { if (e.target.dataset.ofd) ownerDraft[e.target.dataset.ofd] = e.target.value; });
 $("shop-offers").addEventListener("keydown", e => { if (e.target.dataset.ofd && e.key === "Enter"){ e.preventDefault(); e.target.closest(".of-card").querySelector('[data-ofa="counter"]').click(); } });
 $("shop-offers").addEventListener("click", async e => {
@@ -2136,7 +2171,27 @@ function audioCtx(){
 }
 // browsers only allow sound after the first click or key press on the page
 ["pointerdown", "keydown"].forEach(ev => addEventListener(ev, () => audioCtx(), { once: true, capture: true }));
-function coinChime(){
+function coinChime(){ (LS.get("rb-offer-chime") === "poro" ? poroCoin : konbiniChime)(); }
+// konbini door chime: soft mallet notes (a sine plus a quiet bright partial, quick attack, long fade) through a small echo
+function konbiniChime(){
+  const a = audioCtx(); if (!a || a.state !== "running") return;
+  const t = a.currentTime + 0.03, out = a.createDynamicsCompressor(); out.connect(a.destination);
+  const echo = a.createDelay(1), fb = a.createGain(), wet = a.createGain(), dry = a.createGain();
+  echo.delayTime.value = 0.21; fb.gain.value = 0.25; wet.gain.value = 0.28; dry.gain.value = 1;
+  dry.connect(out); dry.connect(echo); echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(out);
+  const note = (f, at, dur, vol) => {
+    for (const [mul, lv, d] of [[1, 1, dur], [4, 0.12, dur * 0.35], [2, 0.18, dur * 0.6]]){
+      const o = a.createOscillator(), g = a.createGain();
+      o.type = "sine"; o.frequency.value = f * mul;
+      g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol * lv, t + at + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + at + d);
+      o.connect(g); g.connect(dry); o.start(t + at); o.stop(t + at + d + 0.05);
+    }
+  };
+  // ding-dong, ding-dong… then a bright two-note ending: G5 E5 C5 E5 · A5 G5 · C6 E6
+  [[784, 0], [659, 0.19], [523, 0.38], [659, 0.57], [880, 0.86], [784, 1.05], [1047, 1.34], [1319, 1.53]]
+    .forEach(([f, at], i) => note(f, at, i === 7 ? 1.6 : 0.9, i >= 6 ? 0.2 : 0.17));
+}
+function poroCoin(){
   const a = audioCtx(); if (!a || a.state !== "running") return;
   const t = a.currentTime + 0.02;
   // a cute poro "brrr-eep!", then a mystical "ca-ching" (a bell with a shimmering echo and sparkles)
@@ -2268,7 +2323,7 @@ $("deck-summary").addEventListener("click", e => {
     saveDecks(); renderDecks();
   }
   if (e.target.id === "dk-share" || e.target.id === "dk-link") openShare("deck");
-  if (e.target.id === "dk-unshare"){ const d = customDecks.find(x => x.id === curDeck); if (d){ d.shared = false; saveDecks(); renderDecks(); } }
+  if (e.target.id === "dk-unshare"){ const d = customDecks.find(x => x.id === curDeck); if (d && stopShareOK("deck")){ d.shared = false; saveDecks(); renderDecks(); } }
   if (e.target.id === "dk-edit"){
     const d = allDecks().find(x => x.id === curDeck); if (!d) return;
     editingId = d.id;

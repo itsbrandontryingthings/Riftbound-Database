@@ -11,7 +11,9 @@
   3 on it", updated on each tap). Lower or remove it in Marketplace.
 - Each shopping list card: "To buy" − / + (deck cards keep the change in wish._shop.adj), "Need N · Have N", the decks
   that use it with their counts, and "+ Collected 1" (was "+ Bought 1"), which adds one to your collection and takes
-  one off "to buy"; the collection, totals, decks and shared list all update from that.
+  one off "to buy"; the collection, totals, decks and shared list all update from that. It can be undone: a note
+  pops up with Undo (7 s), and "↶ Undo Collected" sits by the My Shopping List header (shUndo: the card it added and the
+  shopping list as it was, up to 30 steps, until the page reloads).
 - My Decks: the Need − / + on each deck card is gone; only "I have" stays.
 - Marketplace headers (Incoming Offers, Shopping List Overview, My Shopping List, Friends' Shopping Lists) fold up when
   tapped (localStorage "rb-mk-fold").
@@ -19,6 +21,11 @@
   domain, type, rarity) plus sort and size. renderFriends still builds them in #fr-list; groupFriends moves them to
   #mk-frlist, and every #fr-list listener is on both (frListen). Opening or pasting a shopping list link goes there.
   Its search matches card names and the list's name (or owner's name: then the whole list shows).
+- Header: "The card list and prices are updated every Monday. Last updated … · next update Monday, …" above the title,
+  and the dates there and in the line under the values use the long format (October 12, 2026).
+- New-offer sound: pick "Konbini chime" (new default, an original vibraphone-style door chime) or "Poro coin" (the old
+  sound) next to Sound on/off (localStorage "rb-offer-chime").
+- Every "Stop sharing" button (deck, wish list, shopping list) asks "Are you sure…?" first (stopShareOK).
 - Each incoming offer folds to its top line by tapping the sender's name (localStorage "rb-offer-fold").
 - Making an offer: "Your Offer Preview" shows pictures of the cards you're giving (ticked) and trading, with counts;
   the trade chips' pictures are bigger.
@@ -51,7 +58,10 @@ rep('</style>\n\n<div class="wrap" id="app">', '''.mk-h{font-family:var(--displa
 .wishbtn.shopbtn.over[aria-pressed="true"]{color:#5fd08a}
 .shopq.over.on .wishbtn.shopbtn{width:auto;padding:0 9px}
 #shop-toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,16px);z-index:1000;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;background:#14231a;color:#e8f6ec;border:1px solid #5fd08a;border-radius:10px;padding:10px 16px;font-size:14px;box-shadow:0 10px 28px rgb(0 0 0 / .5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
-#shop-toast.show{opacity:1;transform:translate(-50%,0)}
+#shop-toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#shop-toast .toast-undo{margin-left:10px;padding:3px 12px;font-size:13.5px;border-color:#5fd08a;color:#5fd08a;background:transparent}
+.mk-hrow .grow{flex:1}
+.sh-undo{align-self:center;padding:5px 12px;font-size:13.5px}
 #shop-toast.bump{animation:shopbump .25s}
 #shop-toast b{color:#5fd08a}
 @keyframes shopbump{40%{transform:translate(-50%,0) scale(1.04)}}
@@ -110,7 +120,21 @@ function shfOpts(){
   fill("shf-dom", uniq(c => c.domains || [])); fill("shf-type", uniq(c => [c.type]));
   fill("shf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
 }
-function shopHead(n, all){ return `<div class="mk-hrow"><h2 class="mk-h">My Shopping List</h2>${all && shfOn() ? `<span class="meta">Showing ${n} of ${all} card${all === 1 ? "" : "s"}</span>` : ""}</div>`; }
+// "+ Collected 1" can be undone: each tap keeps the card it added and the shopping list as it was (until the page reloads)
+const shUndo = [];
+function collected(id, snap){
+  shUndo.push({id, snap}); if (shUndo.length > 30) shUndo.shift();
+  toast(`✓ <b>1 ${esc(byId[id].name)}</b> added to your collection <button type="button" class="btn toast-undo" data-undo>Undo</button>`, 7000);
+  if (st.tab === "shop") renderShop();
+}
+function undoCollected(){
+  const u = shUndo.pop(); if (!u) return;
+  wish._shop = JSON.parse(u.snap); saveWish(); adjust(u.id, -1);
+  if (st.tab === "shop") renderShop();
+  toast(`↶ Undone: <b>${esc(byId[u.id].name)}</b> is back on your shopping list`);
+}
+document.addEventListener("click", e => { if (e.target.closest("[data-undo]")){ e.preventDefault(); undoCollected(); } });
+function shopHead(n, all){ return `<div class="mk-hrow"><h2 class="mk-h">My Shopping List</h2>${all && shfOn() ? `<span class="meta">Showing ${n} of ${all} card${all === 1 ? "" : "s"}</span>` : ""}${shUndo.length ? `<span class="grow"></span><button type="button" class="btn sh-undo" data-undo title="Takes back the last + Collected 1: removes that card from your collection and puts it back on this list">↶ Undo Collected${shUndo.length > 1 ? ` (${shUndo.length})` : ""}</button>` : ""}</div>`; }
 function shfReset(){ Object.assign(shf, {q: "", dom: "", type: "", rar: ""}); $("shf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("shf-" + k).value = ""); $("shf-reset").disabled = true; renderShop(); }
 $("shf-q").addEventListener("input", e => { shf.q = e.target.value.trim(); $("shf-reset").disabled = !shfOn(); renderShop(); });
 ["dom", "type", "rar"].forEach(k => $("shf-" + k).addEventListener("change", e => { shf[k] = e.target.value; $("shf-reset").disabled = !shfOn(); renderShop(); }));
@@ -189,13 +213,14 @@ function setShopN(id, q){
 }
 // a small note at the bottom of the screen; tapping again updates it and keeps it up
 let shopToastT = 0;
-function shopToast(c, n){
+function toast(html, ms){
   let t = $("shop-toast");
   if (!t){ document.body.insertAdjacentHTML("beforeend", '<div id="shop-toast" role="status" aria-live="polite"></div>'); t = $("shop-toast"); }
-  t.innerHTML = `✓ <b>${esc(c.name)}</b> added to your shopping list · <b>${n}</b> on it`;
+  t.innerHTML = html;
   t.classList.remove("bump"); void t.offsetWidth; t.classList.add("show", "bump");
-  clearTimeout(shopToastT); shopToastT = setTimeout(() => t.classList.remove("show"), 2500);
+  clearTimeout(shopToastT); shopToastT = setTimeout(() => t.classList.remove("show"), ms || 2500);
 }
+function shopToast(c, n){ toast(`✓ <b>${esc(c.name)}</b> added to your shopping list · <b>${n}</b> on it`); }
 document.addEventListener("click", e => {
   const b = e.target.closest("button[data-shopadd]"); if (!b) return;
   e.preventDefault(); e.stopPropagation();
@@ -229,7 +254,7 @@ rep('''if (view === "grid") return `<div class="card tile dk-tile" style="${dom}
 rep('''return `<div class="dk-card sh-card" style="${dom}">''', '''return `<div class="dk-card sh-card${x.buy ? "" : " sh-zero"}" style="${dom}">''')
 rep('''<span class="dk-q">${x.buy}× <span>${esc(c.type)}</span></span>''', '''<span class="dk-q"><span>${esc(c.type)}</span></span>''')
 rep('''    if (xb.dataset.gotx){ adjust(id, 1); ex[id] = (ex[id] || 0) - 1; }''',
-    '''    if (xb.dataset.gotx){ ex[id] = (ex[id] || 0) - 1; if (!(ex[id] > 0)) delete ex[id]; wish._shop = {...shopP(), extra: ex}; saveWish(); adjust(id, 1); return; }''')
+    '''    if (xb.dataset.gotx){ const snap = JSON.stringify(shopP()); ex[id] = (ex[id] || 0) - 1; if (!(ex[id] > 0)) delete ex[id]; wish._shop = {...shopP(), extra: ex}; saveWish(); adjust(id, 1); collected(id, snap); return; }''')
 rep('''  const g = e.target.closest("[data-got]");
   if (g){ const c = cheapestOf(g.dataset.got) || groups[g.dataset.got][0]; adjust(c.id, 1); }''', '''  const ad = e.target.closest("[data-adj]");
   if (ad){
@@ -240,9 +265,9 @@ rep('''  const g = e.target.closest("[data-got]");
   const g = e.target.closest("[data-got]");
   if (g){
     // collecting one always takes one off "to buy": when the decks are already covered, it comes off the extra copies
-    const x = shopItems().items.find(i => !i.extra && i.key === g.dataset.got);
+    const snap = JSON.stringify(shopP()), x = shopItems().items.find(i => !i.extra && i.key === g.dataset.got);
     if (x && x.base === 0 && x.adj > 0){ const a = {...(shopP().adj || {})}; a[x.key] = x.adj - 1; if (!a[x.key]) delete a[x.key]; wish._shop = {...shopP(), adj: a}; saveWish(); }
-    const c = cheapestOf(g.dataset.got) || groups[g.dataset.got][0]; adjust(c.id, 1);
+    const c = cheapestOf(g.dataset.got) || groups[g.dataset.got][0]; adjust(c.id, 1); collected(c.id, snap);
   }''')
 rep('</style>\n\n<div class="wrap" id="app">', '''.sh-nh{font-size:13px;color:var(--muted);white-space:nowrap}
 .sh-nh b{color:var(--fg)}
@@ -429,6 +454,72 @@ rep('</style>\n\n<div class="wrap" id="app">', '''.of-card.folded > :not(.of-top
 .of-pvc small{font-size:12px;line-height:1.25;color:var(--fg)}
 .of-pvq{position:absolute;top:6px;left:6px;z-index:3;background:rgb(10 12 18 / .85);color:#fff;font-weight:700;font-size:13px;border-radius:6px;padding:1px 7px;pointer-events:none}
 @media (max-width:520px){.of-pv{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+
+<div class="wrap" id="app">''')
+
+# ---------- every "Stop sharing" (deck, wish list, shopping list) asks first
+rep('''if (e.target.id === "wish-unshare"){ delete wish._shared;''', '''if (e.target.id === "wish-unshare"){ if (!stopShareOK("wish list")) return; delete wish._shared;''')
+rep('''if (id === "sh-unshare") setShop({shared: false});''', '''if (id === "sh-unshare" && stopShareOK("shopping list")) setShop({shared: false});''')
+rep('''if (e.target.id === "dk-unshare"){ const d = customDecks.find(x => x.id === curDeck); if (d){''', '''if (e.target.id === "dk-unshare"){ const d = customDecks.find(x => x.id === curDeck); if (d && stopShareOK("deck")){''')
+rep('''// ---- Marketplace: each incoming offer folds by tapping the sender's name''', '''function stopShareOK(what){
+  return confirm(`Are you sure you want to stop sharing your ${what}?\\n\\nThe link will stop working for everyone you sent it to. You can share it again later, but that makes a new link.`);
+}
+// ---- Marketplace: each incoming offer folds by tapping the sender's name''')
+
+# ---------- header: a note that the card list and prices update every Monday (weekly task, Mondays 8:47am Pacific),
+# with the last and next update; dates in the long format (October 12, 2026)
+rep('''    <h1>Riftbound - Complete Database</h1>''', '''    <div class="updnote" id="c-sched" hidden></div>
+    <h1>Riftbound - Complete Database</h1>''')
+rep('''if (META.updated) $("c-updated").textContent = `Card list updated ${META.updated} ·''', '''const longDate = d => { try { return new Date(d + "T12:00:00").toLocaleDateString("en-US", {month: "long", day: "numeric", year: "numeric"}); } catch(e){ return d; } };
+if (META.updated){
+  // next Monday after the last update; if that has already passed (an update ran late or was missed), the coming Monday
+  const iso = x => x.toISOString().slice(0, 10), next = new Date(META.updated + "T12:00:00"), today = new Date(); today.setHours(12, 0, 0, 0);
+  do next.setDate(next.getDate() + 1); while (next.getDay() !== 1);
+  while (next < today) next.setDate(next.getDate() + 7);
+  $("c-sched").innerHTML = `<span aria-hidden="true">🔄</span> The card list and prices are updated <b>every Monday</b>. Last updated <b>${esc(longDate(META.updated))}</b> · next update <b>${iso(next) === iso(today) ? "today" : "Monday, " + esc(longDate(iso(next)))}</b>`;
+  $("c-sched").hidden = false;
+}
+if (META.updated) $("c-updated").textContent = `Card list updated ${longDate(META.updated)} ·''')
+rep('''(META.pricesUpdated ? ` · Prices are TCGplayer market prices (USD), updated ${META.pricesUpdated}` : "") + (FX ? ` · CAD at the Bank of Canada rate of ${FX.toFixed(4)} (${META.fx.date})` : "");''',
+    '''(META.pricesUpdated ? ` · Prices are TCGplayer market prices (USD), updated ${longDate(META.pricesUpdated)}` : "") + (FX ? ` · CAD at the Bank of Canada rate of ${FX.toFixed(4)} (${longDate(META.fx.date)})` : "");''')
+rep('</style>\n\n<div class="wrap" id="app">', '''.updnote{margin:8px 0 2px;font-size:13.5px;color:var(--muted);line-height:1.45}
+.updnote b{color:var(--fg);font-weight:600}
+</style>
+
+<div class="wrap" id="app">''')
+
+# ---------- new-offer sound: the old one is kept as "Poro coin"; the new default is an original konbini-style door chime
+# (a vibraphone-like "ding-dong" melody, written here, not a recording or a copy of any store's jingle).
+# Choice kept in localStorage "rb-offer-chime" ("konbini" or "poro"); coinChime() plays whichever is picked.
+rep('''function coinChime(){
+  const a = audioCtx(); if (!a || a.state !== "running") return;''', '''function coinChime(){ (LS.get("rb-offer-chime") === "poro" ? poroCoin : konbiniChime)(); }
+// konbini door chime: soft mallet notes (a sine plus a quiet bright partial, quick attack, long fade) through a small echo
+function konbiniChime(){
+  const a = audioCtx(); if (!a || a.state !== "running") return;
+  const t = a.currentTime + 0.03, out = a.createDynamicsCompressor(); out.connect(a.destination);
+  const echo = a.createDelay(1), fb = a.createGain(), wet = a.createGain(), dry = a.createGain();
+  echo.delayTime.value = 0.21; fb.gain.value = 0.25; wet.gain.value = 0.28; dry.gain.value = 1;
+  dry.connect(out); dry.connect(echo); echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(out);
+  const note = (f, at, dur, vol) => {
+    for (const [mul, lv, d] of [[1, 1, dur], [4, 0.12, dur * 0.35], [2, 0.18, dur * 0.6]]){
+      const o = a.createOscillator(), g = a.createGain();
+      o.type = "sine"; o.frequency.value = f * mul;
+      g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol * lv, t + at + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + at + d);
+      o.connect(g); g.connect(dry); o.start(t + at); o.stop(t + at + d + 0.05);
+    }
+  };
+  // ding-dong, ding-dong… then a bright two-note ending: G5 E5 C5 E5 · A5 G5 · C6 E6
+  [[784, 0], [659, 0.19], [523, 0.38], [659, 0.57], [880, 0.86], [784, 1.05], [1047, 1.34], [1319, 1.53]]
+    .forEach(([f, at], i) => note(f, at, i === 7 ? 1.6 : 0.9, i >= 6 ? 0.2 : 0.17));
+}
+function poroCoin(){
+  const a = audioCtx(); if (!a || a.state !== "running") return;''')
+rep('''<button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="Play a coin sound when a new offer comes in">${offerSound() ? "🔔 Sound on" : "🔕 Sound off"}</button>''',
+    '''<button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="Play a sound when a new offer comes in">${offerSound() ? "🔔 Sound on" : "🔕 Sound off"}</button><select id="of-chime" aria-label="New offer sound" title="Pick the new-offer sound (it plays when you choose)" ${offerSound() ? "" : "disabled"}><option value="konbini" ${LS.get("rb-offer-chime") === "poro" ? "" : "selected"}>Konbini chime</option><option value="poro" ${LS.get("rb-offer-chime") === "poro" ? "selected" : ""}>Poro coin</option></select>''')
+rep('''$("shop-offers").addEventListener("input", e => {''', '''$("shop-offers").addEventListener("change", e => { if (e.target.id === "of-chime"){ LS.set("rb-offer-chime", e.target.value); coinChime(); } });
+$("shop-offers").addEventListener("input", e => {''')
+rep('</style>\n\n<div class="wrap" id="app">', '''#of-chime{padding:5px 8px;font-size:13px}
 </style>
 
 <div class="wrap" id="app">''')
