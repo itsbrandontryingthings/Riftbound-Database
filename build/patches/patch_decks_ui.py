@@ -2,10 +2,11 @@
 """My Decks workspace (website; runs last, after patch_share_tidy.py).
 - Deck header: rename in place, cards collected + progress, Show all / Hide cards I have, List or Grid at S-M-L,
   Include sideboard, tiles (deck value, cost to finish, cards to buy, biggest buys), deck rule checks
-  (when the deck has a Legend), cards by set, and Copy decklist / shopping list, Reset to my collection, Set all to 0.
+  (when the deck has a Legend), cards by set, and Copy decklist / shopping list.
 - Every card: tap Need − / + to change how many the deck runs (rewrites the decklist; 0 or ✕ removes it) and tap
-  I have 0…N to say how many you have for this deck. "I have" starts from your collection (any printing counts);
-  a number you pick is saved with the deck (deck.own, key "<section label>|<card key>") until you reset it.
+  I have 0…N. "I have" is your collection (any printing counts) and tapping it changes your collection: copies
+  are added as the printing the deck prices (cheapest), and taken away from that printing first, then regular
+  printings, then the cheapest others, so a pricey alt art you own is the last to go.
 - Add a card: type a name (suggestions from every card), pick a section or let it choose by card type.
 Usage: patch_decks_ui.py in.html out.html"""
 import sys
@@ -23,7 +24,7 @@ def rep(old, new, count=1):
 rep('''        <li><b>Tournament legality</b>: any banned card is flagged.</li>
       </ul>''',
     '''        <li><b>Tournament legality</b>: any banned card is flagged, and decks with a Legend are checked against the deck rules.</li>
-        <li><b>Make it yours</b>: tap <b>Need</b> to change how many of a card the deck runs, tap <b>I have</b> to mark how many you have, add or remove cards, and switch between list and grid at S, M or L size.</li>
+        <li><b>Make it yours</b>: tap <b>Need</b> to change how many of a card the deck runs, tap <b>I have</b> to update your collection (it's the same count you see in Collection), add or remove cards, and switch between list and grid at S, M or L size.</li>
       </ul>''')
 
 # ---------- replace the deck renderer (everything from renderDecks up to the deck-tab click handler)
@@ -35,13 +36,12 @@ const m1 = v => FX && st.cur === "both" ? cad(v) : money(v);
 const deckKind = key => { const c = (groups[key] || [])[0]; return !c ? "unknown" : c.type === "Legend" ? "legend" : c.type === "Rune" ? "rune" : c.type === "Battlefield" ? "battlefield" : "card"; };
 const deckToText = secs => secs.filter(s => s.rows.length).map(s => `${s.label}:\n` + s.rows.map(r => `${r.q} ${r.name}`).join("\n")).join("\n\n");
 function dkStats(d){
-  const own = d.own || {}, left = {};
+  const left = {};
   const secs = parseDeck(d.text).map((s, si) => ({label: s.label, si, side: isSide(s), rows: s.rows.map((r, ri) => {
     const known = !!groups[r.key], cheap = cheapestOf(r.key), show = cheap || (groups[r.key] || [])[0] || null;
     if (!(r.key in left)) left[r.key] = ownedOf(r.key);
-    const auto = Math.min(r.q, left[r.key]); left[r.key] -= auto;
-    const okey = `${s.label}|${r.key}`, set = okey in own, hv = Math.max(0, Math.min(r.q, set ? +own[okey] || 0 : auto));
-    return {...r, si, ri, known, cheap, show, h: hv, auto, set, okey, miss: r.q - hv, kind: deckKind(r.key)};
+    const hv = Math.min(r.q, left[r.key]); left[r.key] -= hv;
+    return {...r, si, ri, known, cheap, show, h: hv, miss: r.q - hv, kind: deckKind(r.key)};
   })}));
   const counted = secs.filter(s => withSide || !s.side);
   let need = 0, have = 0, cost = 0, value = 0, unknown = 0;
@@ -80,7 +80,7 @@ function editableDeck(){
   return d;
 }
 function dkHaveCtl(r, grid){
-  const lab = `<span class="dk-lab">I have${r.set ? '<i title="You set this for this deck. Reset to my collection undoes it.">•</i>' : ""}</span>`;
+  const lab = `<span class="dk-lab" title="Your collection: any printing counts. Tapping changes your collection.">I have</span>`;
   if (r.q <= 4) return `${lab}<span class="dk-have" role="group" aria-label="Copies of ${esc(r.name)} you have">${Array.from({length: r.q + 1}, (_, n) => `<button data-act="have" data-n="${n}" aria-pressed="${n === r.h}">${n}</button>`).join("")}</span>${grid ? "" : `<span class="meta">of ${r.q}</span>`}`;
   return `${lab}<span class="step" role="group" aria-label="Copies of ${esc(r.name)} you have"><button data-act="haveStep" data-d="-1" aria-label="One fewer" ${r.h ? "" : "disabled"}>−</button><output>${r.h}</output><button data-act="haveStep" data-d="1" aria-label="One more" ${r.h < r.q ? "" : "disabled"}>+</button></span><span class="meta">of ${r.q}</span>`;
 }
@@ -149,13 +149,11 @@ function renderDecks(){
     <div class="frow">
       <button class="btn" id="dk-copylist">Copy decklist</button>
       <button class="btn" id="dk-copy">Copy shopping list</button>
-      ${d.own && Object.keys(d.own).length ? `<button class="btn" id="dk-reset" title="Use the counts from your collection again">Reset to my collection</button>` : ""}
-      <button class="btn" id="dk-zero" title="Mark every card in this deck as not owned (your collection doesn't change)">Set all to 0</button>
       <button class="btn" id="dk-edit">Edit list as text</button>
       ${d.shared ? `<span class="tag ok">✓ Shared by link</span><button class="btn" id="dk-link">Copy share link</button><button class="btn" id="dk-unshare">Stop sharing</button>` : `<button class="btn" id="dk-share">Share with friends</button>`}
       ${custom ? `<button class="btn danger" id="dk-del">${armDelete ? (isBuiltin ? "Tap again to restore the original list" : "Tap again to delete this deck") : (isBuiltin ? "Restore original list" : "Delete deck")}</button>` : ""}
     </div>
-    <p class="meta">"I have" starts from your collection: any printing of a card counts. Tap a number to set it just for this deck; your collection doesn't change. "Cost to finish" uses the cheapest printing of each missing card.${S.unknown ? ` ${S.unknown} card name${S.unknown===1?" isn't":"s aren't"} in the database, marked below.` : ""}</p>`;
+    <p class="meta">"I have" is your collection: any printing of a card counts, and tapping a number adds or removes copies in Collection too. New copies are added as the printing shown on the card. "Cost to finish" uses the cheapest printing of each missing card.${S.unknown ? ` ${S.unknown} card name${S.unknown===1?" isn't":"s aren't"} in the database, marked below.` : ""}</p>`;
   const gridCls = `list grid dkg${size !== "s" ? " sz-" + size : ""}`;
   const secOpts = S.secs.map(s => `<option value="${s.si}">${esc(s.label)}</option>`).join("");
   $("deck-body").innerHTML = S.counted.map(sec => {
@@ -184,22 +182,33 @@ $("deck-summary").addEventListener("click", e => {
   if (id === "dkv-list" || id === "dkv-grid"){ st.dview = id === "dkv-grid" ? "grid" : "list"; saveDeckView(); return; }
   const d = allDecks().find(x => x.id === curDeck); if (!d) return;
   if (id === "dk-copylist") copy(d.text, "decklist");
-  if (id === "dk-reset"){ const e2 = editableDeck(); delete e2.own; saveDecks(); renderDecks(); }
-  if (id === "dk-zero"){ const e2 = editableDeck(), own = {}; dkStats(e2).secs.forEach(s => s.rows.forEach(r => { if (r.known) own[r.okey] = 0; })); e2.own = own; saveDecks(); renderDecks(); }
 });
+// "I have" changes your collection: add as the deck's printing; remove that printing first, then regular
+// printings, then the cheapest others (so an expensive alt art you own is the last to go)
+function collectionChange(row, delta){
+  if (!delta || !row.known) return;
+  const base = row.show;
+  if (delta > 0){ adjust(base.id, delta); }
+  else {
+    let left = -delta;
+    const order = (groups[row.key] || []).filter(c => counts[c.id]).sort((a, b) => (b === base) - (a === base) || (!!a.variant) - (!!b.variant) || (a.price ?? 1e9) - (b.price ?? 1e9));
+    for (const c of order){ if (!left) break; const take = Math.min(left, counts[c.id]); adjust(c.id, -take); left -= take; }
+  }
+  renderDecks();
+}
 $("deck-body").addEventListener("click", e => {
   const b = e.target.closest("button[data-act]"); if (!b) return;
   const el = b.closest("[data-s]"), d = el && editableDeck(); if (!d) return;
   const si = +el.dataset.s, ri = +el.dataset.r, secs = parseDeck(d.text), sec = secs[si], r = sec && sec.rows[ri]; if (!r) return;
-  const row = dkStats(d).secs[si].rows[ri], own = d.own || {}, act = b.dataset.act;
-  const setHave = n => { n = Math.max(0, Math.min(row.q, n)); if (n === row.auto) delete own[row.okey]; else own[row.okey] = n; d.own = own; if (!Object.keys(own).length) delete d.own; };
-  if (act === "have") setHave(+b.dataset.n);
-  if (act === "haveStep") setHave(row.h + +b.dataset.d);
+  const row = dkStats(d).secs[si].rows[ri], act = b.dataset.act;
+  if (act === "have" || act === "haveStep"){
+    const n = Math.max(0, Math.min(row.q, act === "have" ? +b.dataset.n : row.h + +b.dataset.d));
+    collectionChange(row, n - row.h); return;
+  }
   if (act === "need" || act === "rm"){
     r.q = act === "rm" ? 0 : Math.max(0, Math.min(99, r.q + +b.dataset.d));
-    if (!r.q){ sec.rows.splice(ri, 1); delete own[row.okey]; }
-    else if (row.okey in own) own[row.okey] = Math.min(own[row.okey], r.q);
-    d.text = deckToText(secs); d.own = own; if (!Object.keys(own).length) delete d.own;
+    if (!r.q) sec.rows.splice(ri, 1);
+    d.text = deckToText(secs); delete d.own;
   }
   saveDecks(); renderDecks();
 });
