@@ -569,6 +569,8 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
   #fr-list.frsz-l .frrow,#fr-list.frsz-l .frrow:not(:has(.pill.ban)){grid-template-columns:84px 2.2em minmax(0,1fr)}
   #fr-list.frsz-l .frrow .frn{font-size:16.5px}
 }
+.of-new{display:inline-block;background:var(--accent);color:var(--bg);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:0 6px;line-height:18px;margin-right:6px;vertical-align:2px}
+#of-sound{padding:6px 10px;font-size:13px}
 </style>
 
 <div class="wrap" id="app">
@@ -1588,7 +1590,13 @@ async function loadOffers(force){
   const me = cloudUser, { data, error } = await sb.from("shop_offers").select("id, from_name, items, offer, created_at").order("created_at", { ascending: false }).limit(100);
   offersBusy = false; if (cloudUser !== me) return;
   if (error){ offersOff = /shop_offers|relation|does not exist|schema cache|permission/i.test(error.message || ""); offers = []; }
-  else { offersOff = false; offers = data || []; }
+  else {
+    offersOff = false; offers = data || [];
+    const had = LS.get("rb-offers-seen"), seen = new Set(had || []), fresh = offers.filter(o => !seen.has(o.id));
+    fresh.forEach(o => offersNew.add(o.id));
+    if (fresh.length && had && offerSound()) coinChime();
+    LS.set("rb-offers-seen", offers.map(o => o.id));
+  }
   offersAt = Date.now(); showOfferBadge(); if (st.tab === "shop") renderOffers();
 }
 function showOfferBadge(){
@@ -1599,7 +1607,7 @@ function offerHTML(o){
   const items = Array.isArray(o.items) ? o.items : [], n = items.reduce((a, i) => a + (+i.q || 0), 0);
   const worth = items.reduce((a, i) => { const c = cheapestOf(norm(i.name)); return a + (c ? c.price * (+i.q || 0) : 0); }, 0);
   return `<article class="of-card" data-offer="${esc(o.id)}">
-    <div class="of-top"><div><b class="of-from">${esc(o.from_name)}</b> <span class="meta">sent ${esc(fmtDate(String(o.created_at).slice(0, 10)))}</span></div><span class="of-sum">${n} card${n === 1 ? "" : "s"}${worth ? ` · market ${esc(money(worth))}` : ""}</span></div>
+    <div class="of-top"><div>${offersNew.has(o.id) ? '<span class="of-new">New</span>' : ""}<b class="of-from">${esc(o.from_name)}</b> <span class="meta">sent ${esc(fmtDate(String(o.created_at).slice(0, 10)))}</span></div><span class="of-sum">${n} card${n === 1 ? "" : "s"}${worth ? ` · market ${esc(money(worth))}` : ""}</span></div>
     <div class="of-said"><span class="collect-k">Their offer</span><span class="of-text">${esc(o.offer || "")}</span></div>
     <div class="of-items">${items.map(i => { const key = norm(i.name), c = frCard(key);
       return `<div class="frrow"${c ? ` data-card="${esc(c.id)}"` : ""}>${frThumb(key)}<span class="q">${+i.q || 0}×</span><span class="frn">${esc(i.name)}${cardSub(key)}</span></div>`; }).join("")}</div>
@@ -1611,10 +1619,11 @@ function renderOffers(){
   if (!cloudUser || (!shopP().shared && !(offers && offers.length))){ box.innerHTML = ""; return; }
   if (offersOff){ box.innerHTML = `<div class="panel of-panel"><h3 class="of-h">Offers</h3><p class="meta">Offers need a quick database update before friends can send them. The site owner has the steps.</p></div>`; return; }
   if (!offers){ box.innerHTML = ""; return; }
-  box.innerHTML = `<div class="panel of-panel"><div class="of-hrow"><h3 class="of-h">Offers <small>${offers.length}</small></h3><button class="btn" id="of-refresh">Check for new offers</button></div>
+  box.innerHTML = `<div class="panel of-panel"><div class="of-hrow"><h3 class="of-h">Offers <small>${offers.length}</small></h3><span class="frow"><button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="Play a coin sound when a new offer comes in">${offerSound() ? "🔔 Sound on" : "🔕 Sound off"}</button><button class="btn" id="of-refresh">Check for new offers</button></span></div>
     ${offers.length ? offers.map(offerHTML).join("") : `<p class="meta">No offers yet. When a friend opens your shopping list link, they can tick the cards they have and send you an offer: money, a trade, anything. It shows up here with their name.</p>`}</div>`;
 }
 $("shop-offers").addEventListener("click", async e => {
+  if (e.target.id === "of-sound"){ LS.set("rb-offer-sound", !offerSound()); if (offerSound()) coinChime(); renderOffers(); return; }
   if (e.target.id === "of-refresh"){ e.target.disabled = true; await loadOffers(true); return; }
   const a = e.target.closest("[data-ofa]");
   if (!a){ const row = e.target.closest(".frrow[data-card]"); if (row) openCard(byId[row.dataset.card]); return; }
@@ -1729,6 +1738,33 @@ function setUiSize(z, save){
 }
 ["s","m","l"].forEach(k => $("ui-" + k).addEventListener("click", () => { setUiSize(k, true); if (st.view === "grid" && st.tab === "collection") renderList(); }));
 setUiSize(LS.get("rb-ui-size") || "s");
+// ---- new-offer chime: a short coin "cha-ching" made with Web Audio (no sound file)
+const offersNew = new Set();
+const offerSound = () => LS.get("rb-offer-sound") !== false;
+let actx = null;
+function audioCtx(){
+  try { actx ||= new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); return actx; }
+  catch(e){ return null; }
+}
+// browsers only allow sound after the first click or key press on the page
+["pointerdown", "keydown"].forEach(ev => addEventListener(ev, () => audioCtx(), { once: true, capture: true }));
+function coinChime(){
+  const a = audioCtx(); if (!a || a.state !== "running") return;
+  const t = a.currentTime + 0.02;
+  const note = (f, at, dur, vol, type) => {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t + at);
+    g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol, t + at + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+    o.connect(g); g.connect(a.destination); o.start(t + at); o.stop(t + at + dur + 0.05);
+  };
+  note(1318.5, 0, 0.11, 0.16, "square");      // E6 "cha"
+  note(1975.5, 0.075, 0.42, 0.14, "triangle"); // B6 "ching"
+  note(3951, 0.075, 0.28, 0.035, "sine");      // sparkle on top
+}
+// check for offers every minute while the page is open (and when you come back to it)
+const offerPoll = () => { if (cloudUser && sb && shopP().shared && document.visibilityState === "visible") loadOffers(true); };
+setInterval(offerPoll, 60000);
+document.addEventListener("visibilitychange", offerPoll);
 function saveDeckView(){ LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); renderDecks(); }
 $("deck-summary").addEventListener("change", e => {
   if (e.target.id !== "dk-rename") return;
