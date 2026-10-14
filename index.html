@@ -135,6 +135,26 @@ select{background:var(--panel);border:1px solid var(--line);border-radius:8px;pa
 .card.got .step output{color:var(--ok)}
 .empty{background:var(--panel);border:1px dashed var(--line);border-radius:10px;padding:24px;text-align:center;color:var(--muted)}
 .more{justify-self:center}
+.frsec{font-family:var(--display);font-size:19px;margin:10px 0 0;display:flex;gap:8px;align-items:baseline}
+.frsec small{font-family:var(--body-font);font-size:14px;color:var(--muted);font-weight:500}
+.frlist > .frnone{margin:0}
+/* list view picture sizes (M / L); S keeps the compact 60px rows */
+.list.lsz-m .card:not(.tile){grid-template-columns:170px 72px minmax(0,1fr) auto;gap:14px;padding:10px 12px}
+.list.lsz-l .card:not(.tile){grid-template-columns:280px 72px minmax(0,1fr) auto;gap:16px;padding:12px 14px}
+.wlist.lsz-m .wrow{grid-template-columns:170px minmax(0,1fr) auto auto;gap:14px;padding:10px 12px}
+.wlist.lsz-l .wrow{grid-template-columns:280px minmax(0,1fr) auto auto;gap:16px;padding:12px 14px}
+.list.lsz-m .name,.list.lsz-l .name,.wlist.lsz-m .name,.wlist.lsz-l .name{font-size:17px}
+.list.lsz-l .name,.wlist.lsz-l .name{font-size:19px}
+@media (max-width:640px){
+  .list.lsz-m .card:not(.tile){grid-template-columns:96px minmax(0,1fr) auto;gap:10px;padding:8px}
+  .list.lsz-l .card:not(.tile){grid-template-columns:150px minmax(0,1fr);gap:10px;padding:8px}
+  .list.lsz-m .card:not(.tile) .code,.list.lsz-l .card:not(.tile) .code{display:none}
+  .list.lsz-l .card:not(.tile) .right{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center}
+  .wlist.lsz-m .wrow{grid-template-columns:96px minmax(0,1fr) auto}
+  .wlist.lsz-l .wrow{grid-template-columns:150px minmax(0,1fr)}
+  .wlist.lsz-l .wrow .wq,.wlist.lsz-l .wrow .rm{grid-column:1/-1}
+  .list.lsz-m .name,.list.lsz-l .name,.wlist.lsz-m .name,.wlist.lsz-l .name{font-size:15px}
+}
 .deckintro ul{margin:0;padding-left:20px;display:grid;gap:4px}
 .deckintro p{margin:0;max-width:75ch}
 .howto{background:var(--row);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;display:grid;gap:6px}
@@ -323,7 +343,7 @@ button.thumb:hover{border-color:var(--muted)}
     <button role="tab" id="t-packs" aria-selected="false" aria-controls="view-packs">Open Packs</button>
     <button role="tab" id="t-decks" aria-selected="false" aria-controls="view-decks">My Decks</button>
     <button role="tab" id="t-wish" aria-selected="false" aria-controls="view-wish">Wish List</button>
-    <button role="tab" id="t-friends" aria-selected="false" aria-controls="view-friends">Friends' Decks</button>
+    <button role="tab" id="t-friends" aria-selected="false" aria-controls="view-friends">Friends</button>
   </nav>
 
   <section class="view" id="view-collection" role="tabpanel" aria-labelledby="t-collection">
@@ -397,7 +417,7 @@ button.thumb:hover{border-color:var(--muted)}
 
   <section class="view" id="view-friends" role="tabpanel" aria-labelledby="t-friends" hidden>
     <div class="panel frbar">
-      <h2>Friends' Decks and Wish Lists</h2>
+      <h2>Friends</h2>
       <p class="meta">Decks and wish lists other players have chosen to share. Search by deck name, player, or a card you're looking to trade for. Decks show how many of their cards you own; wish lists show which wanted cards you could trade.</p>
       <input class="search" id="fr-q" type="search" placeholder="Search decks, wish lists, players or cards, e.g. Jinx" aria-label="Search shared decks" autocomplete="off">
       <span class="meta" id="fr-count" aria-live="polite"></span>
@@ -621,7 +641,7 @@ function cardHTML(c){
   const dots = c.domains.map(d => `<span class="dot" title="${d}" style="background:var(--${d.toLowerCase()})"></span>`).join("");
   const kind = c.type + (c.champ ? " · Champion" : "") + (c.sig ? " · Signature" : "") + (c.token ? " · Token" : "");
   return `<div class="card${n?" got":""}" data-id="${esc(c.id)}">
-    ${thumbHTML(c)}
+    ${thumbHTML(c, st.size === "m" || st.size === "l" ? 744 : 160)}
     <div class="code"><b>${c.set}</b>${esc(num)}</div>
     <div class="info"><span class="name"><a href="${link}" target="_blank" rel="noopener">${esc(c.name)}</a></span>
       <span class="sub">${dots}<span>${esc(kind)}</span><span class="r-${c.rarity}">${c.rarity}</span>${c.variant?`<span class="pill var">${esc(c.variant)}</span>`:""}${banPill(c)}${viewLink(c)}${wishBtn(c)}</span></div>
@@ -669,7 +689,7 @@ function renderWish(){
     </div>
     <div class="frow"><span class="meta">${ids.length ? "TCGplayer market prices" + (unpriced ? ` · ${unpriced} card${unpriced === 1 ? " has" : "s have"} no price yet` : "") : "Tap ♡ Want on any card in Collection to add it here, even if it's not in one of your decks."}</span><span style="flex:1"></span>
       ${ids.length ? `<div class="seg" role="group" aria-label="Wish list layout"><button id="wv-list" aria-pressed="${wv === "list"}">List</button><button id="wv-grid" aria-pressed="${wv === "grid"}">Grid</button></div><button class="btn" id="wish-copy">Copy wish list</button>` : ""}${typeof openShare === "function" ? (wish._shared ? `<span class="tag ok">✓ Shared with friends</span><button class="btn" id="wish-unshare">Stop sharing</button>` : `<button class="btn" id="wish-share">Share with friends</button>`) : ""}</div>`;
-  $("wish-list").className = wv === "grid" ? "list grid" + (st.size && st.size !== "s" ? " sz-" + st.size : "") : "wlist";
+  $("wish-list").className = wv === "grid" ? "list grid" + (st.size && st.size !== "s" ? " sz-" + st.size : "") : "wlist" + (st.size === "m" || st.size === "l" ? " lsz-" + st.size : "");
   $("wish-list").innerHTML = ids.map(id => { const c = byId[id], q = wish[id], have = counts[id] || 0;
     if (wv === "grid") return `<div class="card tile" data-id="${esc(id)}">${thumbHTML(c, PHONE() && st.size === "s" ? 480 : 744)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
       <a class="tname" href="${tcgURL(c)}" target="_blank" rel="noopener" title="Open ${esc(c.name)} on TCGplayer">${esc(c.name)}</a>
@@ -677,7 +697,7 @@ function renderWish(){
       <div class="tsub"><span class="own${have ? " ok" : ""}">${have ? `you own ${have}` : "you don't own it"}</span></div>
       <div class="tfoot">${priceHTML(c, q)}<div class="step" role="group" aria-label="Copies of ${esc(c.name)} wanted"><button data-w="-1" aria-label="Want one fewer">−</button><output>${q}</output><button data-w="1" aria-label="Want one more">+</button></div>
       <button class="rm" data-w="rm" aria-label="Remove ${esc(c.name)} from your wish list">Remove</button></div></div>`;
-    return `<div class="wrow" data-id="${esc(id)}">${thumbHTML(c, 160)}
+    return `<div class="wrow" data-id="${esc(id)}">${thumbHTML(c, st.size === "m" || st.size === "l" ? 744 : 160)}
       <span class="info"><span class="name"><a href="${tcgURL(c)}" target="_blank" rel="noopener">${esc(c.name)}</a></span><span class="sub"><span class="r-${c.rarity}">${esc(codeOf(c))}</span>${c.variant ? `<span class="pill var">${esc(c.variant)}</span>` : ""}${banPill(c)}<span class="own${have ? " ok" : ""}">${have ? `you own ${have}` : "you don't own it"}</span></span></span>
       <span class="wq">${priceHTML(c, q)}<span class="step" role="group" aria-label="Copies of ${esc(c.name)} wanted"><button data-w="-1" aria-label="Want one fewer">−</button><output>${q}</output><button data-w="1" aria-label="Want one more">+</button></span></span>
       <button class="rm" data-w="rm" aria-label="Remove ${esc(c.name)} from your wish list">Remove</button></div>`; }).join("");
@@ -718,7 +738,8 @@ function renderList(){
   if (!["s","m","l"].includes(st.size)) st.size = "m";
   $("list").classList.toggle("grid", st.view === "grid"); document.body.classList.toggle("gridview", st.view === "grid");
   ["s","m","l"].forEach(z => { $("list").classList.toggle("sz-" + z, st.view === "grid" && st.size === z && z !== "s"); $("sz-" + z).setAttribute("aria-pressed", st.size === z); });
-  $("sizeseg").hidden = st.view !== "grid";
+  $("sizeseg").hidden = false;
+  ["m","l"].forEach(z => $("list").classList.toggle("lsz-" + z, st.view === "list" && st.size === z));
   // page size always divides evenly by the column count: 8, 6 or 4 across -> 48 a page; 3 across (phones) -> 30
   const cols = st.view === "grid" ? (getComputedStyle($("list")).gridTemplateColumns.split(" ").filter(Boolean).length || 4) : 1;
   gridCols = cols;
@@ -1219,7 +1240,23 @@ async function loadShareProfile(){
   const { data } = await sb.from("shared_decks").select("owner_name, contact").eq("owner", me.id).limit(1);
   if (data && data[0]){ shareProfile = {name: data[0].owner_name, contact: data[0].contact || ""}; LS.set("rb-share-profile", shareProfile); }
 }
-async function renderFriends(){
+// split the shared lists into "Friends' Decks" and "Wish Lists"
+function groupFriends(){
+  const list = $("fr-list"), arts = [...list.querySelectorAll(":scope > article.frdeck")];
+  if (!arts.length) return;
+  const isWish = a => (a.querySelector("h3") || {}).textContent.trim().startsWith("♥");
+  const wishes = arts.filter(isWish), decks = arts.filter(a => !isWish(a)), q = $("fr-q").value.trim();
+  list.innerHTML = "";
+  const section = (title, items, none) => {
+    const h = document.createElement("h2"); h.className = "frsec"; h.innerHTML = `${title} <small>${items.length}</small>`; list.append(h);
+    if (items.length) items.forEach(a => list.append(a));
+    else { const p = document.createElement("p"); p.className = "meta frnone"; p.textContent = none; list.append(p); }
+  };
+  section("Friends' Decks", decks, q ? "No shared decks match this search." : "No one has shared a deck yet.");
+  section("Wish Lists", wishes, q ? "No shared wish lists match this search." : "No one has shared a wish list yet.");
+}
+async function renderFriends(){ await renderFriendsList(); groupFriends(); }
+async function renderFriendsList(){
   const list = $("fr-list");
   if (!cloudUser){
     $("fr-count").textContent = "";
