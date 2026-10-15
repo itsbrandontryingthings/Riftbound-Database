@@ -36,7 +36,7 @@ async def main():
         await pg.click("#dk-link"); await pg.wait_for_timeout(500); print("same link again:", await pg.input_value("#share-url") == url); await pg.click("#share-ok")
         # wish list share
         await pg.click("#t-collection"); await pg.wait_for_timeout(200)
-        await pg.click("#list button[data-wish]"); await pg.click("#t-wish"); await pg.wait_for_timeout(300)
+        await pg.click("#list button[data-wish]"); await pg.click("#wf-rows [data-wfr=\"\"]"); await pg.click("#wf-dok"); await pg.click("#t-wish"); await pg.wait_for_timeout(300)
         await pg.click("#wish-share"); await pg.wait_for_timeout(300)
         if await pg.is_visible("#share-go"): await pg.click("#share-go")
         await pg.wait_for_timeout(1500); wurl = await pg.input_value("#share-url"); print("wish link:", wurl[-45:], wurl != url); await pg.click("#share-ok")

@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 P=patches; T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 run(){ local i=0 cur="$1"; shift; for p in "$@"; do i=$((i+1)); python3 -I "$P/$p.py" "$cur" "$T/s$i.html" >/dev/null; cur="$T/s$i.html"; done; echo "$cur"; }
 
-WEB=(patch_local patch_bans patch_web patch_accounts patch_sharing patch_mobile patch_wish patch_polish patch_foil patch_info patch_links patch_share_tidy patch_decks_ui patch_friends_ui patch_shop patch_offers patch_shop_add patch_uisize patch_friends_size patch_fixes patch_chime patch_offer_threads patch_marketplace patch_social patch_sliders patch_art patch_deck_sort)
+WEB=(patch_local patch_bans patch_web patch_accounts patch_sharing patch_mobile patch_wish patch_polish patch_foil patch_info patch_links patch_share_tidy patch_decks_ui patch_friends_ui patch_shop patch_offers patch_shop_add patch_uisize patch_friends_size patch_fixes patch_chime patch_offer_threads patch_marketplace patch_social patch_sliders patch_art patch_deck_sort patch_wish_lists)
 out=$(run base/shared.html "${WEB[@]}"); cp "$out" ../index.html; echo "website -> index.html"
 
 if [[ "${1:-}" == "--local" ]]; then
