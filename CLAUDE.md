@@ -99,7 +99,7 @@ them, and don't put it in Dropbox / OneDrive (two syncs on one git folder can co
 - On a Windows PC (Git for Windows + Python from python.org) there's no `python3`: run the build as
   `bash -c 'python3(){ python "$@"; }; export -f python3; ./build/make.sh'` and the tests with `python -X utf8`.
   The home PC has the full python.org Python 3.12 (per-user, with pip) in `%LOCALAPPDATA%\Programs\Python\Python312`,
-  on the user PATH with a `python3.exe` copy, so `./build/make.sh` runs as is. Playwright isn't installed there yet
-  (`python -m pip install playwright` + `python -m playwright install chromium`) for `smoke.py` / `links_test.py`.
+  on the user PATH with a `python3.exe` copy, so `./build/make.sh` runs as is. Playwright 1.64 + its Chromium are
+  installed there too: `python -X utf8 build\tests\smoke.py` passes (Oct 14, 2026).
   (Its installer fails with 1603 while Windows has a restart pending.)
 - After a change, tell Brandon in a couple of sentences what changed and where to see it.
