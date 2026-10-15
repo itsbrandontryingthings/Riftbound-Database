@@ -699,6 +699,9 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .dk-tile .dk-set,.dk-tile .dk-buy,.dk-tile .sh-nh{white-space:normal;min-width:0;max-width:100%;overflow-wrap:anywhere}
 .dk-tile .sh-tb{flex-wrap:wrap;max-width:100%}
 .dk-tile .dk-st,.dk-tile .sh-act{min-width:0;max-width:100%}
+h1.brand-h{display:flex;align-items:center;gap:12px}
+h1.brand-h .brand-logo{width:52px;height:52px;flex:none;border-radius:12px;box-shadow:0 4px 12px rgb(0 0 0 / .35)}
+@media (max-width:520px){h1.brand-h .brand-logo{width:42px;height:42px;border-radius:10px}}
 .rng-row{gap:10px 22px;align-items:flex-end}
 .rng{display:grid;gap:2px;flex:1 1 200px;min-width:170px;max-width:320px}
 .rng-l{font-size:13px;color:var(--muted)}
@@ -721,7 +724,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
   <div class="top">
     <div class="eyebrow">Collection tracker <span class="tag" id="sync">Loading your collection…</span><span class="uisize curpick"><span>Currency</span><span class="seg" role="group" aria-label="Currency"><button id="c-both" aria-pressed="true">CAD + USD</button><button id="c-cad" aria-pressed="false">CAD</button><button id="c-usd" aria-pressed="false">USD</button></span></span><span class="uisize"><span>Page size</span><span class="seg" role="group" aria-label="Page size"><button id="ui-s" aria-pressed="true" title="Normal size">S</button><button id="ui-m" aria-pressed="false" title="Bigger">M</button><button id="ui-l" aria-pressed="false" title="Biggest">L</button></span></span></div>
     <div class="updnote" id="c-sched" hidden></div>
-    <h1>Riftbound - Complete Database</h1>
+    <h1 class="brand-h"><img class="brand-logo" src="logo-512.png" alt="RBDB logo" width="52" height="52"><span>Riftbound Database</span></h1>
     <div class="acct" id="acct"><button class="btn primary" id="acct-in">Sign in or create an account</button><span class="who" id="acct-who"></span><button class="btn" id="acct-out" hidden>Sign out</button></div>
     <div class="collect-row">
       <span class="collect-k">Unique cards owned</span>

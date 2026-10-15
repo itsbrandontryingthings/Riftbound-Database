@@ -3,6 +3,7 @@
 - Open Graph / Twitter tags in <head>, so a link to the site posted in Discord, iMessage, etc. shows a card with the
   title, a short description and og-image.jpg (1200 x 630).
 - The RBDB logo (logo-512.png) as the browser tab icon and the phone home-screen icon; theme colour = site green.
+- The page heading reads "Riftbound Database" with the RBDB logo in front of it.
 og-image.jpg and logo-512.png sit at the repo root and are made from build/og/og.html and logo.html by
 build/og/render.py. Discord remembers a link's preview for a while: to see a new picture straight away, post the link
 with something on the end, like https://rbdatabase.pages.dev/?v=2.
@@ -41,6 +42,14 @@ rep('</style></head><body>', f'''</style>
 <link rel="icon" type="image/png" sizes="512x512" href="/logo-512.png">
 <link rel="apple-touch-icon" href="/logo-512.png">
 </head><body>''')
+
+# ---------- the page heading: "Riftbound Database" with the RBDB logo in front (was "Riftbound - Complete Database")
+rep('    <h1>Riftbound - Complete Database</h1>',
+    '    <h1 class="brand-h"><img class="brand-logo" src="logo-512.png" alt="RBDB logo" width="52" height="52"><span>Riftbound Database</span></h1>')
+_i = h.rfind("</style>"); h = h[:_i] + """h1.brand-h{display:flex;align-items:center;gap:12px}
+h1.brand-h .brand-logo{width:52px;height:52px;flex:none;border-radius:12px;box-shadow:0 4px 12px rgb(0 0 0 / .35)}
+@media (max-width:520px){h1.brand-h .brand-logo{width:42px;height:42px;border-radius:10px}}
+""" + h[_i:]
 
 open(out, "w", encoding="utf-8").write(h)
 print("patch_social: ok ->", out)
