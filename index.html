@@ -699,6 +699,22 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 .dk-tile .dk-set,.dk-tile .dk-buy,.dk-tile .sh-nh{white-space:normal;min-width:0;max-width:100%;overflow-wrap:anywhere}
 .dk-tile .sh-tb{flex-wrap:wrap;max-width:100%}
 .dk-tile .dk-st,.dk-tile .sh-act{min-width:0;max-width:100%}
+.rng-row{gap:10px 22px;align-items:flex-end}
+.rng{display:grid;gap:2px;flex:1 1 200px;min-width:170px;max-width:320px}
+.rng-l{font-size:13px;color:var(--muted)}
+.rng-l b{color:var(--fg);font-variant-numeric:tabular-nums;margin-left:2px}
+.rng.on .rng-l b{color:var(--accent)}
+.rng-t{position:relative;height:28px}
+.rng-t::before{content:"";position:absolute;left:9px;right:9px;top:12px;height:4px;border-radius:2px;background:var(--line)}
+.rng-fill{position:absolute;top:12px;height:4px;border-radius:2px;background:var(--muted)}
+.rng.on .rng-fill{background:var(--accent)}
+.rng-t input{position:absolute;left:0;top:0;width:100%;height:28px;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none;z-index:2}
+.rng-t input:focus{outline:none}
+.rng-t input::-webkit-slider-runnable-track{background:none;height:28px}
+.rng-t input::-moz-range-track{background:none}
+.rng-t input::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:18px;height:18px;margin-top:5px;border-radius:50%;background:var(--fg);border:2px solid var(--accent);cursor:pointer;box-shadow:0 1px 4px rgb(0 0 0 / .4)}
+.rng-t input::-moz-range-thumb{pointer-events:auto;width:14px;height:14px;border-radius:50%;background:var(--fg);border:2px solid var(--accent);cursor:pointer}
+.rng-t input:focus-visible::-webkit-slider-thumb{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 
 <div class="wrap" id="app">
@@ -761,6 +777,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
       <label class="chk"><input type="checkbox" id="variants" checked> Show alt arts, overnumbered and promos</label>
       <button class="btn reset" id="freset" type="button" disabled>Reset filters</button>
     </div>
+    <div class="frow rng-row"><div class="rng" data-g="c" data-k="e"><span class="rng-l">Energy <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest energy"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest energy"></div></div><div class="rng" data-g="c" data-k="m"><span class="rng-l">Might <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest might"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest might"></div></div></div>
     <div class="frow">
       <span class="meta" id="count"></span>
       <span style="flex:1"></span>
@@ -852,6 +869,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
         <select id="wlf-type" aria-label="Card type"><option value="">All types</option></select>
         <select id="wlf-rar" aria-label="Rarity"><option value="">All rarities</option></select>
       </div>
+      <div class="frow rng-row"><div class="rng" data-g="w" data-k="e"><span class="rng-l">Energy <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest energy"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest energy"></div></div><div class="rng" data-g="w" data-k="m"><span class="rng-l">Might <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest might"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest might"></div></div></div>
       <div class="frow">
         <div class="seg" role="group" aria-label="Which cards to show"><button id="wlf-all" aria-pressed="true">All</button><button id="wlf-have" aria-pressed="false">I have</button><button id="wlf-need" aria-pressed="false">Missing</button></div>
         <select id="wlf-sort" aria-label="Sort your wish list"><option value="">Sort: set order</option><option value="name">Sort: name</option><option value="price">Sort: price, high to low</option><option value="cost">Sort: total cost, high to low</option></select>
@@ -883,6 +901,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
         <select id="shf-rar" aria-label="Rarity"><option value="">All rarities</option></select>
         <button class="btn reset" id="shf-reset" type="button" disabled>Reset filters</button>
       </div>
+      <div class="frow rng-row"><div class="rng" data-g="s" data-k="e"><span class="rng-l">Energy <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest energy"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest energy"></div></div><div class="rng" data-g="s" data-k="m"><span class="rng-l">Might <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest might"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest might"></div></div></div>
       <div id="shop-tools"></div>
     </div>
     <div id="shop-body"></div>
@@ -897,6 +916,7 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
           <select id="mkf-rar" aria-label="Rarity"><option value="">All rarities</option></select>
           <button class="btn reset" id="mkf-reset" type="button" disabled>Reset filters</button>
         </div>
+        <div class="frow rng-row"><div class="rng" data-g="f" data-k="e"><span class="rng-l">Energy <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest energy"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest energy"></div></div><div class="rng" data-g="f" data-k="m"><span class="rng-l">Might <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest might"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest might"></div></div></div>
         <div class="frow"><select id="mkf-sort" aria-label="Sort the cards in friends' shopping lists"><option value="">Sort: list order</option><option value="set">Sort: set order</option><option value="name">Sort: name A–Z</option><option value="price">Sort: price, high to low</option></select><span class="meta">Card size</span><div class="seg sizeseg" role="group" aria-label="Card size"><button id="mkfs-s" aria-pressed="false" title="Small cards">S</button><button id="mkfs-m" aria-pressed="false" title="Medium cards">M</button><button id="mkfs-l" aria-pressed="false" title="Large cards">L</button></div></div>
       </div>
       <div class="frlist" id="mk-frlist"></div>
@@ -1001,6 +1021,45 @@ if (st.view !== "grid" && st.view !== "list") st.view = PHONE() ? "grid" : "list
 
 // ---- card text (text.js from Riftcodex): stats, rules text, keywords
 const RBT = window.RB_TEXT || {n:{}, a:{}};
+// ---- Energy / Might sliders: c = Collection, w = Wish List, s = My Shopping List, f = Friends' Shopping Lists
+const RNG_MAX = 12, RNG = {}; for (const g of ["c", "w", "s", "f"]) RNG[g] = {e: [0, RNG_MAX], m: [0, RNG_MAX]};
+const rngOn = g => ["e", "m"].some(k => RNG[g][k][0] > 0 || RNG[g][k][1] < RNG_MAX);
+const rngCount = g => ["e", "m"].filter(k => RNG[g][k][0] > 0 || RNG[g][k][1] < RNG_MAX).length;
+function rngOK(c, g){
+  for (const k of ["e", "m"]){
+    const [lo, hi] = RNG[g][k]; if (lo === 0 && hi === RNG_MAX) continue;
+    const t = c && txOf(c), v = t ? t[k] : null;
+    if (typeof v !== "number" || v < lo || v > hi) return false;
+  }
+  return true;
+}
+function rngDraw(box){
+  const [lo, hi] = RNG[box.dataset.g][box.dataset.k], ins = box.querySelectorAll("input");
+  ins[0].value = lo; ins[1].value = hi;
+  ins[0].style.zIndex = lo > RNG_MAX / 2 ? 3 : 1;   // keep the low handle reachable when it's pushed to the right
+  box.querySelector("b").textContent = lo === 0 && hi === RNG_MAX ? "Any" : lo === hi ? String(lo) : `${lo}–${hi}`;
+  const f = box.querySelector(".rng-fill"); f.style.left = `calc(9px + (100% - 18px) * ${lo / RNG_MAX})`; f.style.width = `calc((100% - 18px) * ${(hi - lo) / RNG_MAX})`;
+  box.classList.toggle("on", !(lo === 0 && hi === RNG_MAX));
+}
+function rngReset(g){ RNG[g].e = [0, RNG_MAX]; RNG[g].m = [0, RNG_MAX]; document.querySelectorAll(`.rng[data-g="${g}"]`).forEach(rngDraw); }
+const rngT = {};
+function rngApply(g){
+  clearTimeout(rngT[g]);
+  rngT[g] = setTimeout(() => {
+    if (g === "c"){ st.limit = PAGE; st.page = 0; render(); }
+    if (g === "w"){ wlfSync(); renderWish(); }
+    if (g === "s"){ $("shf-reset").disabled = !shfOn(); renderShop(); }
+    if (g === "f"){ $("mkf-reset").disabled = !mkfOn(); renderFriends(); }
+  }, 90);
+}
+document.addEventListener("input", e => {
+  const box = e.target.closest && e.target.closest(".rng"); if (!box || e.target.type !== "range") return;
+  const r = RNG[box.dataset.g][box.dataset.k], v = +e.target.value;
+  if (e.target.dataset.end === "0") r[0] = Math.min(v, r[1]); else r[1] = Math.max(v, r[0]);
+  rngDraw(box); rngApply(box.dataset.g);
+});
+document.addEventListener("DOMContentLoaded", () => document.querySelectorAll(".rng").forEach(rngDraw));
+setTimeout(() => document.querySelectorAll(".rng").forEach(rngDraw), 0);
 const TXNORM = n => n.replace(/\s*\((Alternate Art|Overnumbered|Signature|Metal|Starter|GG EZ|Launch Exclusive|Ultimate|Special)\)\s*$/, "").toLowerCase().replace(", ", " - ").replace(/[^a-z0-9]+/g, " ").trim();
 function txOf(c){
   if (c._tx !== undefined) return c._tx;
@@ -1082,6 +1141,7 @@ function matches(c, ignoreSet){
   if (st.doms.size && !c.domains.some(d => st.doms.has(d))) return false;
   if (st.banned && !c.ban) return false;
   if (st.q){ const q = st.q.toLowerCase(); if (!(c.name.toLowerCase().includes(q) || c.id.includes(q) || findOf(c).includes(q))) return false; }
+  if (!rngOK(c, "c")) return false;
   const n = counts[c.id]||0;
   if (st.show==="have" && !n) return false;
   if (st.show==="need" && n) return false;
@@ -1391,11 +1451,11 @@ $("sets").addEventListener("click", e => { const b = e.target.closest(".setbtn")
 $("doms").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.ban){ st.banned = !st.banned; st.limit = PAGE; st.page = 0; syncControls(); render(); return; } const d = b.dataset.d; st.doms.has(d) ? st.doms.delete(d) : st.doms.add(d); st.limit = PAGE; st.page = 0; syncControls(); render(); });
 
 // ---- reset filters: search, set, domains, banned, type, rarity, keyword, tag, All/I have/Missing, alt arts
-function activeFilters(){ return (st.q ? 1 : 0) + (st.set ? 1 : 0) + st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1); }
+function activeFilters(){ return (st.q ? 1 : 0) + (st.set ? 1 : 0) + st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + rngCount("c"); }
 function syncReset(){ const n = activeFilters(), b = $("freset"); if (!b) return; b.disabled = !n; b.textContent = n ? `Reset filters (${n})` : "Reset filters"; }
 $("freset").addEventListener("click", () => {
   Object.assign(st, {q:"", set:"", doms:new Set(), banned:false, type:"", rarity:"", kw:"", tg:"", show:"all", variants:true, limit:PAGE, page:0});
-  syncControls(); render();
+  rngReset("c"); syncControls(); render();
 });
 let qT; $("q").addEventListener("input", e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); st.limit = PAGE; st.page = 0; render(); }, 120); });
 ["all","have","need"].forEach(k => $("s-"+k).addEventListener("click", () => { st.show = k; st.limit = PAGE; st.page = 0; syncControls(); render(); }));
@@ -1704,9 +1764,10 @@ function stopShareOK(what){
 }
 // ---- Wish List: filters (this visit only) and Add a Card
 const wlf = {q: "", dom: "", type: "", rar: "", own: "", sort: ""};
-function wlfOn(){ return !!(wlf.q || wlf.dom || wlf.type || wlf.rar || wlf.own); }
+function wlfOn(){ return !!(wlf.q || wlf.dom || wlf.type || wlf.rar || wlf.own) || rngOn("w"); }
 function wlfMatch(id){
   const c = byId[id], n = counts[id] || 0;
+  if (!rngOK(c, "w")) return false;
   if (wlf.q){ const q = wlf.q.toLowerCase(); if (!(c.name.toLowerCase().includes(q) || c.id.includes(q) || findOf(c).includes(q))) return false; }
   return (!wlf.dom || c.domains.includes(wlf.dom)) && (!wlf.type || c.type === wlf.type) && (!wlf.rar || c.rarity === wlf.rar) && (wlf.own !== "have" || n > 0) && (wlf.own !== "need" || !n);
 }
@@ -1725,7 +1786,7 @@ function wlfOpts(){
   fill("wlf-dom", uniq(c => c.domains || [])); fill("wlf-type", uniq(c => [c.type])); fill("wlf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
 }
 function wlfSync(){ $("wlf-reset").disabled = !wlfOn(); ["all", "have", "need"].forEach(k => $("wlf-" + k).setAttribute("aria-pressed", (wlf.own || "all") === k)); }
-function wlfReset(){ Object.assign(wlf, {q: "", dom: "", type: "", rar: "", own: ""}); $("wlf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("wlf-" + k).value = ""); wlfSync(); renderWish(); }
+function wlfReset(){ rngReset("w"); Object.assign(wlf, {q: "", dom: "", type: "", rar: "", own: ""}); $("wlf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("wlf-" + k).value = ""); wlfSync(); renderWish(); }
 let wlfT; $("wlf-q").addEventListener("input", e => { wlf.q = e.target.value.trim(); wlfSync(); clearTimeout(wlfT); wlfT = setTimeout(renderWish, 120); });
 ["dom", "type", "rar"].forEach(k => $("wlf-" + k).addEventListener("change", e => { wlf[k] = e.target.value; wlfSync(); renderWish(); }));
 $("wlf-sort").addEventListener("change", e => { wlf.sort = e.target.value; renderWish(); });
@@ -1847,10 +1908,10 @@ function mkGoFriend(){
 }
 function frListen(type, fn, opt){ ["fr-list", "mk-frlist"].forEach(id => $(id).addEventListener(type, fn, opt)); }
 const mkf = {q: "", dom: "", type: "", rar: ""};
-function mkfOn(){ return !!(mkf.q || mkf.dom || mkf.type || mkf.rar); }
+function mkfOn(){ return !!(mkf.q || mkf.dom || mkf.type || mkf.rar) || rngOn("f"); }
 function mkfMatch(x, nameHit){ const c = frCard(x.key), nm = nameHit || !mkf.q || norm(x.name).includes(norm(mkf.q));
-  if (!c) return nm && !mkf.dom && !mkf.type && !mkf.rar;
-  return nm && (!mkf.dom || (c.domains || []).includes(mkf.dom)) && (!mkf.type || c.type === mkf.type) && (!mkf.rar || c.rarity === mkf.rar); }
+  if (!c) return nm && !mkf.dom && !mkf.type && !mkf.rar && !rngOn("f");
+  return nm && rngOK(c, "f") && (!mkf.dom || (c.domains || []).includes(mkf.dom)) && (!mkf.type || c.type === mkf.type) && (!mkf.rar || c.rarity === mkf.rar); }
 function mkFriendsFill(shops){
   const box = $("mk-frlist"); box.innerHTML = "";
   if (shops.length) shops.forEach(a => box.append(a));
@@ -1858,7 +1919,7 @@ function mkFriendsFill(shops){
     : `<div class="empty">No friends' shopping lists yet. When a friend sends you a link to their shopping list, open it (or paste it in the <b>Friends</b> tab) and it shows up here, where you can send them an offer.</div>`;
   $("mkf-count").textContent = shops.length ? `${shops.length} list${shops.length === 1 ? "" : "s"}` : "";
 }
-function mkfReset(){ Object.assign(mkf, {q: "", dom: "", type: "", rar: ""}); $("mkf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("mkf-" + k).value = ""); $("mkf-reset").disabled = true; renderFriends(); }
+function mkfReset(){ rngReset("f"); Object.assign(mkf, {q: "", dom: "", type: "", rar: ""}); $("mkf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("mkf-" + k).value = ""); $("mkf-reset").disabled = true; renderFriends(); }
 let mkfT; $("mkf-q").addEventListener("input", e => { mkf.q = e.target.value.trim(); $("mkf-reset").disabled = !mkfOn(); clearTimeout(mkfT); mkfT = setTimeout(renderFriends, 150); });
 ["dom", "type", "rar"].forEach(k => $("mkf-" + k).addEventListener("change", e => { mkf[k] = e.target.value; $("mkf-reset").disabled = !mkfOn(); renderFriends(); }));
 $("mkf-reset").addEventListener("click", mkfReset);
@@ -1867,9 +1928,9 @@ $("mkf-sort").addEventListener("change", e => { st.frsort = e.target.value; LS.s
 ["s","m","l"].forEach(k => $("mkfs-" + k).addEventListener("click", () => { st.size = k; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); frSize(); }));
 // ---- Marketplace filters for your shopping list (this visit only, not saved)
 const shf = {q: "", dom: "", type: "", rar: ""};
-function shfOn(){ return !!(shf.q || shf.dom || shf.type || shf.rar); }
+function shfOn(){ return !!(shf.q || shf.dom || shf.type || shf.rar) || rngOn("s"); }
 function shfMatch(x){ const c = x.show;
-  return (!shf.q || norm(x.name).includes(norm(shf.q))) && (!shf.dom || (c.domains || []).includes(shf.dom)) && (!shf.type || c.type === shf.type) && (!shf.rar || c.rarity === shf.rar); }
+  return rngOK(c, "s") && (!shf.q || norm(x.name).includes(norm(shf.q))) && (!shf.dom || (c.domains || []).includes(shf.dom)) && (!shf.type || c.type === shf.type) && (!shf.rar || c.rarity === shf.rar); }
 let shfReady = false;
 function shfOpts(){
   if (shfReady) return; shfReady = true;
@@ -1897,7 +1958,7 @@ function undoCollected(){
 }
 document.addEventListener("click", e => { if (e.target.closest("[data-undo]")){ e.preventDefault(); undoCollected(); } });
 function shopHead(n, all){ return `<div class="mk-hrow"><h2 class="mk-h">${mkFoldBtn("list", "My Shopping List")}</h2>${all && shfOn() ? `<span class="meta">Showing ${n} of ${all} card${all === 1 ? "" : "s"}</span>` : ""}${shUndo.length ? `<span class="grow"></span><button type="button" class="btn sh-undo" data-undo title="Takes back the last + Collected 1: removes that card from your collection and puts it back on this list">↶ Undo Collected${shUndo.length > 1 ? ` (${shUndo.length})` : ""}</button>` : ""}</div>`; }
-function shfReset(){ Object.assign(shf, {q: "", dom: "", type: "", rar: ""}); $("shf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("shf-" + k).value = ""); $("shf-reset").disabled = true; renderShop(); }
+function shfReset(){ rngReset("s"); Object.assign(shf, {q: "", dom: "", type: "", rar: ""}); $("shf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("shf-" + k).value = ""); $("shf-reset").disabled = true; renderShop(); }
 $("shf-q").addEventListener("input", e => { shf.q = e.target.value.trim(); $("shf-reset").disabled = !shfOn(); renderShop(); });
 ["dom", "type", "rar"].forEach(k => $("shf-" + k).addEventListener("change", e => { shf[k] = e.target.value; $("shf-reset").disabled = !shfOn(); renderShop(); }));
 $("shf-reset").addEventListener("click", shfReset);
