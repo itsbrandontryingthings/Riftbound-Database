@@ -3,7 +3,8 @@
 - Top: a strip of card artwork (zoomed into the art, so the card frames and text don't show) that fades into the
   page; the header panel sits slightly over its lower edge. Bottom: a second strip with other champions after the
   last note, fading upward. Both are decoration only (aria-hidden), load from Riot's image server like the cards,
-  and show fewer pieces on a phone. The bottom one loads lazily.
+  and show fewer pieces on a phone. The bottom one loads lazily. Kept cheap to draw while scrolling: no blur, masks
+  or filters (they made the page laggy on real screens); the fades are plain gradients on top, and contain:strict.
 Usage: patch_art.py in.html out.html"""
 import sys
 
@@ -48,13 +49,14 @@ i = h.index('<p class="note">Riftbound Database is a free fan project.')
 j = h.index('</p>\n</div>', i) + len('</p>\n')
 h = h[:j] + '  ' + strip(BOTTOM, "art-bottom", True) + '\n' + h[j:]
 
-_i = h.rfind("</style>"); h = h[:_i] + """.art-band{position:relative;display:flex;gap:4px;height:150px;border-radius:14px;overflow:hidden;pointer-events:none;
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%)}
+_i = h.rfind("</style>"); h = h[:_i] + """.art-band{position:relative;display:flex;gap:4px;height:150px;border-radius:14px;overflow:hidden;pointer-events:none;contain:strict}
+/* side fades: plain gradients drawn on top (much cheaper while scrolling than a mask) */
+.art-band::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,var(--bg) 0,transparent 7%,transparent 93%,var(--bg) 100%)}
 .art-t{flex:1 1 0;min-width:96px;overflow:hidden;position:relative;background:var(--panel)}
-.art-t img{position:absolute;left:50%;top:50%;width:215%;max-width:none;height:auto;transform:translate(-50%,-31%);filter:saturate(1.08)}
-.art-band::after{content:"";position:absolute;inset:0;pointer-events:none}
+.art-t img{position:absolute;left:50%;top:50%;width:215%;max-width:none;height:auto;transform:translate(-50%,-31%)}
+.art-band::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none}
 .art-top::after{background:linear-gradient(180deg,rgb(19 21 28 / .05) 0%,rgb(19 21 28 / .25) 55%,var(--bg) 100%)}
-.art-top + .top{margin-top:-58px;position:relative;z-index:1;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(6px)}
+.art-top + .top{margin-top:-58px;position:relative;z-index:1}
 .art-bottom{margin-top:6px;height:120px}
 .art-bottom::after{background:linear-gradient(0deg,rgb(19 21 28 / .1) 0%,rgb(19 21 28 / .3) 45%,var(--bg) 100%)}
 @media (max-width:640px){

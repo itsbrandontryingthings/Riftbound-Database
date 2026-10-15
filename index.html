@@ -718,13 +718,14 @@ h1.brand-h .brand-logo{width:52px;height:52px;flex:none;border-radius:12px;box-s
 .rng-t input::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:18px;height:18px;margin-top:5px;border-radius:50%;background:var(--fg);border:2px solid var(--accent);cursor:pointer;box-shadow:0 1px 4px rgb(0 0 0 / .4)}
 .rng-t input::-moz-range-thumb{pointer-events:auto;width:14px;height:14px;border-radius:50%;background:var(--fg);border:2px solid var(--accent);cursor:pointer}
 .rng-t input:focus-visible::-webkit-slider-thumb{outline:2px solid var(--accent);outline-offset:2px}
-.art-band{position:relative;display:flex;gap:4px;height:150px;border-radius:14px;overflow:hidden;pointer-events:none;
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%)}
+.art-band{position:relative;display:flex;gap:4px;height:150px;border-radius:14px;overflow:hidden;pointer-events:none;contain:strict}
+/* side fades: plain gradients drawn on top (much cheaper while scrolling than a mask) */
+.art-band::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,var(--bg) 0,transparent 7%,transparent 93%,var(--bg) 100%)}
 .art-t{flex:1 1 0;min-width:96px;overflow:hidden;position:relative;background:var(--panel)}
-.art-t img{position:absolute;left:50%;top:50%;width:215%;max-width:none;height:auto;transform:translate(-50%,-31%);filter:saturate(1.08)}
-.art-band::after{content:"";position:absolute;inset:0;pointer-events:none}
+.art-t img{position:absolute;left:50%;top:50%;width:215%;max-width:none;height:auto;transform:translate(-50%,-31%)}
+.art-band::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none}
 .art-top::after{background:linear-gradient(180deg,rgb(19 21 28 / .05) 0%,rgb(19 21 28 / .25) 55%,var(--bg) 100%)}
-.art-top + .top{margin-top:-58px;position:relative;z-index:1;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(6px)}
+.art-top + .top{margin-top:-58px;position:relative;z-index:1}
 .art-bottom{margin-top:6px;height:120px}
 .art-bottom::after{background:linear-gradient(0deg,rgb(19 21 28 / .1) 0%,rgb(19 21 28 / .3) 45%,var(--bg) 100%)}
 @media (max-width:640px){
