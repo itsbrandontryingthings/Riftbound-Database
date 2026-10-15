@@ -734,6 +734,7 @@ h1.brand-h .brand-logo{width:52px;height:52px;flex:none;border-radius:12px;box-s
   .art-top + .top{margin-top:-34px}
   .art-bottom{height:104px;contain-intrinsic-size:auto 104px}
 }
+#dk-sort{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--fg)}
 </style>
 
 <div class="wrap" id="app">
@@ -1767,12 +1768,13 @@ function renderDecks(){
       <div class="seg" role="group" aria-label="Which cards to show"><button id="dk-all" aria-pressed="${!hide}">Show all cards</button><button id="dk-hide" aria-pressed="${hide}">Hide cards I have</button></div>
       <div class="seg sizeseg" role="group" aria-label="Card size"><button id="dks-s" aria-pressed="${size==="s"}" title="Small cards">S</button><button id="dks-m" aria-pressed="${size==="m"}" title="Medium cards">M</button><button id="dks-l" aria-pressed="${size==="l"}" title="Large cards">L</button></div>
       <div class="seg" role="group" aria-label="Layout"><button id="dkv-list" aria-pressed="${view==="list"}">List</button><button id="dkv-grid" aria-pressed="${view==="grid"}">Grid</button></div>
+      <select id="dk-sort" aria-label="Sort the cards in each section">${[["", "Sort: set order"], ["list", "Sort: deck list order"], ["name", "Sort: name A–Z"], ["energy", "Sort: energy, low to high"], ["price", "Sort: price, high to low"]].map(([v, t]) => `<option value="${v}" ${(st.dsort || "") === v ? "selected" : ""}>${t}</option>`).join("")}</select>
       <label class="chk"><input type="checkbox" id="dk-side" ${withSide?"checked":""}> Include sideboard</label>
     </div>`;
   $("deck-body").innerHTML = tools + S.counted.map(sec => {
     const sh = sec.rows.reduce((a, r) => a + r.h, 0), sn = sec.rows.reduce((a, r) => a + r.q, 0), rows = hide ? sec.rows.filter(r => r.miss || !r.known) : sec.rows;
     return `<section class="dk-sec"><div class="dk-sh"><h3>${esc(sec.label)}</h3><span class="dk-cnt${sh === sn ? " ok" : ""}" title="Copies you have / copies in this section">${sh}/${sn}</span></div>
-      ${rows.length ? `<div class="${view === "grid" ? gridCls : "dkl dkl-" + size}">${rows.map(r => dkRowHTML(r, view, size)).join("")}</div>` : `<p class="meta dk-alldone">✓ You have ${sn === 1 ? "the 1 card" : `all ${sn} cards`} in this section.</p>`}</section>`;
+      ${rows.length ? `<div class="${view === "grid" ? gridCls : "dkl dkl-" + size}">${dkSortRows(rows).map(r => dkRowHTML(r, view, size)).join("")}</div>` : `<p class="meta dk-alldone">✓ You have ${sn === 1 ? "the 1 card" : `all ${sn} cards`} in this section.</p>`}</section>`;
   }).join("") + `<form class="panel dk-addc" id="dk-addc" novalidate><b>Add a Card</b>
       <input class="search" id="dk-addn" list="dk-names" placeholder="Card name, e.g. Gust" aria-label="Card name" autocomplete="off">
       <select id="dk-adds" aria-label="Section"><option value="auto">Best section for the card</option>${secOpts}</select>
@@ -2561,6 +2563,18 @@ const offerPoll = () => {
 setTimeout(() => loadMyOffers(true), 1500);
 setInterval(offerPoll, 60000);
 document.addEventListener("visibilitychange", offerPoll);
+// sort a deck section's cards for display (the decklist itself keeps its order)
+function dkSortRows(rows){
+  const by = st.dsort || "", ix = r => r.show ? CARDS.indexOf(r.show) : 1e9, en = r => { const t = r.show && txOf(r.show); return t && typeof t.e === "number" ? t.e : 99; };
+  if (by === "list") return rows;
+  const out = rows.slice();
+  if (by === "name") out.sort((a, b) => (a.show ? a.show.name : a.name).localeCompare(b.show ? b.show.name : b.name));
+  else if (by === "energy") out.sort((a, b) => en(a) - en(b) || ix(a) - ix(b));
+  else if (by === "price") out.sort((a, b) => (b.cheap ? b.cheap.price : -1) - (a.cheap ? a.cheap.price : -1) || ix(a) - ix(b));
+  else out.sort((a, b) => ix(a) - ix(b));
+  return out;
+}
+$("deck-body").addEventListener("change", e => { if (e.target.id === "dk-sort"){ st.dsort = e.target.value; saveDeckView(); } });
 function saveDeckView(){ LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); renderDecks(); }
 $("deck-summary").addEventListener("change", e => {
   if (e.target.id !== "dk-rename") return;
