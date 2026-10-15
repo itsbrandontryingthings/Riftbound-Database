@@ -77,11 +77,28 @@ with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` he
 - The site is tested with a fake Supabase; real-database behaviour should be checked after SQL changes
   (share a deck, open its link in a private window).
 
+## Working on more than one computer
+
+GitHub is the one shared copy. Brandon works from more than one PC; don't copy or zip the project folder between
+them, and don't put it in Dropbox / OneDrive (two syncs on one git folder can corrupt it).
+- **Before any change:** `git pull` (this repo has `pull.rebase=true` and `rebase.autoStash=true`, so it rebases).
+  If it reports a conflict, stop and explain it to Brandon before going on.
+- **After a change:** commit, then push. Pushing needs Brandon's GitHub sign-in (Git Credential Manager opens a
+  browser window the first time on a PC), so give him the push command:
+  `git -C "C:\Users\brand\Desktop\Riftbound Database\repo" push origin main` (PowerShell has no `&&`).
+- **New PC:** `git clone https://github.com/itsbrandontryingthings/Riftbound-Database.git repo` inside
+  `Desktop\Riftbound Database`, then set `pull.rebase true` / `rebase.autoStash true`, and `user.name` /
+  `user.email` as below. The offline copy (`Riftbound Database\Riftbound Database\`) is rebuilt with
+  `./build/make.sh --local`, never copied.
+
 ## Conventions
 
-- Commit as `itsbrandontryingthings`; fetch + rebase on `origin/main` before pushing (the Action and weekly task also push).
+- Commit as `itsbrandontryingthings` <itsbrandontryingthings@users.noreply.github.com>; pull (rebase) on `origin/main` before pushing (the Action and weekly task also push).
 - Keep wording friendly and plain; headings in Title Case; tab names (in this order): Collection, Open Packs, My Decks, Marketplace, Wish List, Friends. The Wish List has
   its own Add a Card box and filters (`wlf`, `wlAdd`, in patch_marketplace).
 - On a Windows PC (Git for Windows + Python from python.org) there's no `python3`: run the build as
   `bash -c 'python3(){ python "$@"; }; export -f python3; ./build/make.sh'` and the tests with `python -X utf8`.
+  The home PC has python.org's embeddable Python 3.12 in `%LOCALAPPDATA%\Programs\Python\Python312` (on the user
+  PATH, with a `python3.exe` copy), so `./build/make.sh` runs as is; it has no pip, so `smoke.py` (playwright) can't
+  run there until the full installer is in (it failed with 1603 while Windows had a restart pending).
 - After a change, tell Brandon in a couple of sentences what changed and where to see it.
