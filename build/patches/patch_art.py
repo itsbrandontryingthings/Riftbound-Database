@@ -4,7 +4,8 @@
   page; the header panel sits slightly over its lower edge. Bottom: a second strip with other champions after the
   last note, fading upward. Both are decoration only (aria-hidden), load from Riot's image server like the cards,
   and show fewer pieces on a phone. The bottom one loads lazily. Kept cheap to draw while scrolling: no blur, masks
-  or filters (they made the page laggy on real screens); the fades are plain gradients on top, and contain:strict.
+  or filters (they made the page laggy on real screens); the fades are plain gradients on top; each strip is its own
+  layer (contain:strict + translateZ) and the bottom one is skipped while off-screen (content-visibility:auto).
 Usage: patch_art.py in.html out.html"""
 import sys
 
@@ -40,7 +41,7 @@ BOTTOM = [  # other printings, so the two strips don't repeat
 ]
 
 def strip(cards, cls, lazy):
-    tiles = "".join(f'<span class="art-t"><img src="{IMG.format(f)}" alt="" referrerpolicy="no-referrer" decoding="async"{" loading=\"lazy\"" if lazy else ""}></span>' for f, _ in cards)
+    tiles = "".join(f'<span class="art-t"><img src="{IMG.format(f)}" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async"{" loading=\"lazy\"" if lazy else ""}></span>' for f, _ in cards)
     return f'<div class="art-band {cls}" aria-hidden="true">{tiles}</div>'
 
 rep('<div class="wrap" id="app">', '<div class="wrap" id="app">\n  ' + strip(TOP, "art-top", False))
@@ -49,7 +50,7 @@ i = h.index('<p class="note">Riftbound Database is a free fan project.')
 j = h.index('</p>\n</div>', i) + len('</p>\n')
 h = h[:j] + '  ' + strip(BOTTOM, "art-bottom", True) + '\n' + h[j:]
 
-_i = h.rfind("</style>"); h = h[:_i] + """.art-band{position:relative;display:flex;gap:4px;height:150px;border-radius:14px;overflow:hidden;pointer-events:none;contain:strict}
+_i = h.rfind("</style>"); h = h[:_i] + """.art-band{position:relative;display:flex;gap:4px;height:200px;border-radius:14px;overflow:hidden;pointer-events:none;contain:strict;transform:translateZ(0)}
 /* side fades: plain gradients drawn on top (much cheaper while scrolling than a mask) */
 .art-band::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,var(--bg) 0,transparent 7%,transparent 93%,var(--bg) 100%)}
 .art-t{flex:1 1 0;min-width:96px;overflow:hidden;position:relative;background:var(--panel)}
@@ -57,13 +58,13 @@ _i = h.rfind("</style>"); h = h[:_i] + """.art-band{position:relative;display:fl
 .art-band::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none}
 .art-top::after{background:linear-gradient(180deg,rgb(19 21 28 / .05) 0%,rgb(19 21 28 / .25) 55%,var(--bg) 100%)}
 .art-top + .top{margin-top:-58px;position:relative;z-index:1}
-.art-bottom{margin-top:6px;height:120px}
+.art-bottom{margin-top:6px;height:160px;content-visibility:auto;contain-intrinsic-size:auto 160px}
 .art-bottom::after{background:linear-gradient(0deg,rgb(19 21 28 / .1) 0%,rgb(19 21 28 / .3) 45%,var(--bg) 100%)}
 @media (max-width:640px){
-  .art-band{height:96px;gap:3px}
+  .art-band{height:120px;gap:3px}
   .art-t{min-width:78px}
   .art-top + .top{margin-top:-34px}
-  .art-bottom{height:84px}
+  .art-bottom{height:104px;contain-intrinsic-size:auto 104px}
 }
 """ + h[_i:]
 
