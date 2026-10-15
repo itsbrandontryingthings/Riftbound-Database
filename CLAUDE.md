@@ -19,7 +19,7 @@ and keep the site working on phones.
 | `build/sql/` | Supabase SQL, run by Brandon in Supabase → SQL Editor: `supabase_setup.sql` (collections table), `supabase_sharing.sql` (shared_decks), `supabase_wishlist.sql` (wish column), `supabase_links.sql` (private share links), `supabase_offers.sql` (offers on shopping lists), `supabase_offer_threads.sql` (counter offers, trade cards, bad-word filter — see "Pending"), `supabase_offer_revise.sql` (revising an offer you made), `supabase_bad_words.sql` (stricter bad-word check). |
 | `build/tests/` | `smoke.py` (loads the built site with stand-in images + fake Supabase; checks no JS errors, filters, info sheet), `links_test.py` (end-to-end private links), `fake_supabase.js` (in-browser stand-in that enforces the same rules as the real database). |
 | `build/make.sh` | Rebuilds `index.html`; `--local` also builds the local Desktop copy. |
-| `build/og/` | `og.html` (link preview picture: RBDB logo + a fan of cards with a foil "armpit Shen", Shen - Eye of Twilight VEN 193, in the middle) and `logo.html` (the RBDB logo); `render.py` (Playwright) makes `og-image.jpg` and `logo-512.png` at the repo root. Re-run it after changing either page. |
+| `build/og/` | `og.html` (link preview picture: RBDB logo + a fan of cards with the "armpit Shen" (no foil), Shen - Eye of Twilight VEN 193, in the middle) and `logo.html` (the RBDB logo); `render.py` (Playwright) makes `og-image.jpg` and `logo-512.png` at the repo root. Re-run it after changing either page. |
 
 ## Build
 

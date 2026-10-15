@@ -32,7 +32,7 @@ rep('</style></head><body>', f'''</style>
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Riftbound Database: the RBDB logo and a fan of Riftbound cards, with a foil Shen in the middle">
+<meta property="og:image:alt" content="Riftbound Database: the RBDB logo and a fan of Riftbound cards, with Shen in the middle">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{TITLE}">
 <meta name="twitter:description" content="{DESC}">
