@@ -2695,7 +2695,7 @@ function chimeReady(){
     const buf = await new Promise((ok, no) => { const p = oc.startRendering(); if (p && p.then) p.then(ok, no); else oc.oncomplete = e => ok(e.renderedBuffer); });
     // the live chime was very quiet (peak about 15%): bring the recording up to one clear, fixed level
     const d = buf.getChannelData(0); let peak = 0; for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
-    const gain = peak > 0 ? Math.min(5, 0.35 / peak) : 1; for (let i = 0; i < d.length; i++) d[i] *= gain;
+    const gain = peak > 0 ? Math.min(5, 0.1225 / peak) : 1; for (let i = 0; i < d.length; i++) d[i] *= gain;
     chimeBuf = buf;
     const el = new Audio(URL.createObjectURL(wavBlob(buf))); el.preload = "auto"; el.setAttribute("playsinline", ""); el.volume = 1;
     return chimeEl = el;
