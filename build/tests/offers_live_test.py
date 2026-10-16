@@ -10,7 +10,14 @@ import asyncio, os, subprocess, sys, time
 from playwright.async_api import async_playwright
 S = os.path.dirname(os.path.abspath(__file__)) + "/"; ROOT = os.path.abspath(S + "../..")
 BASE = "http://127.0.0.1:8768/index.html"
-COUNT_SOUNDS = "window.__osc = 0; const _o = AudioContext.prototype.createOscillator; AudioContext.prototype.createOscillator = function(){ window.__osc++; return _o.call(this); };"
+# counts sounds that really play: the chime's <audio> element (not the silent unlock) or a live Web Audio chime
+COUNT_SOUNDS = """window.__osc = 0;
+const _p = HTMLMediaElement.prototype.play; HTMLMediaElement.prototype.play = function(){ const r = _p.call(this); if (!this.muted && r && r.then) r.then(() => window.__osc++, () => {}); return r; };
+const _o = AudioContext.prototype.createOscillator; AudioContext.prototype.createOscillator = function(){ if (!(this instanceof OfflineAudioContext)) window.__osc++; return _o.call(this); };"""
+TAP_FIRST = """window.__tapped = false; ["pointerdown", "keydown"].forEach(ev => addEventListener(ev, e => { if (e.isTrusted) window.__tapped = true; }, true));
+const _pl = HTMLMediaElement.prototype.play; HTMLMediaElement.prototype.play = function(){ return window.__tapped ? _pl.call(this) : Promise.reject(new DOMException("needs a tap", "NotAllowedError")); };
+const _A = AudioContext; window.AudioContext = class extends _A { constructor(...a){ super(...a); if (!window.__tapped) this.suspend(); }
+  resume(){ return window.__tapped ? super.resume() : Promise.reject(new DOMException("needs a tap", "NotAllowedError")); } };"""
 async def main():
     srv = subprocess.Popen([sys.executable, "-m", "http.server", "8768"], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(1)
     ok = True
@@ -18,7 +25,7 @@ async def main():
         nonlocal ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, extra)
     try:
         async with async_playwright() as p:
-            b = await p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
+            b = await p.chromium.launch()   # normal sound rules: no sound until the page has had a click
             ctx = await b.new_context(viewport={"width": 1000, "height": 900}); errs = []
             await ctx.add_init_script(COUNT_SOUNDS)
             async def h(r):
@@ -77,6 +84,23 @@ async def main():
             thread = await pg.evaluate("JSON.parse(localStorage.__db).shop_offers[0].thread.map(m => m.by + ':' + m.text)")
             check("friend: reply sent from Incoming Offers", thread[-1] == "them:Deal at $4?", thread)
             check("friend: it leaves Incoming Offers (their turn now)", "Counter Offers on Your Offers" not in await pg.inner_text("#shop-offers"))
+            # 3. nobody has tapped the page since it loaded: the browser blocks the sound, so a note says how to turn it on
+            # (a fresh browser session with the same saved data: browsers remember clicks from earlier in a session)
+            # the test browser doesn't enforce "no sound before a tap", so act like Chrome / Safari do
+            ctx2 = await b.new_context(viewport={"width": 1000, "height": 900}, storage_state=await ctx.storage_state())
+            await ctx2.add_init_script(TAP_FIRST); await ctx2.add_init_script(COUNT_SOUNDS); await ctx2.route("**/*", h)
+            pg = await ctx2.new_page(); pg.on("pageerror", lambda e: errs.append(str(e)))
+            await pg.goto(BASE); await pg.wait_for_timeout(2500)
+            await pg.evaluate("""() => { const d = JSON.parse(localStorage.__db), o = d.shop_offers.find(x => x.id === "o1");
+              o.thread.push({by: "owner", text: "OK, $4.50?", at: new Date().toISOString()}); localStorage.__db = JSON.stringify(d); }""")
+            await pg.wait_for_timeout(12000)
+            note = (await pg.text_content("#shop-toast")) if await pg.locator("#shop-toast").count() else ""
+            check("no tap yet: a note says to tap to turn on sounds", "Tap anywhere" in note, repr(note))
+            await pg.mouse.click(5, 5); await pg.wait_for_timeout(300); before = await pg.evaluate("window.__osc")
+            await pg.evaluate("""() => { const d = JSON.parse(localStorage.__db), o = d.shop_offers.find(x => x.id === "o1");
+              o.thread.push({by: "owner", text: "Last offer: $4.25", at: new Date().toISOString()}); localStorage.__db = JSON.stringify(d); }""")
+            await pg.wait_for_timeout(12000)
+            check("after one tap: the next counter offer plays the sound", await pg.evaluate("window.__osc") > before)
             check("no JavaScript errors", not errs, errs)
             await b.close()
     finally:
