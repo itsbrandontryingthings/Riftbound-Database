@@ -2280,7 +2280,7 @@ async function loadOffers(force){
   offersBusy = false; if (cloudUser !== me) return;
   if (error){ offersOff = /shop_offers|relation|does not exist|schema cache|permission/i.test(error.message || ""); offers = []; }
   else {
-    offersOff = false; offers = (data || []).map(o => ({...o, trade: Array.isArray(o.trade) ? o.trade : [], thread: Array.isArray(o.thread) ? o.thread : [], status: o.status || "open"}));
+    offersOff = false; offers = (data || []).map(o => ({...o, trade: Array.isArray(o.trade) ? o.trade : [], thread: Array.isArray(o.thread) ? o.thread : [], status: o.status || "open"})).filter(o => o.status !== "withdrawn");
     // new = an offer you haven't seen, or a new message from them on one you have
     const old = LS.get("rb-offers-seen"), seen = Array.isArray(old) ? Object.fromEntries(old.map(id => [id, -1])) : (old || {}), first = !old;
     const fresh = offers.filter(o => !(o.id in seen) || (seen[o.id] >= 0 && o.thread.length > seen[o.id] && (o.thread[o.thread.length - 1] || {}).by === "them"));
@@ -2407,7 +2407,7 @@ async function loadMyOffers(force){
   myOffersBusy = false;
   if (error){ myOffersOff = true; myOffers = []; showFriendsBadge(); return; }
   myOffersOff = false; myOffersAt = Date.now();
-  myOffers = (data || []).map(o => ({...o, trade: Array.isArray(o.trade) ? o.trade : [], thread: Array.isArray(o.thread) ? o.thread : []}));
+  myOffers = (data || []).map(o => ({...o, trade: Array.isArray(o.trade) ? o.trade : [], thread: Array.isArray(o.thread) ? o.thread : []})).filter(o => o.status !== "withdrawn");
   const old = LS.get("rb-my-offers-seen"), seen = old || {};
   const fresh = myOffers.filter(o => o.thread.length > (seen[o.reply_token] || 0) && (o.thread[o.thread.length - 1] || {}).by === "owner");
   fresh.forEach(o => moNew.add(o.reply_token));
@@ -2443,7 +2443,9 @@ frListen("click", async e => {
   const { error } = await sb.rpc("offer_reply", { p_reply: code, p_action: act, p_text: act === "withdraw" ? "" : text, p_trade: [] });
   moArm = "";
   if (error){ msg.textContent = offerErr(error); b.disabled = false; return; }
-  delete moDraft[code]; moNew.delete(code); await loadMyOffers(true); renderFriends();
+  delete moDraft[code]; moNew.delete(code);
+  if (act === "withdraw"){ myOffers = (myOffers || []).filter(o => o.reply_token !== code); toast("Offer withdrawn."); }
+  await loadMyOffers(true); renderFriends();
 });
 
 // load an offer you made back into that list's offer form, to revise it
@@ -2586,7 +2588,7 @@ frListen("click", async e => {
     say(/words/.test(m) ? "Please keep it friendly: your name or offer has a word we don't allow." : /make_offer|function/i.test(m) && !/busy|link|item|name|offer/i.test(m) ? "Offers aren't switched on yet. They need a quick database update." : /busy/.test(m) ? "This list has had a lot of offers in the last hour. Try again later." : /link/.test(m) ? "This shopping list isn't shared any more." : "Couldn't send your offer. Check your connection and try again.");
     b.disabled = false; return;
   }
-  if (typeof replyCode === "string" && replyCode.length >= 20){ addReplyCode(replyCode); loadMyOffers(true); }
+  if (typeof replyCode === "string" && replyCode.length >= 20){ addReplyCode(replyCode); await loadMyOffers(true); }
   LS.set("rb-offer-name", name); S.sel = {}; S.trade = {}; S.offer = ""; S.msg = `Offer sent. They'll see it with your name, ${name}.`; S.ok = true; renderFriends();
 });
 let shSug = [], shSel = 0;
