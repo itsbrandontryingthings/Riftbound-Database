@@ -665,7 +665,6 @@ button.kw{cursor:pointer;font-size:13.5px;padding:2px 9px}button.kw:hover{filter
 @media (max-width:520px){.of-pv{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .updnote{margin:8px 0 2px;font-size:13.5px;color:var(--muted);line-height:1.45}
 .updnote b{color:var(--fg);font-weight:600}
-#of-chime{padding:5px 8px;font-size:13px}
 #wish-head .mk-hrow{margin:14px 0 8px;align-items:center}
 #wish-head .seg{flex:0 0 auto}
 #wlf-p{margin-bottom:10px}
@@ -773,6 +772,11 @@ h1.brand-h .brand-logo{width:52px;height:52px;flex:none;border-radius:12px;box-s
 .wfchk{width:20px;height:20px;border:1.5px solid var(--muted);border-radius:5px;display:inline-grid;place-items:center;font-size:13px;font-weight:700;flex:0 0 auto}
 .wfrow.on .wfchk{background:#ff7a90;border-color:#ff7a90;color:#14151b}
 .wfrow .step button{width:30px;height:30px}
+.mo-in{display:grid;gap:8px;margin:6px 0 14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.mo-in-h{margin:0;font-size:15px;font-family:var(--display)}
+.mo-in .meta{margin:0}
+.mo-in .mo-box{display:grid;gap:10px}
+.mo-in .of-from{margin-right:6px}
 </style>
 
 <div class="wrap" id="app">
@@ -2271,8 +2275,8 @@ const cardSub = key => { const c = frCard(key), cheap = cheapestOf(key);
   return `<span class="of-sub">${c ? `<span class="dk-set" style="--sc:var(--${setCol[c.set] || "line"})">${esc(setName[c.set] || c.set)} · ${esc(codeOf(c))}</span>` : ""}<span class="of-mkt">${cheap ? `market ${esc(money(cheap.price))} each` : "no price"}</span></span>`; };
 async function loadOffers(force){
   if (!sb || !cloudUser){ offers = null; showOfferBadge(); return; }
-  if (offersBusy || (!force && offers && Date.now() - offersAt < 60000)) return;
-  offersBusy = true;
+  if ((offersBusy && Date.now() - offersBusy < 30000) || (!force && offers && Date.now() - offersAt < 20000)) return;
+  offersBusy = Date.now();
   const me = cloudUser, q = cols => sb.from("shop_offers").select(cols).order("created_at", { ascending: false }).limit(100);
   let { data, error } = await q("id, from_name, items, offer, trade, thread, status, created_at, updated_at");
   if (error && /column|trade|thread|status/i.test(error.message || "")){ threadsOff = true; ({ data, error } = await q("id, from_name, items, offer, created_at")); }
@@ -2288,7 +2292,7 @@ async function loadOffers(force){
     if (fresh.length && !first && offerSound()) coinChime();
     LS.set("rb-offers-seen", Object.fromEntries(offers.map(o => [o.id, o.thread.length])));
   }
-  offersAt = Date.now(); showOfferBadge(); if (st.tab === "shop") renderOffers();
+  offersAt = Date.now(); showOfferBadge(); offersRedraw();
 }
 function showOfferBadge(){
   const mineN = offers ? offers.filter(o => o.status === "open" && (o.thread[o.thread.length - 1] || {by: "them"}).by === "them").length : 0;
@@ -2314,16 +2318,24 @@ function offerHTML(o){
   </article>`;
 }
 function renderOffers(){
+  renderOffers0();
+  const cs = myCounters(), panel = $("shop-offers").querySelector(".of-panel"); if (!cs.length || !panel) return;
+  const small = panel.querySelector(".of-h small"), n = (offers || []).length + cs.length;
+  if (small) small.textContent = n; else panel.querySelector(".of-h .mk-fold, .of-h").insertAdjacentHTML("beforeend", ` <small>${n}</small>`);
+  const html = `<div class="mo-in"><h3 class="mo-in-h">Counter Offers on Your Offers</h3><p class="meta">Answers from friends on offers you made. Reply, accept their counter or withdraw right here.</p>${myOffersHTML(null, isCounter)}</div>`;
+  const after = panel.querySelector(".of-hrow") || panel.querySelector(".of-h");
+  after.insertAdjacentHTML("afterend", html);
+}
+function renderOffers0(){
   const box = $("shop-offers");
   const note = t => `<div class="panel of-panel"><h2 class="of-h mk-h">${mkFoldBtn("offers", "Incoming Offers")}</h2><p class="meta">${t}</p></div>`;
   if (!cloudUser){ box.innerHTML = note("Sign in and share your shopping list, and friends can send you offers on the cards you need. They show up here."); return; }
   if (!shopP().shared && !(offers && offers.length)){ box.innerHTML = note("No offers yet. Share your shopping list (below) and friends can tick the cards they have and send you an offer: money, a trade, anything. It shows up here with their name."); return; }
   if (offersOff){ box.innerHTML = note("Offers need a quick database update before friends can send them. The site owner has the steps."); return; }
   if (!offers){ box.innerHTML = note("Checking for offers…"); return; }
-  box.innerHTML = `<div class="panel of-panel"><div class="of-hrow"><h2 class="of-h mk-h">${mkFoldBtn("offers", `Incoming Offers <small>${offers.length}</small>`)}</h2><span class="frow"><button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="Play a sound when a new offer comes in">${offerSound() ? "🔔 Sound on" : "🔕 Sound off"}</button><select id="of-chime" aria-label="New offer sound" title="Pick the new-offer sound (it plays when you choose)" ${offerSound() ? "" : "disabled"}><option value="konbini" ${LS.get("rb-offer-chime") === "poro" ? "" : "selected"}>Konbini chime</option><option value="poro" ${LS.get("rb-offer-chime") === "poro" ? "selected" : ""}>Poro coin</option></select><button class="btn" id="of-refresh">Check for new offers</button></span></div>
+  box.innerHTML = `<div class="panel of-panel"><div class="of-hrow"><h2 class="of-h mk-h">${mkFoldBtn("offers", `Incoming Offers <small>${offers.length}</small>`)}</h2><span class="frow"><button class="btn" id="of-sound" aria-pressed="${offerSound()}" title="Play a sound when a new offer comes in">${offerSound() ? "🔔 Sound on" : "🔕 Sound off"}</button><button class="btn" id="of-refresh">Check for new offers</button></span></div>
     ${offers.length ? offers.map(offerHTML).join("") : `<p class="meta">No offers yet. When a friend opens your shopping list link, they can tick the cards they have and send you an offer: money, a trade, anything. It shows up here with their name.</p>`}</div>`;
 }
-$("shop-offers").addEventListener("change", e => { if (e.target.id === "of-chime"){ LS.set("rb-offer-chime", e.target.value); coinChime(); } });
 $("shop-offers").addEventListener("input", e => { if (e.target.dataset.ofd) ownerDraft[e.target.dataset.ofd] = e.target.value; });
 $("shop-offers").addEventListener("keydown", e => { if (e.target.dataset.ofd && e.key === "Enter"){ e.preventDefault(); e.target.closest(".of-card").querySelector('[data-ofa="counter"]').click(); } });
 $("shop-offers").addEventListener("click", async e => {
@@ -2401,8 +2413,8 @@ function addReplyCode(t){
 async function loadMyOffers(force){
   const codes = myReplyCodes();
   if (!codes.length || !sb){ myOffers = []; showFriendsBadge(); return; }
-  if (myOffersBusy || (!force && myOffers && Date.now() - myOffersAt < 60000)) return;
-  myOffersBusy = true;
+  if ((myOffersBusy && Date.now() - myOffersBusy < 30000) || (!force && myOffers && Date.now() - myOffersAt < 20000)) return;
+  myOffersBusy = Date.now();
   const { data, error } = await sb.rpc("get_my_offers", { p_replies: codes });
   myOffersBusy = false;
   if (error){ myOffersOff = true; myOffers = []; showFriendsBadge(); return; }
@@ -2413,30 +2425,42 @@ async function loadMyOffers(force){
   fresh.forEach(o => moNew.add(o.reply_token));
   if (fresh.length && old && offerSound()) coinChime();
   LS.set("rb-my-offers-seen", Object.fromEntries(myOffers.map(o => [o.reply_token, o.thread.length])));
-  showFriendsBadge();
+  showFriendsBadge(); offersRedraw();
   if ((st.tab === "friends" || st.tab === "shop") && !document.activeElement?.closest?.(".of-body, .mo-card")) renderFriends();
 }
 function showFriendsBadge(){ $("t-friends").textContent = "Friends"; showOfferBadge(); }
-function myOffersHTML(listTok){
-  const mine = (myOffers || []).filter(o => o.list_token === listTok);
+function moListen(type, fn){ frListen(type, fn); $("shop-offers").addEventListener(type, fn); }
+// counter offers (and answers) on offers you made: your turn, or not looked at yet
+function isCounter(o){ return (o.status === "open" && (o.thread[o.thread.length - 1] || {}).by === "owner") || moNew.has(o.reply_token); }
+function myCounters(){ try { return (myOffers || []).filter(isCounter); } catch(e){ return []; } }   // myOffers / moNew are set up further down the page
+var offersStale = false;
+function offersRedraw(now){
+  if (st.tab !== "shop") return;
+  const a = document.activeElement;
+  if (!now && a && a.closest && a.closest("#shop-offers") && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){ offersStale = true; return; }
+  offersStale = false; renderOffers();
+}
+$("shop-offers").addEventListener("focusout", () => { if (offersStale) setTimeout(() => { if (!$("shop-offers").contains(document.activeElement)) offersRedraw(); }, 0); });
+function myOffersHTML(listTok, pick){
+  const mine = (myOffers || []).filter(pick || (o => o.list_token === listTok));
   if (!mine.length) return "";
-  return `<div class="mo-box"><span class="collect-k">Your offers on this list</span>${mine.map(o => {
+  return `<div class="mo-box">${pick ? "" : '<span class="collect-k">Your offers on this list</span>'}${mine.map(o => {
     const n = (o.items || []).reduce((a, i) => a + (+i.q || 0), 0), last = (o.thread[o.thread.length - 1] || {}).by, open = o.status === "open";
     return `<div class="mo-card" data-reply="${esc(o.reply_token)}">
-      <div class="of-top"><div>${moNew.has(o.reply_token) ? '<span class="of-new">New</span>' : ""}${statusPill(o, false)}<span class="meta">sent ${esc(fmtWhen(o.created_at))}</span></div></div>
+      <div class="of-top"><div>${moNew.has(o.reply_token) ? '<span class="of-new">New</span>' : ""}${statusPill(o, false)}${pick ? `<b class="of-from">${esc(o.list_name || "A friend's shopping list")}</b> ` : ""}<span class="meta">sent ${esc(fmtWhen(o.created_at))}</span></div></div>
       ${o.offer || o.trade.length ? `<div class="of-said"><span class="collect-k">You offered</span><span class="of-text">${o.offer ? esc(o.offer) : ""}${o.offer && tradeGive(o.trade).length ? " <span class=\"of-plus\">+</span> " : ""}${cardRefs(tradeGive(o.trade))}${!o.offer && !tradeGive(o.trade).length ? "<span class=\"meta\">a straight swap</span>" : ""}</span>${tradeWant(o.trade).length ? `<span class="collect-k of-wantk">In return, you'd like</span><span class="of-text">${cardRefs(tradeWant(o.trade))}</span>` : ""}</div>` : ""}
       ${(o.items || []).length ? `<span class="collect-k">Cards you're giving them</span>${tradeRows(o.items)}` : ""}
       ${threadHTML(o.thread, false, o.status === "open")}
       ${open ? `<div class="of-reply"><input data-mo="text" maxlength="200" value="${esc(moDraft[o.reply_token] || "")}" placeholder="${last === "owner" ? "Reply to their counter offer…" : "Add a message…"}" aria-label="Your reply"><button class="btn" data-mo="reply">Send reply</button><button class="btn" data-mo="revise" title="Change the cards or money in this offer">Revise offer</button>${last === "owner" ? '<button class="btn ok" data-mo="accept">Accept their counter</button>' : ""}<button class="btn" data-mo="withdraw">${moArm === o.reply_token ? "Tap again to withdraw" : "Withdraw"}</button></div><p class="msg" data-mo-msg aria-live="polite"></p>` : ""}
     </div>`; }).join("")}</div>`;
 }
-frListen("input", e => { if (e.target.dataset.mo === "text") moDraft[e.target.closest(".mo-card").dataset.reply] = e.target.value; });
-frListen("keydown", e => { if (e.target.dataset.mo === "text" && e.key === "Enter"){ e.preventDefault(); e.target.closest(".mo-card").querySelector('[data-mo="reply"]').click(); } });
-frListen("click", async e => {
+moListen("input", e => { if (e.target.dataset.mo === "text") moDraft[e.target.closest(".mo-card").dataset.reply] = e.target.value; });
+moListen("keydown", e => { if (e.target.dataset.mo === "text" && e.key === "Enter"){ e.preventDefault(); e.target.closest(".mo-card").querySelector('[data-mo="reply"]').click(); } });
+moListen("click", async e => {
   const b = e.target.closest("button[data-mo]"); if (!b) return;
   const card = b.closest(".mo-card"), code = card.dataset.reply, act = b.dataset.mo, msg = card.querySelector("[data-mo-msg]"), text = (moDraft[code] || "").trim();
   if (act === "revise") return startRevise(code);
-  if (act === "withdraw" && moArm !== code){ moArm = code; renderFriends(); return; }
+  if (act === "withdraw" && moArm !== code){ moArm = code; renderFriends(); offersRedraw(true); return; }
   if (act === "reply" && !text){ msg.textContent = "Write your reply first."; card.querySelector('[data-mo="text"]').focus(); return; }
   if (badWords(text)){ msg.textContent = "Please keep it friendly: that has a word we don't allow."; return; }
   b.disabled = true; msg.textContent = "Sending…";
@@ -2651,26 +2675,7 @@ function audioCtx(){
 }
 // browsers only allow sound after the first click or key press on the page
 ["pointerdown", "keydown"].forEach(ev => addEventListener(ev, () => audioCtx(), { once: true, capture: true }));
-function coinChime(){ (LS.get("rb-offer-chime") === "poro" ? poroCoin : konbiniChime)(); }
-// konbini door chime: soft mallet notes (a sine plus a quiet bright partial, quick attack, long fade) through a small echo
-function konbiniChime(){
-  const a = audioCtx(); if (!a || a.state !== "running") return;
-  const t = a.currentTime + 0.03, out = a.createDynamicsCompressor(); out.connect(a.destination);
-  const echo = a.createDelay(1), fb = a.createGain(), wet = a.createGain(), dry = a.createGain();
-  echo.delayTime.value = 0.21; fb.gain.value = 0.25; wet.gain.value = 0.28; dry.gain.value = 1;
-  dry.connect(out); dry.connect(echo); echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(out);
-  const note = (f, at, dur, vol) => {
-    for (const [mul, lv, d] of [[1, 1, dur], [4, 0.12, dur * 0.35], [2, 0.18, dur * 0.6]]){
-      const o = a.createOscillator(), g = a.createGain();
-      o.type = "sine"; o.frequency.value = f * mul;
-      g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(vol * lv, t + at + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + at + d);
-      o.connect(g); g.connect(dry); o.start(t + at); o.stop(t + at + d + 0.05);
-    }
-  };
-  // ding-dong, ding-dong… then a bright two-note ending: D5 B4 G4 B4 · E5 D5 · G5 B5 (a fourth lower than at first)
-  [[587, 0], [494, 0.19], [392, 0.38], [494, 0.57], [659, 0.86], [587, 1.05], [784, 1.34], [988, 1.53]]
-    .forEach(([f, at], i) => note(f, at, i === 7 ? 1.6 : 0.9, i >= 6 ? 0.2 : 0.17));
-}
+function coinChime(){ poroCoin(); }
 function poroCoin(){
   const a = audioCtx(); if (!a || a.state !== "running") return;
   const t = a.currentTime + 0.02;
@@ -2719,8 +2724,9 @@ const offerPoll = () => {
   if (myReplyCodes().length) loadMyOffers(true);
 };
 setTimeout(() => loadMyOffers(true), 1500);
-setInterval(offerPoll, 60000);
+setInterval(offerPoll, 20000);
 document.addEventListener("visibilitychange", offerPoll);
+addEventListener("focus", offerPoll);
 // sort a deck section's cards for display (the decklist itself keeps its order)
 function dkSortRows(rows){
   const by = st.dsort || "", ix = r => r.show ? CARDS.indexOf(r.show) : 1e9, en = r => { const t = r.show && txOf(r.show); return t && typeof t.e === "number" ? t.e : 99; };
