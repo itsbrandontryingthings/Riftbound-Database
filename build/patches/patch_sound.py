@@ -6,7 +6,7 @@ Before, the poro coin was drawn live with Web Audio and gave up silently when th
   iPhones play even on silent and desktop browsers allow once the site has had a click. Web Audio is the fallback.
 - Every play is the same recording at one fixed level (Web Audio fallback plays that same recording too), and
   a chime never starts on top of one that's still playing; the silent unlock never cuts off a real chime.
-- The clip is brought up to a clear level (the live chime peaked at about 15% volume, easy to miss on a phone).
+- The clip is set to one fixed level, peak 0.35 (Brandon asked for half of the first 0.7; the live chime peaked at about 0.15).
 - Every tap / click / key press (not just the first) wakes the sound up and unlocks the <audio> element.
 - If the browser still blocks it, a note pops up: "New offer! Tap anywhere on the page to turn on sounds." (once a visit).
 Usage: patch_sound.py in.html out.html"""
@@ -51,7 +51,7 @@ function chimeReady(){
     const buf = await new Promise((ok, no) => { const p = oc.startRendering(); if (p && p.then) p.then(ok, no); else oc.oncomplete = e => ok(e.renderedBuffer); });
     // the live chime was very quiet (peak about 15%): bring the recording up to one clear, fixed level
     const d = buf.getChannelData(0); let peak = 0; for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
-    const gain = peak > 0 ? Math.min(5, 0.7 / peak) : 1; for (let i = 0; i < d.length; i++) d[i] *= gain;
+    const gain = peak > 0 ? Math.min(5, 0.35 / peak) : 1; for (let i = 0; i < d.length; i++) d[i] *= gain;
     chimeBuf = buf;
     const el = new Audio(URL.createObjectURL(wavBlob(buf))); el.preload = "auto"; el.setAttribute("playsinline", ""); el.volume = 1;
     return chimeEl = el;
