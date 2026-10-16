@@ -105,3 +105,8 @@ them, and don't put it in Dropbox / OneDrive (two syncs on one git folder can co
   installed there too: `python -X utf8 build\tests\smoke.py` passes (Oct 14, 2026).
   (Its installer fails with 1603 while Windows has a restart pending.)
 - After a change, tell Brandon in a couple of sentences what changed and where to see it.
+- **Every push: confirm it's live.** After Brandon pushes (or says he did), check that `git status -sb` shows nothing
+  ahead of `origin/main` (if it does, the push didn't go through: tell him and give the command again), then watch
+  https://rbdatabase.pages.dev until it serves the new version (curl with a cache-busting `?nc=` query and grep for
+  a string the change added or changed; a background loop every ~15 s), and tell him it's live and at what time.
+  Don't call it done until the live site shows the change.
