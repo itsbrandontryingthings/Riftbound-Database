@@ -737,7 +737,7 @@ h1.brand-h .brand-logo{width:52px;height:52px;flex:none;border-radius:12px;box-s
 #dk-sort{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--fg)}
 .wfbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 6px}
 .wfbar .collect-k{margin-right:2px}
-.wfbar .grow{flex:1}
+.wfacts{display:flex;gap:6px;margin-left:auto}
 .wfchip{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--muted);font-size:13.5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wfchip small{opacity:.7;margin-left:2px;font-variant-numeric:tabular-nums}
 .wfchip:hover{color:var(--fg)}
@@ -746,8 +746,9 @@ h1.brand-h .brand-logo{width:52px;height:52px;flex:none;border-radius:12px;box-s
 .btn.sm{padding:5px 10px;font-size:13px}
 .wfhint{margin:2px 0 4px}
 .wfform{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
-.wfform input{flex:1 1 220px;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font:inherit;color:var(--fg)}
+.wfform input{flex:1 1 160px;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font:inherit;color:var(--fg)}
 .wfform .meta:empty{display:none}
+.wftag.gen{border-color:var(--line);color:var(--muted)}
 .wftag{font-size:12px;border:1px solid color-mix(in srgb,#ff7a90 40%,var(--line));color:#ffb3c0;border-radius:999px;padding:0 7px;white-space:nowrap}
 .wfbtn{background:none;border:1px solid var(--line);border-radius:6px;padding:1px 8px;color:var(--muted);font-size:12.5px;white-space:nowrap}
 .wfbtn:hover{color:var(--fg);border-color:var(--muted)}
@@ -759,6 +760,7 @@ h1.brand-h .brand-logo{width:52px;height:52px;flex:none;border-radius:12px;box-s
 .wfd .msg{font-size:13.5px;color:var(--ok)}
 .wfd .msg:empty{display:none}
 .wfd .grow{flex:1}
+.wfd p,.wfd .wfform{margin:0}
 .wfd-card{display:flex;gap:12px;align-items:center}
 .wfd-card .thumb{width:52px;flex:0 0 auto}
 .wfd-card .info{display:grid;gap:2px;min-width:0}
@@ -1468,12 +1470,15 @@ function wfBarHTML(ws){
   const n = fid => all.filter(id => wfIn(fid, id) > 0).length;
   const chip = (v, name, k) => `<button class="wfchip" data-wf="${esc(v)}" aria-pressed="${cur === v}">${esc(name)} <small>${k}</small></button>`;
   const form = wfEdit ? `<form class="wfform" id="wf-form"><input id="wf-name" maxlength="40" autocomplete="off" placeholder="List name, e.g. Master Yi Deck, Art Deck, Collectibles" aria-label="List name" value="${wfEdit === "ren" && ws ? esc(wfName(ws.fid)) : ""}"><button class="btn primary" type="submit">${wfEdit === "ren" ? "Save name" : "Create list"}</button><button class="btn" type="button" id="wf-cancel">Cancel</button><span class="meta" id="wf-msg" aria-live="polite"></span></form>` : "";
-  return `<div class="wfbar" role="group" aria-label="Your wish lists"><span class="collect-k">Lists</span>${chip("", "All", all.length)}${fs.length ? chip("~gen", "General", n("")) : ""}${fs.map(f => chip(f.id, f.name, n(f.id))).join("")}<button class="wfchip wfnew" id="wf-new" aria-expanded="${wfEdit === "new"}">+ New List</button>${ws && ws.fid ? `<span class="grow"></span><button class="btn sm" id="wf-ren">Rename</button><button class="btn sm" id="wf-del">Delete list</button>` : ""}</div>
+  return `<div class="wfbar" role="group" aria-label="Your wish lists"><span class="collect-k">Lists</span>${chip("", "All", all.length)}${fs.length ? chip("~gen", "General", n("")) : ""}${fs.map(f => chip(f.id, f.name, n(f.id))).join("")}<button class="wfchip wfnew" id="wf-new" aria-expanded="${wfEdit === "new"}">+ New List</button>${ws && ws.fid ? `<span class="wfacts"><button class="btn sm" id="wf-ren">Rename</button><button class="btn sm" id="wf-del">Delete list</button></span>` : ""}</div>
     ${fs.length ? "" : `<p class="meta wfhint">Sort your wish list into lists, like "Master Yi Deck", "Art Deck" or "Collectibles". Tap + New List to start one.</p>`}${form}`;
 }
 function wfTags(id, ws){
   if (ws) return ""; const fs = wFolders(); if (!fs.length) return "";
-  return fs.filter(f => wfIn(f.id, id) > 0).map(f => { const k = wfIn(f.id, id); return `<span class="wftag">${esc(f.name)}${k > 1 ? ` ×${k}` : ""}</span>`; }).join("");
+  const tags = fs.filter(f => wfIn(f.id, id) > 0).map(f => { const k = wfIn(f.id, id); return `<span class="wftag">${esc(f.name)}${k > 1 ? ` ×${k}` : ""}</span>`; });
+  // copies outside every list show as General, but only next to a list tag (a card in no list needs no tag)
+  const g = wfIn("", id); if (tags.length && g) tags.unshift(`<span class="wftag gen">General${g > 1 ? ` ×${g}` : ""}</span>`);
+  return tags.join("");
 }
 const wfBtn = c => `<button class="wfbtn" data-wfpick="${esc(c.id)}" aria-haspopup="dialog" title="Choose which wish lists ${esc(c.name)} is in" aria-label="Wish lists for ${esc(c.name)}">📁 Lists</button>`;
 function wishText(){
