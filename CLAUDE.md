@@ -85,9 +85,10 @@ GitHub is the one shared copy. Brandon works from more than one PC; don't copy o
 them, and don't put it in Dropbox / OneDrive (two syncs on one git folder can corrupt it).
 - **Before any change:** `git pull` (this repo has `pull.rebase=true` and `rebase.autoStash=true`, so it rebases).
   If it reports a conflict, stop and explain it to Brandon before going on.
-- **After a change:** commit, then push. Pushing needs Brandon's GitHub sign-in (Git Credential Manager opens a
-  browser window the first time on a PC), so give him the push command:
-  `git -C "C:\Users\brand\Desktop\Riftbound Database\repo" push origin main` (PowerShell has no `&&`).
+- **After a change:** commit, then **push it yourself** once the tests pass (Brandon asked for this on Oct 15, 2026):
+  `git pull` then `GIT_TERMINAL_PROMPT=0 git push origin main`. Git Credential Manager on the home PC already has his
+  GitHub sign-in. If the push fails (no sign-in yet on a new PC, a browser window needed, a conflict), tell him and give
+  him the command: `git -C "C:\Users\brand\Desktop\Riftbound Database\repo" push origin main` (PowerShell has no `&&`).
 - **New PC:** `git clone https://github.com/itsbrandontryingthings/Riftbound-Database.git repo` inside
   `Desktop\Riftbound Database`, then set `pull.rebase true` / `rebase.autoStash true`, and `user.name` /
   `user.email` as below. The offline copy (`Riftbound Database\Riftbound Database\`) is rebuilt with
@@ -105,7 +106,7 @@ them, and don't put it in Dropbox / OneDrive (two syncs on one git folder can co
   installed there too: `python -X utf8 build\tests\smoke.py` passes (Oct 14, 2026).
   (Its installer fails with 1603 while Windows has a restart pending.)
 - After a change, tell Brandon in a couple of sentences what changed and where to see it.
-- **Every push: confirm it's live.** After Brandon pushes (or says he did), check that `git status -sb` shows nothing
+- **Every push: confirm it's live.** After each push (yours, or Brandon's if he pushed), check that `git status -sb` shows nothing
   ahead of `origin/main` (if it does, the push didn't go through: tell him and give the command again), then watch
   https://rbdatabase.pages.dev until it serves the new version (curl with a cache-busting `?nc=` query and grep for
   a string the change added or changed; a background loop every ~15 s), and tell him it's live and at what time.
