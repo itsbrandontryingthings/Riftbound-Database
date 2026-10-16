@@ -12,8 +12,10 @@ S = os.path.dirname(os.path.abspath(__file__)) + "/"; ROOT = os.path.abspath(S +
 BASE = "http://127.0.0.1:8768/index.html"
 # counts sounds that really play: the chime's <audio> element (not the silent unlock) or a live Web Audio chime
 COUNT_SOUNDS = """window.__osc = 0;
-const _p = HTMLMediaElement.prototype.play; HTMLMediaElement.prototype.play = function(){ const r = _p.call(this); if (!this.muted && r && r.then) r.then(() => window.__osc++, () => {}); return r; };
-const _o = AudioContext.prototype.createOscillator; AudioContext.prototype.createOscillator = function(){ if (!(this instanceof OfflineAudioContext)) window.__osc++; return _o.call(this); };"""
+window.__plays = []; window.__live = 0;
+const _p = HTMLMediaElement.prototype.play; HTMLMediaElement.prototype.play = function(){ const el = this, m = el.muted, r = _p.call(el); if (!m && r && r.then) r.then(() => { window.__osc++; window.__plays.push({t: performance.now(), vol: el.volume, src: el.src}); }, () => {}); return r; };
+const _st = AudioBufferSourceNode.prototype.start; AudioBufferSourceNode.prototype.start = function(...a){ if (!(this.context instanceof OfflineAudioContext)){ window.__osc++; window.__plays.push({t: performance.now(), vol: 1, src: "webaudio"}); } return _st.apply(this, a); };
+const _o = AudioContext.prototype.createOscillator; AudioContext.prototype.createOscillator = function(){ if (!(this instanceof OfflineAudioContext)){ window.__osc++; window.__live++; } return _o.call(this); };"""
 TAP_FIRST = """window.__tapped = false; ["pointerdown", "keydown"].forEach(ev => addEventListener(ev, e => { if (e.isTrusted) window.__tapped = true; }, true));
 const _pl = HTMLMediaElement.prototype.play; HTMLMediaElement.prototype.play = function(){ return window.__tapped ? _pl.call(this) : Promise.reject(new DOMException("needs a tap", "NotAllowedError")); };
 const _A = AudioContext; window.AudioContext = class extends _A { constructor(...a){ super(...a); if (!window.__tapped) this.suspend(); }
@@ -60,6 +62,20 @@ async def main():
             check("owner: Incoming Offers shows Sam's offer marked New", "Sam" in inc and "NEW" in inc.upper())
             check("owner: no sound menu any more", await pg.locator("#of-chime").count() == 0)
             await pg.screenshot(path=S + "live_owner.png")
+            # the sound stays the same every time: tap Sound off/on quickly (one chime, no stacking), then again later
+            await pg.wait_for_timeout(2000); n0 = await pg.evaluate("window.__plays.length")
+            for _ in range(3):
+                await pg.click("#of-sound"); await pg.wait_for_timeout(120); await pg.click("#of-sound"); await pg.wait_for_timeout(120)
+            await pg.wait_for_timeout(2200)
+            n1 = await pg.evaluate("window.__plays.length")
+            await pg.click("#of-sound"); await pg.wait_for_timeout(200); await pg.click("#of-sound"); await pg.wait_for_timeout(2200)
+            plays = await pg.evaluate("window.__plays")
+            check("Sound button: quick taps play one chime, not a pile-up", n1 - n0 == 1, (n0, n1))
+            check("Sound button: a later tap plays it again", len(plays) - n1 == 1, len(plays))
+            check("every chime is the same clip at the same volume", len({(x["src"], x["vol"]) for x in plays}) == 1 and all(x["vol"] == 1 for x in plays), plays)
+            gaps = [round(b["t"] - a["t"]) for a, b in zip(plays, plays[1:])]
+            check("chimes never overlap", all(g >= 1700 for g in gaps), gaps)
+            check("the quiet live version never plays", await pg.evaluate("window.__live") == 0)
             # 2. the friend: signed out, has made an offer (reply code in this browser)
             await pg.click("#acct-out"); await pg.wait_for_timeout(500)
             await pg.evaluate("""() => { localStorage.setItem("rb-my-offers", JSON.stringify(["r".repeat(32)])); localStorage.setItem("rb-my-offers-seen", JSON.stringify({["r".repeat(32)]: 0})); }""")
