@@ -2275,7 +2275,7 @@ const cardSub = key => { const c = frCard(key), cheap = cheapestOf(key);
   return `<span class="of-sub">${c ? `<span class="dk-set" style="--sc:var(--${setCol[c.set] || "line"})">${esc(setName[c.set] || c.set)} · ${esc(codeOf(c))}</span>` : ""}<span class="of-mkt">${cheap ? `market ${esc(money(cheap.price))} each` : "no price"}</span></span>`; };
 async function loadOffers(force){
   if (!sb || !cloudUser){ offers = null; showOfferBadge(); return; }
-  if ((offersBusy && Date.now() - offersBusy < 30000) || (!force && offers && Date.now() - offersAt < 20000)) return;
+  if ((offersBusy && Date.now() - offersBusy < 30000) || (!force && offers && Date.now() - offersAt < 10000)) return;
   offersBusy = Date.now();
   const me = cloudUser, q = cols => sb.from("shop_offers").select(cols).order("created_at", { ascending: false }).limit(100);
   let { data, error } = await q("id, from_name, items, offer, trade, thread, status, created_at, updated_at");
@@ -2413,7 +2413,7 @@ function addReplyCode(t){
 async function loadMyOffers(force){
   const codes = myReplyCodes();
   if (!codes.length || !sb){ myOffers = []; showFriendsBadge(); return; }
-  if ((myOffersBusy && Date.now() - myOffersBusy < 30000) || (!force && myOffers && Date.now() - myOffersAt < 20000)) return;
+  if ((myOffersBusy && Date.now() - myOffersBusy < 30000) || (!force && myOffers && Date.now() - myOffersAt < 10000)) return;
   myOffersBusy = Date.now();
   const { data, error } = await sb.rpc("get_my_offers", { p_replies: codes });
   myOffersBusy = false;
@@ -2724,7 +2724,7 @@ const offerPoll = () => {
   if (myReplyCodes().length) loadMyOffers(true);
 };
 setTimeout(() => loadMyOffers(true), 1500);
-setInterval(offerPoll, 20000);
+setInterval(offerPoll, 10000);
 document.addEventListener("visibilitychange", offerPoll);
 addEventListener("focus", offerPoll);
 // sort a deck section's cards for display (the decklist itself keeps its order)

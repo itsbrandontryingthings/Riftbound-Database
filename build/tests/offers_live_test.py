@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Live offers check (fake Supabase), no page refreshes:
-1. The list owner has the page open on Collection; a friend's offer arrives -> within ~20 s the Marketplace tab shows a
+1. The list owner has the page open on Collection; a friend's offer arrives -> within ~10 s the Marketplace tab shows a
    count, the poro sound plays, and Incoming Offers shows it marked New.
 2. The friend (signed out) has the page open; the owner sends a counter offer -> it shows in the friend's Incoming Offers
    under "Counter Offers on Your Offers" (New, sound), and replying from there works and moves it out.
 "Another person" acts by writing straight into the fake database, like the real one would change on the server.
-Run: python3 build/tests/offers_live_test.py   (starts its own server on port 8768; takes about a minute)"""
+Run: python3 build/tests/offers_live_test.py   (starts its own server on port 8768; takes about 40 seconds)"""
 import asyncio, os, subprocess, sys, time
 from playwright.async_api import async_playwright
 S = os.path.dirname(os.path.abspath(__file__)) + "/"; ROOT = os.path.abspath(S + "../..")
@@ -44,7 +44,7 @@ async def main():
             await pg.evaluate("""tok => { const d = JSON.parse(localStorage.__db), s = d.shared_decks.find(r => r.share_token === tok), now = new Date().toISOString();
               d.shop_offers.push({id: "o1", owner: s.owner, share_token: tok, from_name: "Sam", items: [{name: "Baccai Sandspinner", q: 1}], offer: "$3", trade: [], thread: [], status: "open", reply_token: "r".repeat(32), created_at: now, updated_at: now});
               localStorage.__db = JSON.stringify(d); }""", tok)
-            await pg.wait_for_timeout(22000)
+            await pg.wait_for_timeout(12000)
             tab = await pg.text_content("#t-shop")
             check("owner: Marketplace tab shows a count without refreshing", tab.strip() != "Marketplace", repr(tab))
             check("owner: the sound played", await pg.evaluate("window.__osc") > before)
@@ -61,7 +61,7 @@ async def main():
             check("friend: nothing waiting yet", "Counter Offers" not in await pg.inner_text("#shop-offers"))
             await pg.evaluate("""() => { const d = JSON.parse(localStorage.__db), o = d.shop_offers.find(x => x.id === "o1");
               o.thread.push({by: "owner", text: "Would you do $5?", at: new Date().toISOString()}); localStorage.__db = JSON.stringify(d); }""")
-            await pg.wait_for_timeout(22000)
+            await pg.wait_for_timeout(12000)
             tab = await pg.text_content("#t-shop")
             check("friend: Marketplace tab shows a count without refreshing", tab.strip() != "Marketplace", repr(tab))
             check("friend: the sound played", await pg.evaluate("window.__osc") > before)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Offers: one sound, live updates, counter offers in Incoming Offers (website; runs last, after patch_withdrawn.py).
 - The new-offer sound is always the poro coin (poroCoin); the konbini chime and the sound menu are gone.
-- Offers are checked every 20 seconds while the page is open and showing (was every minute), and straight away when
+- Offers are checked every 10 seconds while the page is open and showing (was every minute), and straight away when
   you come back to the page, so new offers, counter offers and replies show up (with "New" and the sound) without a refresh.
   The Incoming Offers panel redraws itself, except while you're typing in it (then it waits until you leave the box).
 - Counter offers and answers on offers YOU made (signed in or not) show in Incoming Offers too, under
@@ -30,17 +30,17 @@ assert "konbini" not in h.lower() and "of-chime" not in h
 
 # ---- check more often, and when you come back to the page
 rep('''setInterval(offerPoll, 60000);
-document.addEventListener("visibilitychange", offerPoll);''', '''setInterval(offerPoll, 20000);
+document.addEventListener("visibilitychange", offerPoll);''', '''setInterval(offerPoll, 10000);
 document.addEventListener("visibilitychange", offerPoll);
 addEventListener("focus", offerPoll);''')
 # the 60-second "don't ask again yet" limits would skip a poll, so polls always force; a stuck request can't block later ones
 rep('''  if (offersBusy || (!force && offers && Date.now() - offersAt < 60000)) return;''',
-    '''  if ((offersBusy && Date.now() - offersBusy < 30000) || (!force && offers && Date.now() - offersAt < 20000)) return;''')
+    '''  if ((offersBusy && Date.now() - offersBusy < 30000) || (!force && offers && Date.now() - offersAt < 10000)) return;''')
 rep('''  offersBusy = true;
   const me = cloudUser''', '''  offersBusy = Date.now();
   const me = cloudUser''')
 rep('''  if (myOffersBusy || (!force && myOffers && Date.now() - myOffersAt < 60000)) return;
-  myOffersBusy = true;''', '''  if ((myOffersBusy && Date.now() - myOffersBusy < 30000) || (!force && myOffers && Date.now() - myOffersAt < 20000)) return;
+  myOffersBusy = true;''', '''  if ((myOffersBusy && Date.now() - myOffersBusy < 30000) || (!force && myOffers && Date.now() - myOffersAt < 10000)) return;
   myOffersBusy = Date.now();''')
 
 # ---- redraw Incoming Offers when something changes, but not under someone's fingers
