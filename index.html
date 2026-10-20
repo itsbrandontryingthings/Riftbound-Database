@@ -1209,13 +1209,13 @@ const setName = Object.fromEntries(META.sets.map(s => [s.code, s.name]));
 const types = [...new Set(CARDS.map(c => c.type))].sort();
 types.forEach(t => $("type").insertAdjacentHTML("beforeend", `<option value="${esc(t)}">${esc(t)}</option>`));
 $("type").insertAdjacentHTML("beforeend", `<option value="__token">Token</option>`);
-{ const u = $("type").querySelector('option[value="Unit"]'); if (u){ u.textContent = "Regular Unit"; u.insertAdjacentHTML("afterend", `<option value="__champ">Champion Unit</option>`); } }
-{ const s = $("type").querySelector('option[value="Spell"]'); if (s) s.insertAdjacentHTML("afterend", `<option value="__sig">Signature Spell</option>`); }
+const TYPE_SUB = {__champ: ["Unit", "Champion", "Champion Unit"], __sigunit: ["Unit", "Signature", "Signature Unit"],
+  __sig: ["Spell", "Signature", "Signature Spell"], __siggear: ["Gear", "Signature", "Signature Gear"]};
+Object.entries(TYPE_SUB).reverse().forEach(([v, [t, , label]]) => { const o = $("type").querySelector(`option[value="${t}"]`); if (o) o.insertAdjacentHTML("afterend", `<option value="${v}">${label}</option>`); });
+{ const u = $("type").querySelector('option[value="Unit"]'); if (u) u.textContent = "Regular Unit"; }
 const supOf = c => (txOf(c) && txOf(c).sup) || "";
-const isChampUnit = c => c.type === "Unit" && supOf(c) === "Champion";
-const isSigSpell = c => c.type === "Spell" && supOf(c) === "Signature";
-const typeOK = c => st.type === "__token" ? !!c.token : st.type === "__champ" ? isChampUnit(c) : st.type === "__sig" ? isSigSpell(c)
-  : st.type === "Unit" ? c.type === "Unit" && !isChampUnit(c) : st.type === "Spell" ? c.type === "Spell" && !isSigSpell(c) : !st.type || c.type === st.type;
+const subOf = c => Object.keys(TYPE_SUB).find(v => TYPE_SUB[v][0] === c.type && TYPE_SUB[v][1] === supOf(c)) || "";
+const typeOK = c => st.type === "__token" ? !!c.token : TYPE_SUB[st.type] ? subOf(c) === st.type : !st.type || (c.type === st.type && !subOf(c));
 { const kc = {}; CARDS.forEach(c => kwOf(c).forEach(k => kc[k] = (kc[k] || 0) + 1));
   const ks = Object.keys(kc).sort((a, b) => a.localeCompare(b));
   ks.forEach(k => $("kw").insertAdjacentHTML("beforeend", `<option value="${esc(k)}">${esc(k)} (${kc[k]})</option>`));
