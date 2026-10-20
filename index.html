@@ -1209,8 +1209,13 @@ const setName = Object.fromEntries(META.sets.map(s => [s.code, s.name]));
 const types = [...new Set(CARDS.map(c => c.type))].sort();
 types.forEach(t => $("type").insertAdjacentHTML("beforeend", `<option value="${esc(t)}">${esc(t)}</option>`));
 $("type").insertAdjacentHTML("beforeend", `<option value="__token">Token</option>`);
-{ const u = $("type").querySelector('option[value="Unit"]'); if (u) u.insertAdjacentHTML("afterend", `<option value="__champ">Champion Unit</option>`); }
-const isChampUnit = c => c.type === "Unit" && !!txOf(c) && txOf(c).sup === "Champion";
+{ const u = $("type").querySelector('option[value="Unit"]'); if (u){ u.textContent = "Regular Unit"; u.insertAdjacentHTML("afterend", `<option value="__champ">Champion Unit</option>`); } }
+{ const s = $("type").querySelector('option[value="Spell"]'); if (s) s.insertAdjacentHTML("afterend", `<option value="__sig">Signature Spell</option>`); }
+const supOf = c => (txOf(c) && txOf(c).sup) || "";
+const isChampUnit = c => c.type === "Unit" && supOf(c) === "Champion";
+const isSigSpell = c => c.type === "Spell" && supOf(c) === "Signature";
+const typeOK = c => st.type === "__token" ? !!c.token : st.type === "__champ" ? isChampUnit(c) : st.type === "__sig" ? isSigSpell(c)
+  : st.type === "Unit" ? c.type === "Unit" && !isChampUnit(c) : st.type === "Spell" ? c.type === "Spell" && !isSigSpell(c) : !st.type || c.type === st.type;
 { const kc = {}; CARDS.forEach(c => kwOf(c).forEach(k => kc[k] = (kc[k] || 0) + 1));
   const ks = Object.keys(kc).sort((a, b) => a.localeCompare(b));
   ks.forEach(k => $("kw").insertAdjacentHTML("beforeend", `<option value="${esc(k)}">${esc(k)} (${kc[k]})</option>`));
@@ -1243,7 +1248,7 @@ const isVariant = c => !!c.variant || ["OPP","PR","JDG"].includes(c.set);
 function matches(c, ignoreSet){
   if (!ignoreSet && st.set && c.set !== st.set) return false;
   if (!st.variants && isVariant(c)) return false;
-  if (st.type === "__token" ? !c.token : st.type === "__champ" ? !isChampUnit(c) : (st.type && c.type !== st.type)) return false;
+  if (!typeOK(c)) return false;
   if (st.rarity && c.rarity !== st.rarity) return false;
   if (st.kw && !kwOf(c).includes(st.kw)) return false;
   if (st.tg && !(txOf(c) && txOf(c).tags.includes(st.tg))) return false;
