@@ -344,6 +344,7 @@ button.thumb:hover{border-color:var(--muted)}
   background-size:300% 300%;background-position:50% 50%}
 .thumb.foil:hover .sheen{opacity:.8;animation:foilmove 7s ease-in-out infinite}
 .lbwrap.foil .sheen{animation:foilmove 7s ease-in-out infinite}
+html.rb-idle *,html.rb-idle *::before,html.rb-idle *::after{animation-play-state:paused!important}
 .lbwrap{position:relative;width:fit-content;max-width:100%;margin:0 auto;border-radius:10px;overflow:hidden;transition:transform .25s ease-out;will-change:transform;touch-action:pinch-zoom}
 .lbwrap .sheen,.lbwrap .glare{display:none}
 .lbwrap.foil .sheen{display:block;opacity:.6}
@@ -2778,6 +2779,8 @@ const offersNew = new Set();
 const offerSound = () => LS.get("rb-offer-sound") !== false;
 let actx = null;
 function audioRest(){ try { if (actx && actx.state === "running"){ const r = actx.suspend(); if (r && r.catch) r.catch(() => {}); } } catch(e){} }
+const rbIdle = () => document.documentElement.classList.toggle("rb-idle", !document.hasFocus());
+addEventListener("blur", rbIdle); addEventListener("focus", rbIdle); document.addEventListener("visibilitychange", rbIdle); rbIdle();
 function audioCtx(){
   try { actx ||= new (window.AudioContext || window.webkitAudioContext)(); if (actx.state !== "running" && actx.state !== "closed"){ const r = actx.resume(); if (r && r.catch) r.catch(() => {}); } return actx; }
   catch(e){ return null; }

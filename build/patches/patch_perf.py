@@ -6,6 +6,7 @@
 - Sound: the Web Audio context (only a fallback for the offer chime) used to be woken on every tap and left running,
   which keeps an audio stream open in Chrome all the time. Now it's only woken until the <audio> chime is unlocked, and
   it's suspended once the chime works (and after a fallback chime finishes).
+- Animations pause while the window is not focused (html.rb-idle), so a page on another monitor draws nothing.
 Usage: patch_perf.py in.html out.html"""
 import sys
 
@@ -37,6 +38,16 @@ rep('''if (ok){ el.pause(); el.currentTime = 0; chimeOK = true; }''',
     '''if (ok){ el.pause(); el.currentTime = 0; chimeOK = true; audioRest(); }''')
 rep('''s.connect(a.destination); s.start(); }''',
     '''s.connect(a.destination); s.start(); setTimeout(audioRest, CHIME_LEN * 1000 + 300); }''')
+
+# while you're in another window (e.g. a video on the other monitor), every animation on the page pauses where it is
+# (the Halloween / Winter decorations would otherwise make Chrome draw new frames nonstop); clicking back resumes them
+rep('''.lbwrap.foil .sheen{animation:foilmove 7s ease-in-out infinite}''',
+    '''.lbwrap.foil .sheen{animation:foilmove 7s ease-in-out infinite}
+html.rb-idle *,html.rb-idle *::before,html.rb-idle *::after{animation-play-state:paused!important}''')
+rep('''function audioCtx(){''',
+    '''const rbIdle = () => document.documentElement.classList.toggle("rb-idle", !document.hasFocus());
+addEventListener("blur", rbIdle); addEventListener("focus", rbIdle); document.addEventListener("visibilitychange", rbIdle); rbIdle();
+function audioCtx(){''')
 
 open(out, "w", encoding="utf-8").write(h)
 print("ok")
