@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Lighter on the computer, so videos in other tabs/windows don't stutter (website; runs last, after patch_winter.py).
-- Foil shine: the rainbow (mix-blend-mode color-dodge) no longer moves forever on every foil card in the grid. It sits
-  still, and only moves while the pointer is over a card or the card is open in the preview. Before, every foil card on
-  screen was repainted every frame, which competed with video playback for the graphics card.
+- Foil shine: still moves on every foil card (it was briefly hover-only; Brandon asked for it back). It's the heaviest
+  animation on the page (color-dodge, repainted every frame), so it's covered by the pause below.
 - Sound: the Web Audio context (only a fallback for the offer chime) used to be woken on every tap and left running,
   which keeps an audio stream open in Chrome all the time. Now it's only woken until the <audio> chime is unlocked, and
   it's suspended once the chime works (and after a fallback chime finishes).
@@ -19,12 +18,7 @@ def rep(old, new, count=1):
     assert n == count, f"expected {count} of {old[:80]!r}, found {n}"
     h = h.replace(old, new)
 
-# foil shine: still by default, moving on hover and in the preview (.lbwrap.foil.live still turns it off for the tilt)
-rep('''background-size:300% 300%;animation:foilmove 7s ease-in-out infinite}
-.thumb.foil:hover .sheen{opacity:.8}''',
-    '''background-size:300% 300%;background-position:50% 50%}
-.thumb.foil:hover .sheen{opacity:.8;animation:foilmove 7s ease-in-out infinite}
-.lbwrap.foil .sheen{animation:foilmove 7s ease-in-out infinite}''')
+# (the foil shine keeps moving on every foil card, Brandon asked for it back; it pauses with the rest below)
 
 # sound: let the Web Audio context rest unless it's needed
 rep('''function audioCtx(){''',
@@ -41,8 +35,8 @@ rep('''s.connect(a.destination); s.start(); }''',
 
 # while you're in another window (e.g. a video on the other monitor), every animation on the page pauses where it is
 # (the Halloween / Winter decorations would otherwise make Chrome draw new frames nonstop); clicking back resumes them
-rep('''.lbwrap.foil .sheen{animation:foilmove 7s ease-in-out infinite}''',
-    '''.lbwrap.foil .sheen{animation:foilmove 7s ease-in-out infinite}
+rep('''.thumb.foil:hover .sheen{opacity:.8}''',
+    '''.thumb.foil:hover .sheen{opacity:.8}
 html.rb-idle *,html.rb-idle *::before,html.rb-idle *::after{animation-play-state:paused!important}''')
 rep('''function audioCtx(){''',
     '''const rbIdle = () => document.documentElement.classList.toggle("rb-idle", !document.hasFocus());

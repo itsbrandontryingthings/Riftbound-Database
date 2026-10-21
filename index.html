@@ -341,9 +341,8 @@ button.thumb:hover{border-color:var(--muted)}
 @keyframes foilmove{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .thumb .sheen,.lbwrap .sheen{position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;mix-blend-mode:color-dodge;opacity:.55;
   background-image:linear-gradient(115deg,transparent 0%,rgb(255 0 150 / .24) 18%,rgb(255 220 0 / .24) 30%,rgb(0 255 170 / .24) 42%,rgb(0 180 255 / .24) 54%,rgb(150 80 255 / .24) 66%,rgb(255 0 150 / .24) 78%,transparent 100%);
-  background-size:300% 300%;background-position:50% 50%}
-.thumb.foil:hover .sheen{opacity:.8;animation:foilmove 7s ease-in-out infinite}
-.lbwrap.foil .sheen{animation:foilmove 7s ease-in-out infinite}
+  background-size:300% 300%;animation:foilmove 7s ease-in-out infinite}
+.thumb.foil:hover .sheen{opacity:.8}
 html.rb-idle *,html.rb-idle *::before,html.rb-idle *::after{animation-play-state:paused!important}
 .lbwrap{position:relative;width:fit-content;max-width:100%;margin:0 auto;border-radius:10px;overflow:hidden;transition:transform .25s ease-out;will-change:transform;touch-action:pinch-zoom}
 .lbwrap .sheen,.lbwrap .glare{display:none}
