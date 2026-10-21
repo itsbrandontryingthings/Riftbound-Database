@@ -341,8 +341,9 @@ button.thumb:hover{border-color:var(--muted)}
 @keyframes foilmove{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .thumb .sheen,.lbwrap .sheen{position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;mix-blend-mode:color-dodge;opacity:.55;
   background-image:linear-gradient(115deg,transparent 0%,rgb(255 0 150 / .24) 18%,rgb(255 220 0 / .24) 30%,rgb(0 255 170 / .24) 42%,rgb(0 180 255 / .24) 54%,rgb(150 80 255 / .24) 66%,rgb(255 0 150 / .24) 78%,transparent 100%);
-  background-size:300% 300%;animation:foilmove 7s ease-in-out infinite}
-.thumb.foil:hover .sheen{opacity:.8}
+  background-size:300% 300%;background-position:50% 50%}
+.thumb.foil:hover .sheen{opacity:.8;animation:foilmove 7s ease-in-out infinite}
+.lbwrap.foil .sheen{animation:foilmove 7s ease-in-out infinite}
 .lbwrap{position:relative;width:fit-content;max-width:100%;margin:0 auto;border-radius:10px;overflow:hidden;transition:transform .25s ease-out;will-change:transform;touch-action:pinch-zoom}
 .lbwrap .sheen,.lbwrap .glare{display:none}
 .lbwrap.foil .sheen{display:block;opacity:.6}
@@ -2776,6 +2777,7 @@ setUiSize(LS.get("rb-ui-size") || "s");
 const offersNew = new Set();
 const offerSound = () => LS.get("rb-offer-sound") !== false;
 let actx = null;
+function audioRest(){ try { if (actx && actx.state === "running"){ const r = actx.suspend(); if (r && r.catch) r.catch(() => {}); } } catch(e){} }
 function audioCtx(){
   try { actx ||= new (window.AudioContext || window.webkitAudioContext)(); if (actx.state !== "running" && actx.state !== "closed"){ const r = actx.resume(); if (r && r.catch) r.catch(() => {}); } return actx; }
   catch(e){ return null; }
@@ -2810,11 +2812,11 @@ function chimeReady(){
 }
 setTimeout(chimeReady, 800);
 function soundWake(){
-  audioCtx();
+  if (!chimeOK) audioCtx(); else if (Date.now() - chimeAt > CHIME_LEN * 1000) audioRest();
   const el = chimeEl; if (!el || chimeOK || chimeWaking || Date.now() - chimeAt < CHIME_LEN * 1000) return;
   // play it silently once inside the tap, so later plays (with no tap) are allowed; a real chime started meanwhile wins
   chimeWaking = true; el.muted = true; const p = el.play();
-  const done = ok => { if (!chimeWaking) return; chimeWaking = false; if (ok){ el.pause(); el.currentTime = 0; chimeOK = true; } el.muted = false; };
+  const done = ok => { if (!chimeWaking) return; chimeWaking = false; if (ok){ el.pause(); el.currentTime = 0; chimeOK = true; audioRest(); } el.muted = false; };
   if (p && p.then) p.then(() => done(true), () => done(false)); else done(true);
 }
 ["pointerdown", "touchend", "click", "keydown"].forEach(ev => addEventListener(ev, soundWake, { capture: true, passive: true }));
@@ -2827,7 +2829,7 @@ async function coinChime(){
   const a = audioCtx();
   if (a && a.state !== "running"){ try { await a.resume(); } catch(e){} }
   if (a && a.state === "running"){
-    if (chimeBuf){ const s = a.createBufferSource(); s.buffer = chimeBuf; s.connect(a.destination); s.start(); } else poroGraph(a);
+    if (chimeBuf){ const s = a.createBufferSource(); s.buffer = chimeBuf; s.connect(a.destination); s.start(); setTimeout(audioRest, CHIME_LEN * 1000 + 300); } else poroGraph(a);
     return true;
   }
   chimeAt = 0; return false;
