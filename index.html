@@ -932,6 +932,7 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
     <div class="fpanel" id="fpanel">
     <div class="frow">
       <div class="dom" id="doms" role="group" aria-label="Filter by domain"></div>
+      <select id="cset" aria-label="Set"><option value="">All sets</option></select>
       <select id="type" aria-label="Card type"><option value="">All types</option></select>
       <select id="rarity" aria-label="Rarity"><option value="">All rarities</option></select>
       <select id="kw" aria-label="Keyword"><option value="">All keywords</option></select>
@@ -1037,6 +1038,7 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
     <div class="panel sh-filt" id="wlf-p" role="search" aria-label="Filter your wish list">
       <div class="frow">
         <input class="search" id="wlf-q" type="search" placeholder="Search name, keyword or ability, e.g. Jinx, draw" aria-label="Search your wish list" autocomplete="off">
+        <select id="wlf-set" aria-label="Set"><option value="">All sets</option></select>
         <select id="wlf-dom" aria-label="Domain"><option value="">All domains</option></select>
         <select id="wlf-type" aria-label="Card type"><option value="">All types</option></select>
         <select id="wlf-rar" aria-label="Rarity"><option value="">All rarities</option></select>
@@ -1068,6 +1070,7 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
     <div class="panel sh-filt" id="sh-filtp" role="search" aria-label="Filter and sort your shopping list">
       <div class="frow">
         <input class="search" id="shf-q" type="search" placeholder="Search your shopping list, e.g. Jinx" aria-label="Search your shopping list" autocomplete="off">
+        <select id="shf-set" aria-label="Set"><option value="">All sets</option></select>
         <select id="shf-dom" aria-label="Domain"><option value="">All domains</option></select>
         <select id="shf-type" aria-label="Card type"><option value="">All types</option></select>
         <select id="shf-rar" aria-label="Rarity"><option value="">All rarities</option></select>
@@ -1083,7 +1086,8 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
       <div class="panel sh-filt" id="mkf-filtp" role="search" aria-label="Filter your friends' shopping lists">
         <div class="frow">
           <input class="search" id="mkf-q" type="search" placeholder="Search a list name or card, e.g. Sam or Jinx" aria-label="Search your friends' shopping lists by list name or card" autocomplete="off">
-          <select id="mkf-dom" aria-label="Domain"><option value="">All domains</option></select>
+          <select id="mkf-set" aria-label="Set"><option value="">All sets</option></select>
+        <select id="mkf-dom" aria-label="Domain"><option value="">All domains</option></select>
           <select id="mkf-type" aria-label="Card type"><option value="">All types</option></select>
           <select id="mkf-rar" aria-label="Rarity"><option value="">All rarities</option></select>
           <button class="btn reset" id="mkf-reset" type="button" disabled>Reset filters</button>
@@ -1730,13 +1734,16 @@ function renderList(){
   $("fcount").textContent = nf ? nf : ""; syncReset();
   $("count").textContent = `${shown.length.toLocaleString()} card${shown.length===1?"":"s"}` + (st.set ? ` in ${setName[st.set]}` : "");
 }
-function render(){ renderSummary(); renderList(); if (st.tab === "decks") renderDecks(); if (st.tab === "packs") renderPack(); if (st.tab === "wish") renderWish(); if (st.tab === "shop") renderShop(); LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); }
+function render(){ if ($("cset")) $("cset").value = st.set || ""; renderSummary(); renderList(); if (st.tab === "decks") renderDecks(); if (st.tab === "packs") renderPack(); if (st.tab === "wish") renderWish(); if (st.tab === "shop") renderShop(); LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); }
 
 // ---- events
 $("list").addEventListener("click", e => {
   const b = e.target.closest("button[data-a]"); if (!b) return;
   adjust(b.closest(".card").dataset.id, Number(b.dataset.a));
 });
+const setOpts = () => META.sets.filter(s => CARDS.some(c => c.set === s.code)).map(s => `<option value="${esc(s.code)}">${esc(s.name)}</option>`).join("");
+$("cset").insertAdjacentHTML("beforeend", setOpts()); $("cset").value = st.set || "";
+$("cset").addEventListener("change", e => { st.set = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("sets").addEventListener("click", e => { const b = e.target.closest(".setbtn"); if (!b) return; st.set = b.dataset.set; st.limit = PAGE; st.page = 0; render(); });
 $("doms").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.ban){ st.banned = !st.banned; st.limit = PAGE; st.page = 0; syncControls(); render(); return; } const d = b.dataset.d; st.doms.has(d) ? st.doms.delete(d) : st.doms.add(d); st.limit = PAGE; st.page = 0; syncControls(); render(); });
 
@@ -2054,13 +2061,13 @@ function stopShareOK(what){
   return confirm(`Are you sure you want to stop sharing your ${what}?\n\nThe link will stop working for everyone you sent it to. You can share it again later, but that makes a new link.`);
 }
 // ---- Wish List: filters (this visit only) and Add a Card
-const wlf = {q: "", dom: "", type: "", rar: "", own: "", sort: ""};
-function wlfOn(){ return !!(wlf.q || wlf.dom || wlf.type || wlf.rar || wlf.own) || rngOn("w"); }
+const wlf = {q: "", set: "", dom: "", type: "", rar: "", own: "", sort: ""};
+function wlfOn(){ return !!(wlf.q || wlf.set || wlf.dom || wlf.type || wlf.rar || wlf.own) || rngOn("w"); }
 function wlfMatch(id){
   const c = byId[id], n = counts[id] || 0;
   if (!rngOK(c, "w")) return false;
   if (wlf.q){ const q = wlf.q.toLowerCase(); if (!(c.name.toLowerCase().includes(q) || c.id.includes(q) || findOf(c).includes(q))) return false; }
-  return (!wlf.dom || c.domains.includes(wlf.dom)) && (!wlf.type || c.type === wlf.type) && (!wlf.rar || c.rarity === wlf.rar) && (wlf.own !== "have" || n > 0) && (wlf.own !== "need" || !n);
+  return (!wlf.set || c.set === wlf.set) && (!wlf.dom || c.domains.includes(wlf.dom)) && (!wlf.type || c.type === wlf.type) && (!wlf.rar || c.rarity === wlf.rar) && (wlf.own !== "have" || n > 0) && (wlf.own !== "need" || !n);
 }
 function wlfSort(ids){
   const p = id => byId[id].price ?? -1;
@@ -2074,12 +2081,13 @@ function wlfOpts(){
   if (wlfReady) return; wlfReady = true;
   const uniq = f => [...new Set(CARDS.flatMap(f))].filter(Boolean).sort();
   const fill = (id, vals) => $(id).insertAdjacentHTML("beforeend", vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join(""));
+  $("wlf-set").insertAdjacentHTML("beforeend", setOpts());
   fill("wlf-dom", uniq(c => c.domains || [])); fill("wlf-type", uniq(c => [c.type])); fill("wlf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
 }
 function wlfSync(){ $("wlf-reset").disabled = !wlfOn(); ["all", "have", "need"].forEach(k => $("wlf-" + k).setAttribute("aria-pressed", (wlf.own || "all") === k)); }
-function wlfReset(){ rngReset("w"); Object.assign(wlf, {q: "", dom: "", type: "", rar: "", own: ""}); $("wlf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("wlf-" + k).value = ""); wlfSync(); renderWish(); }
+function wlfReset(){ rngReset("w"); Object.assign(wlf, {q: "", set: "", dom: "", type: "", rar: "", own: ""}); $("wlf-q").value = ""; ["set", "dom", "type", "rar"].forEach(k => $("wlf-" + k).value = ""); wlfSync(); renderWish(); }
 let wlfT; $("wlf-q").addEventListener("input", e => { wlf.q = e.target.value.trim(); wlfSync(); clearTimeout(wlfT); wlfT = setTimeout(renderWish, 120); });
-["dom", "type", "rar"].forEach(k => $("wlf-" + k).addEventListener("change", e => { wlf[k] = e.target.value; wlfSync(); renderWish(); }));
+["set", "dom", "type", "rar"].forEach(k => $("wlf-" + k).addEventListener("change", e => { wlf[k] = e.target.value; wlfSync(); renderWish(); }));
 $("wlf-sort").addEventListener("change", e => { wlf.sort = e.target.value; renderWish(); });
 ["all", "have", "need"].forEach(k => $("wlf-" + k).addEventListener("click", () => { wlf.own = k === "all" ? "" : k; wlfSync(); renderWish(); }));
 $("wlf-reset").addEventListener("click", wlfReset);
@@ -2198,11 +2206,11 @@ function mkGoFriend(){
   showTab("shop"); setTimeout(() => { const b = document.querySelector("#mk-frlist .frdeck.new"); if (b) b.scrollIntoView({block: "start", behavior: "smooth"}); }, 400);
 }
 function frListen(type, fn, opt){ ["fr-list", "mk-frlist"].forEach(id => $(id).addEventListener(type, fn, opt)); }
-const mkf = {q: "", dom: "", type: "", rar: ""};
-function mkfOn(){ return !!(mkf.q || mkf.dom || mkf.type || mkf.rar) || rngOn("f"); }
+const mkf = {q: "", set: "", dom: "", type: "", rar: ""};
+function mkfOn(){ return !!(mkf.q || mkf.set || mkf.dom || mkf.type || mkf.rar) || rngOn("f"); }
 function mkfMatch(x, nameHit){ const c = frCard(x.key), nm = nameHit || !mkf.q || norm(x.name).includes(norm(mkf.q));
-  if (!c) return nm && !mkf.dom && !mkf.type && !mkf.rar && !rngOn("f");
-  return nm && rngOK(c, "f") && (!mkf.dom || (c.domains || []).includes(mkf.dom)) && (!mkf.type || c.type === mkf.type) && (!mkf.rar || c.rarity === mkf.rar); }
+  if (!c) return nm && !mkf.set && !mkf.dom && !mkf.type && !mkf.rar && !rngOn("f");
+  return nm && rngOK(c, "f") && (!mkf.set || c.set === mkf.set) && (!mkf.dom || (c.domains || []).includes(mkf.dom)) && (!mkf.type || c.type === mkf.type) && (!mkf.rar || c.rarity === mkf.rar); }
 function mkFriendsFill(shops){
   const box = $("mk-frlist"); box.innerHTML = "";
   if (shops.length) shops.forEach(a => box.append(a));
@@ -2210,23 +2218,24 @@ function mkFriendsFill(shops){
     : `<div class="empty">No friends' shopping lists yet. When a friend sends you a link to their shopping list, open it (or paste it in the <b>Friends</b> tab) and it shows up here, where you can send them an offer.</div>`;
   $("mkf-count").textContent = shops.length ? `${shops.length} list${shops.length === 1 ? "" : "s"}` : "";
 }
-function mkfReset(){ rngReset("f"); Object.assign(mkf, {q: "", dom: "", type: "", rar: ""}); $("mkf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("mkf-" + k).value = ""); $("mkf-reset").disabled = true; renderFriends(); }
+function mkfReset(){ rngReset("f"); Object.assign(mkf, {q: "", set: "", dom: "", type: "", rar: ""}); $("mkf-q").value = ""; ["set", "dom", "type", "rar"].forEach(k => $("mkf-" + k).value = ""); $("mkf-reset").disabled = true; renderFriends(); }
 let mkfT; $("mkf-q").addEventListener("input", e => { mkf.q = e.target.value.trim(); $("mkf-reset").disabled = !mkfOn(); clearTimeout(mkfT); mkfT = setTimeout(renderFriends, 150); });
-["dom", "type", "rar"].forEach(k => $("mkf-" + k).addEventListener("change", e => { mkf[k] = e.target.value; $("mkf-reset").disabled = !mkfOn(); renderFriends(); }));
+["set", "dom", "type", "rar"].forEach(k => $("mkf-" + k).addEventListener("change", e => { mkf[k] = e.target.value; $("mkf-reset").disabled = !mkfOn(); renderFriends(); }));
 $("mkf-reset").addEventListener("click", mkfReset);
 $("mk-frlist").addEventListener("click", e => { if (e.target.id === "mkf-clear") mkfReset(); });
 $("mkf-sort").addEventListener("change", e => { st.frsort = e.target.value; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); renderFriends(); });
 ["s","m","l"].forEach(k => $("mkfs-" + k).addEventListener("click", () => { st.size = k; LS.set("rb-filters", {...st, doms:[...st.doms], limit:undefined}); frSize(); }));
 // ---- Marketplace filters for your shopping list (this visit only, not saved)
-const shf = {q: "", dom: "", type: "", rar: ""};
-function shfOn(){ return !!(shf.q || shf.dom || shf.type || shf.rar) || rngOn("s"); }
+const shf = {q: "", set: "", dom: "", type: "", rar: ""};
+function shfOn(){ return !!(shf.q || shf.set || shf.dom || shf.type || shf.rar) || rngOn("s"); }
 function shfMatch(x){ const c = x.show;
-  return rngOK(c, "s") && (!shf.q || norm(x.name).includes(norm(shf.q))) && (!shf.dom || (c.domains || []).includes(shf.dom)) && (!shf.type || c.type === shf.type) && (!shf.rar || c.rarity === shf.rar); }
+  return rngOK(c, "s") && (!shf.set || c.set === shf.set) && (!shf.q || norm(x.name).includes(norm(shf.q))) && (!shf.dom || (c.domains || []).includes(shf.dom)) && (!shf.type || c.type === shf.type) && (!shf.rar || c.rarity === shf.rar); }
 let shfReady = false;
 function shfOpts(){
   if (shfReady) return; shfReady = true;
   const uniq = f => [...new Set(CARDS.flatMap(f))].filter(Boolean).sort();
   const fill = (id, vals) => $(id).insertAdjacentHTML("beforeend", vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join(""));
+  $("shf-set").insertAdjacentHTML("beforeend", setOpts()); $("mkf-set").insertAdjacentHTML("beforeend", setOpts());
   fill("shf-dom", uniq(c => c.domains || [])); fill("shf-type", uniq(c => [c.type]));
   fill("shf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
   fill("mkf-dom", uniq(c => c.domains || [])); fill("mkf-type", uniq(c => [c.type])); fill("mkf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
@@ -2249,9 +2258,9 @@ function undoCollected(){
 }
 document.addEventListener("click", e => { if (e.target.closest("[data-undo]")){ e.preventDefault(); undoCollected(); } });
 function shopHead(n, all){ return `<div class="mk-hrow"><h2 class="mk-h">${mkFoldBtn("list", "My Shopping List")}</h2>${all && shfOn() ? `<span class="meta">Showing ${n} of ${all} card${all === 1 ? "" : "s"}</span>` : ""}${shUndo.length ? `<span class="grow"></span><button type="button" class="btn sh-undo" data-undo title="Takes back the last + Collected 1: removes that card from your collection and puts it back on this list">↶ Undo Collected${shUndo.length > 1 ? ` (${shUndo.length})` : ""}</button>` : ""}</div>`; }
-function shfReset(){ rngReset("s"); Object.assign(shf, {q: "", dom: "", type: "", rar: ""}); $("shf-q").value = ""; ["dom", "type", "rar"].forEach(k => $("shf-" + k).value = ""); $("shf-reset").disabled = true; renderShop(); }
+function shfReset(){ rngReset("s"); Object.assign(shf, {q: "", set: "", dom: "", type: "", rar: ""}); $("shf-q").value = ""; ["set", "dom", "type", "rar"].forEach(k => $("shf-" + k).value = ""); $("shf-reset").disabled = true; renderShop(); }
 $("shf-q").addEventListener("input", e => { shf.q = e.target.value.trim(); $("shf-reset").disabled = !shfOn(); renderShop(); });
-["dom", "type", "rar"].forEach(k => $("shf-" + k).addEventListener("change", e => { shf[k] = e.target.value; $("shf-reset").disabled = !shfOn(); renderShop(); }));
+["set", "dom", "type", "rar"].forEach(k => $("shf-" + k).addEventListener("change", e => { shf[k] = e.target.value; $("shf-reset").disabled = !shfOn(); renderShop(); }));
 $("shf-reset").addEventListener("click", shfReset);
 $("shop-body").addEventListener("click", e => { if (e.target.id === "shf-clear") shfReset(); });
 // ---- Shopping List: what your decks still need after your collection
