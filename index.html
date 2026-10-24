@@ -939,6 +939,7 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
       <select id="tg" aria-label="Champion or region tag"><option value="">All tags</option></select>
       <select id="sort" aria-label="Sort cards"><option value="set">Sort: set order</option><option value="price">Sort: price, high to low</option><option value="value">Sort: my value, high to low</option><option value="name">Sort: name</option></select>
       <label class="chk"><input type="checkbox" id="variants" checked> Show alt arts, overnumbered and promos</label>
+      <label class="chk"><input type="checkbox" id="only"> Only alt arts, overnumbered and promos</label>
       <button class="btn reset" id="freset" type="button" disabled>Reset filters</button>
     </div>
     <div class="frow rng-row"><div class="rng" data-g="c" data-k="e"><span class="rng-l">Energy <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest energy"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest energy"></div></div><div class="rng" data-g="c" data-k="m"><span class="rng-l">Might <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest might"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest might"></div></div></div>
@@ -1168,7 +1169,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 let counts = {};             // id -> copies owned
-let st = {set:"", q:"", show:"all", doms:new Set(), type:"", rarity:"", variants:true, sort:"set", cur:"both", limit:PAGE, view:"", page:0};
+let st = {set:"", q:"", show:"all", doms:new Set(), type:"", rarity:"", variants:true, only:false, sort:"set", cur:"both", limit:PAGE, view:"", page:0};
 const FX = (META.fx && META.fx.usdcad) || 0;
 const fUSD = new Intl.NumberFormat("en-US", {style:"currency", currency:"USD", currencyDisplay:"narrowSymbol"});
 const fCAD = new Intl.NumberFormat("en-CA", {style:"currency", currency:"CAD", currencyDisplay:"narrowSymbol"});
@@ -1343,7 +1344,7 @@ if (META.updated){
 if (META.updated) $("c-updated").textContent = `Card list updated ${longDate(META.updated)} · ${CARDS.length.toLocaleString()} printings across ${META.sets.length} sets` + (META.pricesUpdated ? ` · Prices are TCGplayer market prices (USD), updated ${longDate(META.pricesUpdated)}` : "") + (FX ? ` · CAD at the Bank of Canada rate of ${FX.toFixed(4)} (${longDate(META.fx.date)})` : "");
 
 function syncControls(){
-  $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("kw").value = st.kw || ""; $("tg").value = st.tg || ""; $("variants").checked = st.variants; $("sort").value = st.sort || "set";
+  $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("kw").value = st.kw || ""; $("tg").value = st.tg || ""; $("variants").checked = st.variants; $("only").checked = !!st.only; $("sort").value = st.sort || "set";
   ["all","have","need"].forEach(k => $("s-"+k).setAttribute("aria-pressed", st.show===k));
   ["both","cad","usd"].forEach(k => $("c-"+k).setAttribute("aria-pressed", st.cur===k));
   document.querySelectorAll("#doms button").forEach(b => b.setAttribute("aria-pressed", b.dataset.ban ? !!st.banned : st.doms.has(b.dataset.d)));
@@ -1353,6 +1354,7 @@ const isVariant = c => !!c.variant || ["OPP","PR","JDG"].includes(c.set);
 function matches(c, ignoreSet){
   if (!ignoreSet && st.set && c.set !== st.set) return false;
   if (!st.variants && isVariant(c)) return false;
+  if (st.only && !isVariant(c)) return false;
   if (!typeOK(c)) return false;
   if (st.rarity && c.rarity !== st.rarity) return false;
   if (st.kw && !kwOf(c).includes(st.kw)) return false;
@@ -1368,11 +1370,11 @@ function matches(c, ignoreSet){
 }
 
 function renderSummary(){
-  const pool = CARDS.filter(c => st.variants || !isVariant(c));
+  const pool = CARDS.filter(c => (st.variants || !isVariant(c)) && (!st.only || isVariant(c)));
   const have = pool.filter(c => counts[c.id] > 0).length;
   const copies = CARDS.reduce((a,c) => a + (counts[c.id]||0), 0);
   $("c-have").textContent = have.toLocaleString(); $("c-tot").textContent = pool.length.toLocaleString();
-  $("c-copies").textContent = `${copies.toLocaleString()} total copies` + (st.variants ? "" : " · counting standard printings only");
+  $("c-copies").textContent = `${copies.toLocaleString()} total copies` + (st.only ? " · counting alt arts, overnumbered and promos only" : st.variants ? "" : " · counting standard printings only");
   const pct = pool.length ? have/pool.length*100 : 0;
   $("c-fill").style.width = pct + "%"; $("c-bar").setAttribute("aria-valuenow", Math.round(pct)); $("c-bar").setAttribute("aria-valuemax", 100);
   // value of everything owned (all printings, whatever the filters), and what the missing cards in this view would cost (one of each)
@@ -1384,7 +1386,7 @@ function renderSummary(){
   const missing = scope.filter(c => !counts[c.id]);
   $("v-need-k").textContent = st.set ? `Cost to complete ${setName[st.set]}` : "Cost to complete everything";
   $("v-need").innerHTML = moneyHTML(missing.reduce((a,c) => a + (c.price||0), 0));
-  $("v-need-s").textContent = `${missing.length.toLocaleString()} missing card${missing.length===1?"":"s"}, one copy each` + (st.variants ? "" : " · standard printings only");
+  $("v-need-s").textContent = `${missing.length.toLocaleString()} missing card${missing.length===1?"":"s"}, one copy each` + (st.only ? " · alt arts, overnumbered and promos only" : st.variants ? "" : " · standard printings only");
   const allBtn = `<button class="setbtn" data-set="" aria-pressed="${st.set===""}"><span class="sn">All sets <small>${have}/${pool.length}</small></span><span class="bar"><i style="width:${pct}%"></i></span><span class="collect-s">${money(ownedValue(owned))}</span></button>`;
   $("sets").innerHTML = allBtn + META.sets.map(s => {
     const p = pool.filter(c => c.set === s.code); if (!p.length) return "";
@@ -1730,7 +1732,7 @@ function renderList(){
     : `<div class="empty">${st.show==="have" && !Object.keys(counts).length ? "You haven't marked any cards yet. Switch to All and tap + on the cards you own." : "No cards match these filters. Try clearing the search or a filter."}</div>`;
   $("more").hidden = true; renderPager(pages);
   $("v-list").setAttribute("aria-pressed", st.view === "list"); $("v-grid").setAttribute("aria-pressed", st.view === "grid");
-  const nf = st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1);
+  const nf = st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + (st.only ? 1 : 0);
   $("fcount").textContent = nf ? nf : ""; syncReset();
   $("count").textContent = `${shown.length.toLocaleString()} card${shown.length===1?"":"s"}` + (st.set ? ` in ${setName[st.set]}` : "");
 }
@@ -1748,10 +1750,10 @@ $("sets").addEventListener("click", e => { const b = e.target.closest(".setbtn")
 $("doms").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.ban){ st.banned = !st.banned; st.limit = PAGE; st.page = 0; syncControls(); render(); return; } const d = b.dataset.d; st.doms.has(d) ? st.doms.delete(d) : st.doms.add(d); st.limit = PAGE; st.page = 0; syncControls(); render(); });
 
 // ---- reset filters: search, set, domains, banned, type, rarity, keyword, tag, All/I have/Missing, alt arts
-function activeFilters(){ return (st.q ? 1 : 0) + (st.set ? 1 : 0) + st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + rngCount("c"); }
+function activeFilters(){ return (st.q ? 1 : 0) + (st.set ? 1 : 0) + st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + (st.only ? 1 : 0) + rngCount("c"); }
 function syncReset(){ const n = activeFilters(), b = $("freset"); if (!b) return; b.disabled = !n; b.textContent = n ? `Reset filters (${n})` : "Reset filters"; }
 $("freset").addEventListener("click", () => {
-  Object.assign(st, {q:"", set:"", doms:new Set(), banned:false, type:"", rarity:"", kw:"", tg:"", show:"all", variants:true, limit:PAGE, page:0});
+  Object.assign(st, {q:"", set:"", doms:new Set(), banned:false, type:"", rarity:"", kw:"", tg:"", show:"all", variants:true, only:false, limit:PAGE, page:0});
   rngReset("c"); syncControls(); render();
 });
 let qT; $("q").addEventListener("input", e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); st.limit = PAGE; st.page = 0; render(); }, 120); });
@@ -1760,7 +1762,8 @@ $("type").addEventListener("change", e => { st.type = e.target.value; st.limit =
 $("tg").addEventListener("change", e => { st.tg = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("kw").addEventListener("change", e => { st.kw = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("rarity").addEventListener("change", e => { st.rarity = e.target.value; st.limit = PAGE; st.page = 0; render(); });
-$("variants").addEventListener("change", e => { st.variants = e.target.checked; st.limit = PAGE; st.page = 0; render(); });
+$("only").addEventListener("change", e => { st.only = e.target.checked; if (st.only) st.variants = true; syncControls(); st.limit = PAGE; st.page = 0; render(); });
+$("variants").addEventListener("change", e => { st.variants = e.target.checked; if (!st.variants) { st.only = false; $("only").checked = false; } st.limit = PAGE; st.page = 0; render(); });
 ["both","cad","usd"].forEach(k => $("c-"+k).addEventListener("click", () => { st.cur = k; syncControls(); render(); }));
 $("sort").addEventListener("change", e => { st.sort = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("more").addEventListener("click", () => { st.limit += PAGE; renderList(); });
