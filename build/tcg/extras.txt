@@ -184,3 +184,238 @@ OPP|723239|Jayce, Brilliant Inventor (Promo)|068|Promo|Mind
 PR|702608|Bird // Brush|T02|Promo|
 PR|710699|Riven, Shattered (Alternate Art)|041a|Promo|Calm
 JDG|721871|Gangplank, Naval|086|Promo|Body
+# Radiance (RAD), released 2026-10-23: from TCGplayer until Riftcodex adds the set; 7th field = TCGplayer card type
+RAD|721334|Dockside Lock-Up|136|Epic|Order|Gear
+RAD|721335|Rousing Display|127|Uncommon|Order|Spell
+RAD|721337|Kai'Sa - Rebel|063|Rare|Mind|Champion Unit
+RAD|721340|Orianna - Lady of Clockwork|145|Rare|Calm;Mind|Legend
+RAD|721345|Seraphine - Starry-Eyed Songstress|151|Rare|Mind;Order|Legend
+RAD|721346|K'Sante - Courageous (Heartsteel Overnumbered)|178|Showcase|Body|Champion Unit
+RAD|721350|Aphelios - Exalted (Heartsteel Overnumbered)|179|Showcase|Calm|Champion Unit
+RAD|721352|Ezreal - Dashing (Heartsteel Overnumbered)|180|Showcase|Mind|Champion Unit
+RAD|721354|Yone - Blademaster (Heartsteel Overnumbered)|181|Showcase|Body|Champion Unit
+RAD|721356|Kayn - Unleashed (Heartsteel Overnumbered)|182|Showcase|Chaos|Champion Unit
+RAD|721357|Sett - Kingpin (Heartsteel Overnumbered)|183|Showcase|Order|Champion Unit
+RAD|722275|Ahri - Confident|038|Rare|Calm|Champion Unit
+RAD|722276|Amateur Demolitionist|001|Common|Fury|Unit
+RAD|722277|Banner of Conquest|002|Common|Fury|Gear
+RAD|722278|Bilgewater Tracker|003|Common|Fury|Unit
+RAD|722279|Blade of the Exile|150|Epic|Calm;Chaos|Signature Gear
+RAD|722280|Blossoming Dreamroot|024|Common|Calm|Gear
+RAD|722281|Calm Rune|R02|Common|Calm|Rune
+RAD|722282|Calm Rune (Alternate Art)|R02a|Showcase|Calm|Rune
+RAD|722283|Chronobreak|140|Epic|Fury;Mind|Signature Spell
+RAD|722284|Clanging Sentry|055|Uncommon|Mind|Unit
+RAD|722285|Clocktower Guardian|067|Epic|Mind|Unit
+RAD|722286|Command: Attack|033|Uncommon|Calm|Spell
+RAD|722287|Concert Poster|116|Common|Order|Gear
+RAD|722288|Cosmic Vista|160|Uncommon|None|Battlefield
+RAD|722289|Demacian Standard|156|Epic|Body;Order|Signature Gear
+RAD|722290|Disposal Expert|093|Common|Chaos|Unit
+RAD|722291|Dune Devourer|125|Uncommon|Order|Unit
+RAD|722292|Durand Memorial|161|Uncommon|None|Battlefield
+RAD|722293|Ekko - Boy Who Shattered Time|139|Rare|Fury;Mind|Legend
+RAD|722294|Ekko - Ingenious|061|Rare|Mind|Champion Unit
+RAD|722295|Ekko - Ingenious (Alternate Art)|061a|Showcase|Mind|Champion Unit
+RAD|722296|Elnuk Herd|081|Uncommon|Body|Unit
+RAD|722297|Evelynn - Consuming|090|Epic|Body|Champion Unit
+RAD|722298|Evelynn - Consuming (Alternate Art)|090a|Showcase|Body|Champion Unit
+RAD|722299|Heimerdinger - Academy Instructor|132|Rare|Order|Champion Unit
+RAD|722300|Hexplosive Minefield|142|Epic|Fury;Chaos|Signature Spell
+RAD|722301|Hold 'Em|070|Common|Body|Spell
+RAD|722302|Hunker Down|034|Uncommon|Calm|Spell
+RAD|722303|Improvised Projectile|056|Uncommon|Mind|Spell
+RAD|722304|Invigorating Bloom|035|Uncommon|Calm|Gear
+RAD|722305|Jarvan IV - Exemplar of Demacia|155|Rare|Body;Order|Legend
+RAD|722306|Jarvan IV - Exemplar of Demacia (Overnumbered)|176|Showcase|Body;Order|Legend
+RAD|722307|K'Sante - Courageous|086|Rare|Body|Champion Unit
+RAD|722308|K'Sante - Courageous (Alternate Art)|086a|Showcase|Body|Champion Unit
+RAD|722309|K'Sante - Dauntless|045|Epic|Calm|Champion Unit
+RAD|722310|K'Sante - Dauntless (Alternate Art)|045a|Showcase|Calm|Champion Unit
+RAD|722311|K'Sante - Pride of Nazumah|147|Rare|Calm;Body|Legend
+RAD|722312|K'Sante - Pride of Nazumah (Overnumbered)|172|Showcase|Calm;Body|Legend
+RAD|722313|Kai'Sa - Rebel (K/DA Special Art)|SP4|Showcase|Mind|Champion Unit
+RAD|722314|Lost to the Sands|013|Uncommon|Fury|Spell
+RAD|722315|Mind Rune|R03|Common|Mind|Rune
+RAD|722316|Mind Rune (Alternate Art)|R03a|Showcase|Mind|Rune
+RAD|722317|Momentary Companion|095|Common|Chaos|Unit
+RAD|722318|Mordekaiser - Dominating|137|Epic|Order|Champion Unit
+RAD|722319|Mordekaiser - Dominating (Alternate Art)|137a|Showcase|Order|Champion Unit
+RAD|722320|Mournful Spirit|126|Uncommon|Order|Unit
+RAD|722321|Neeko - Bleeding In|167|Epic|None|Champion Unit
+RAD|722322|Ntofo Strikes|148|Epic|Calm;Body|Signature Spell
+RAD|722323|Orianna - Lady of Clockwork (Overnumbered)|171|Showcase|Calm;Mind|Legend
+RAD|722324|Orianna - Mechanical Marvel|068|Epic|Mind|Champion Unit
+RAD|722325|Orianna - Mechanical Marvel (Alternate Art)|068a|Showcase|Mind|Champion Unit
+RAD|722326|Packed Amphitheater|164|Uncommon|None|Battlefield
+RAD|722327|Pillaged Armory|073|Common|Body|Gear
+RAD|722328|Primordial Roar|082|Uncommon|Body|Spell
+RAD|722329|Rakelstake|165|Uncommon|None|Battlefield
+RAD|722330|Reckless Innovator|105|Uncommon|Chaos|Unit
+RAD|722331|Resplendent Rostrum|046|Epic|Calm|Gear
+RAD|722332|Ruined Monastery|166|Uncommon|None|Battlefield
+RAD|722333|Runeblade Anvil|012|Uncommon|Fury|Gear
+RAD|722334|Satchel Charge|096|Common|Chaos|Spell
+RAD|722335|Seraphine - Not Alone|138|Epic|Order|Champion Unit
+RAD|722336|Seraphine - Not Alone (Alternate Art)|138a|Showcase|Order|Champion Unit
+RAD|722337|Seraphine - Not Alone (K/DA Special Art)|SP5|Showcase|Order|Champion Unit
+RAD|722338|Seraphine - Starry-Eyed Songstress (Overnumbered)|174|Showcase|Mind;Order|Legend
+RAD|722339|Stalwart Goatherd|083|Uncommon|Body|Unit
+RAD|722340|Supernova|059|Uncommon|Mind|Spell
+RAD|722341|The Good Stuff|106|Uncommon|Chaos|Gear
+RAD|722342|Transpositionist|115|Epic|Chaos|Unit
+RAD|722343|Zero Point Inflection|069|Epic|Mind|Gear
+RAD|722344|Ziggs - Hexplosives Expert|141|Rare|Fury;Chaos|Legend
+RAD|722345|Ziggs - Hexplosives Expert (Overnumbered)|169|Showcase|Fury;Chaos|Legend
+RAD|722346|Ziggs - Short-Fused|023|Epic|Fury|Champion Unit
+RAD|722347|Ziggs - Short-Fused (Alternate Art)|023a|Showcase|Fury|Champion Unit
+RAD|722843|Evelynn - Agony's Embrace (Overnumbered)|175|Showcase|Body;Chaos|Legend
+RAD|722844|Evelynn - Agony's Embrace|153|Rare|Body;Chaos|Legend
+RAD|722845|Ahri - Confident (K/DA Special Art)|SP1|Showcase|Calm|Champion Unit
+RAD|722846|Akali - Brash|015|Rare|Fury|Champion Unit
+RAD|722847|Akali - Brash (K/DA Special Art)|SP2|Showcase|Fury|Champion Unit
+RAD|722848|Avalanche|079|Uncommon|Body|Spell
+RAD|722849|Bandle Scouts' Academy|157|Uncommon|None|Battlefield
+RAD|722850|Battlefield Armorer|130|Rare|Order|Unit
+RAD|722851|Bedeviling Stranger|107|Rare|Chaos|Unit
+RAD|722852|Black Market|158|Uncommon|None|Battlefield
+RAD|722853|Black Rose Sanctum|159|Uncommon|None|Battlefield
+RAD|722854|Body Rune (Alternate Art)|R04a|Showcase|Body|Rune
+RAD|722855|Body Rune|R04|Common|Body|Rune
+RAD|722856|Ekko - Boy Who Shattered Time (Overnumbered)|168|Showcase|Fury;Mind|Legend
+RAD|722857|Brawl|004|Common|Fury|Spell
+RAD|722858|Cataclysm|084|Rare|Body|Spell
+RAD|722859|Chaos Rune (Alternate Art)|R05a|Showcase|Chaos|Rune
+RAD|722860|Chaos Rune|R05|Common|Chaos|Rune
+RAD|722861|Coalesced Energy|016|Rare|Fury|Unit
+RAD|722862|Consult the Heavens|025|Common|Calm|Spell
+RAD|722863|Demacian Illuminators|131|Rare|Order|Unit
+RAD|722864|Detonation Amplifier|017|Rare|Fury|Gear
+RAD|722865|Drakehound Packmaster|018|Rare|Fury|Unit
+RAD|722866|Ekko - Revolutionary (Alternate Art)|021a|Showcase|Fury|Champion Unit
+RAD|722867|Ekko - Revolutionary|021|Epic|Fury|Champion Unit
+RAD|722868|Encore|152|Epic|Mind;Order|Signature Spell
+RAD|722869|Entrenched Boar|026|Common|Calm|Unit
+RAD|722870|Ephemeral Ward|039|Rare|Calm|Gear
+RAD|722871|Evelynn - In Control|109|Rare|Chaos|Champion Unit
+RAD|722872|Evelynn - In Control (K/DA Special Art)|SP3|Showcase|Chaos|Champion Unit
+RAD|722873|Evelynn - In Control (Alternate Art)|109a|Showcase|Chaos|Champion Unit
+RAD|722874|Fanfare|047|Common|Mind|Spell
+RAD|722875|Firelights' Hideout|162|Uncommon|None|Battlefield
+RAD|722876|For Demacia!|117|Common|Order|Spell
+RAD|722877|Fury Rune (Alternate Art)|R01a|Showcase|Fury|Rune
+RAD|722878|Fury Rune|R01|Common|Fury|Rune
+RAD|722879|Graves - Blasting Through|085|Rare|Body|Champion Unit
+RAD|722880|Herald of the Emperor|118|Common|Order|Unit
+RAD|722881|High Note|048|Common|Mind|Spell
+RAD|722882|Hunters' Circle|163|Uncommon|None|Battlefield
+RAD|722883|Hunting Dog|119|Common|Order|Unit
+RAD|722884|Industrious Mechsmith|049|Common|Mind|Unit
+RAD|722885|Iridescent Avian|027|Common|Calm|Unit
+RAD|722886|Mordekaiser - Iron Revenant|143|Rare|Fury;Order|Legend
+RAD|722887|Mordekaiser - Iron Revenant (Overnumbered)|170|Showcase|Fury;Order|Legend
+RAD|722888|Jarvan IV - Martial Paragon (Alternate Art)|091a|Showcase|Body|Champion Unit
+RAD|722889|Jarvan IV - Martial Paragon|091|Epic|Body|Champion Unit
+RAD|722890|Ki Burst|028|Common|Calm|Spell
+RAD|722891|Last Caress|154|Epic|Body;Chaos|Signature Spell
+RAD|722892|Lingering Animus|005|Common|Fury|Unit
+RAD|722893|Lulu - Whimsical|110|Rare|Chaos|Champion Unit
+RAD|722894|Meticulous Restorationist|120|Common|Order|Unit
+RAD|722895|Mysterious Chronomancer|050|Common|Mind|Unit
+RAD|722896|Nazuman Ntofo|071|Common|Body|Gear
+RAD|722897|Order Rune|R06|Common|Order|Rune
+RAD|722898|Order Rune (Alternate Art)|R06a|Showcase|Order|Rune
+RAD|722899|Overloaded Traveler|072|Common|Body|Unit
+RAD|722900|Packed Amphitheater (Ultimate)|184|Showcase|None|Battlefield
+RAD|722901|Piltovan Guidebot|057|Uncommon|Mind|Unit
+RAD|722902|Portable Portal|087|Rare|Body|Gear
+RAD|722903|Rally for War|007|Common|Fury|Spell
+RAD|722904|Raving Witness|074|Common|Body|Unit
+RAD|722905|Realm of Death|144|Epic|Fury;Order|Signature Spell
+RAD|722906|Riptide Mage|058|Uncommon|Mind|Unit
+RAD|722907|Riven - Broken Blade|043|Rare|Calm|Champion Unit
+RAD|722908|Riven - Broken Blade (Alternate Art)|043a|Showcase|Calm|Champion Unit
+RAD|722909|Scorched Earth|006|Common|Fury|Spell
+RAD|722910|Shimmering Swimmer|014|Uncommon|Fury|Unit
+RAD|722911|Siren of the Shallows|097|Common|Chaos|Unit
+RAD|722912|Siren's Song|098|Common|Chaos|Spell
+RAD|722913|Skystrike Squadron|075|Common|Body|Unit
+RAD|722914|Staunch Survivor|088|Rare|Body|Unit
+RAD|722915|Steadfast Outrider|128|Uncommon|Order|Unit
+RAD|722916|Storm Raptor|036|Uncommon|Calm|Unit
+RAD|722917|Suave Negotiator|099|Common|Chaos|Unit
+RAD|722918|The Ball|146|Epic|Calm;Mind|Signature Gear
+RAD|722919|The Empyrean|060|Uncommon|Mind|Unit
+RAD|722920|The Waters' Wage|100|Common|Chaos|Spell
+RAD|722921|Trifarian Captain|129|Uncommon|Order|Unit
+RAD|722922|Watchful Curator|037|Uncommon|Calm|Unit
+RAD|723201|An Offer You Can't Refuse|101|Uncommon|Chaos|Spell
+RAD|723202|Antagonistic Apparatus|009|Uncommon|None|Unit
+RAD|723203|Bushwhack Trap|108|Rare|Chaos|Gear
+RAD|723204|Demon Shade|102|Uncommon|Fury|Spell
+RAD|723205|Firebrand Raider|019|Rare|Fury|Unit
+RAD|723206|Gravity Field|062|Rare|Calm|Gear
+RAD|723207|Heartening Soul|040|Rare|Calm|Unit
+RAD|723208|Hush|041|Rare|None|Spell
+RAD|723209|Jarvan IV - Royal Heir|133|Rare|Order|Champion Unit
+RAD|723210|Jarvan IV - Royal Heir (Alternate Art)|133a|Showcase|Order|Champion Unit
+RAD|723211|Life from Stone|029|Common|Calm|Spell
+RAD|723212|Mechanical Bandit|111|Rare|Chaos|Gear
+RAD|723213|Mordekaiser - Twice Slain|020|Rare|Fury|Champion Unit
+RAD|723214|Mordekaiser - Twice Slain (Alternate Art)|020a|Showcase|Fury|Champion Unit
+RAD|723215|One-Two Punch|121|Common|None|Spell
+RAD|723216|Parallel Convergence|051|Common|Mind|Spell
+RAD|723217|Party Crasher|122|Common|Order|Unit
+RAD|723218|Resource Extractor|052|Common|Mind|Gear
+RAD|723219|Riven - Deserter|114|Epic|Chaos|Champion Unit
+RAD|723220|Riven - Deserter (Alternate Art)|114a|Showcase|Chaos|Champion Unit
+RAD|723221|Sanctum Conservator|030|Common|Calm|Unit
+RAD|723222|Scrutinizing Scope|064|Rare|Mind|Gear
+RAD|723223|Sneaky Zeebles|076|Common|Body|Unit
+RAD|723224|Titanic Shrine|089|Rare|Body|Gear
+RAD|723225|War Scout|008|Common|Fury|Unit
+RAD|723226|Wrath of the Freljord|077|Common|Body|Unit
+RAD|723227|Ziggs - Explosive (Alternate Art)|112a|Showcase|Chaos|Champion Unit
+RAD|723228|Ziggs, Explosive|112|Rare|Chaos|Unit
+RAD|723382|Ekko - Revolutionary (Overnumbered)|177|Showcase|Fury|Champion Unit
+RAD|723412|Angler Wyrm|113|Epic|Chaos|Unit
+RAD|723413|Armored Tusker|078|Uncommon|Body|Unit
+RAD|723414|Battle Preparations|032|Uncommon|Calm|Spell
+RAD|723415|Bloodscent Swarm|080|Uncommon|Body|Unit
+RAD|723416|Burn Away|124|Uncommon|Order|Spell
+RAD|723417|Explosimian|094|Common|Chaos|Unit
+RAD|723418|Forbidden Technique|010|Uncommon|Fury|Spell
+RAD|723419|Gutter Guardian|103|Uncommon|Chaos|Unit
+RAD|723420|Hunting Blind|044|Epic|Calm|Gear
+RAD|723421|Incorrigible Construct|011|Uncommon|Fury|Unit
+RAD|723422|Orianna - Exquisite|042|Rare|Calm|Champion Unit
+RAD|723423|Orianna - Exquisite (Alternate Art)|042a|Showcase|Calm|Champion Unit
+RAD|723424|Pitiless Stalker|104|Uncommon|Chaos|Unit
+RAD|723425|Protector's Shield|123|Common|Order|Gear
+RAD|723426|Raucous Anthem|134|Rare|Order|Spell
+RAD|723427|Remember the Fallen|135|Rare|Order|Spell
+RAD|723428|Seraphic Wyvern|092|Epic|Body|Unit
+RAD|723429|Seraphine - Inspiring (Alternate Art)|065a|Showcase|Mind|Champion Unit
+RAD|723430|Seraphine - Inspiring|065|Rare|Mind|Champion Unit
+RAD|723431|Spirit of the Forge|066|Rare|Mind|Unit
+RAD|723432|Stoic Ferryman|031|Common|Calm|Unit
+RAD|723433|Strigian Oracle|053|Common|Mind|Unit
+RAD|723434|Riven - The Exile|149|Rare|Calm;Chaos|Legend
+RAD|723435|Riven - The Exile (Overnumbered)|173|Showcase|Calm;Chaos|Legend
+RAD|723436|Trinket Peddler|054|Common|Mind|Unit
+RAD|723437|Whirling Twirligig|022|Epic|Fury|Gear
+RAD|724638|Ekko - Boy Who Shattered Time (Signature)|168*|Showcase|Fury;Mind|Legend
+RAD|724641|Jarvan IV - Exemplar of Demacia (Signature)|179*|Showcase|Body;Order|Legend
+RAD|724642|Evelynn - Agony's Embrace (Signature)|175*|Showcase|Body;Chaos|Legend
+RAD|724650|K'Sante - Pride of Nazumah (Signature)|172*|Showcase|Calm;Body|Legend
+RAD|724651|Mordekaiser - Iron Revenant (Signature)|170*|Showcase|Fury;Order|Legend
+RAD|724653|Orianna - Lady of Clockwork (Signature)|171*|Showcase|Calm;Mind|Legend
+RAD|724654|Riven - The Exile (Signature)|173*|Showcase|Calm;Chaos|Legend
+RAD|724655|Seraphine - Starry-Eyed Songstress (Signature)|174*|Showcase|Mind;Order|Legend
+RAD|724656|Ziggs - Hexplosives Expert (Signature)|169*|Showcase|Fury;Chaos|Legend
+RAD|724657|K'Sante - Courageous (Heartsteel Signature)|178*|Showcase|Body|Champion Unit
+RAD|724658|Ezreal - Dashing (Heartsteel Signature)|180*|Showcase|Mind|Champion Unit
+RAD|724659|Kayn - Unleashed (Heartsteel Signature)|182*|Showcase|Chaos|Champion Unit
+RAD|724662|Yone - Blademaster (Heartsteel Signature)|181*|Showcase|Body|Champion Unit
+RAD|724663|Sett - Kingpin (Heartsteel Signature)|183*|Showcase|Order|Champion Unit
+RAD|724664|Aphelios - Exalted (Heartsteel Signature)|179*|Showcase|Calm|Champion Unit

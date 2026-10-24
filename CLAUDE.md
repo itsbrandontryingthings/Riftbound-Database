@@ -75,6 +75,14 @@ with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` he
   `supabase_bad_words.sql` (stricter `rb_bad_words`). The site checks words the same way (`badWords` +
   `BAD_MORE`/`BAD_MASK` in patch_marketplace); keep both pattern sets the same. A new SQL file is
   something Brandon runs in Supabase → SQL Editor; note it here until Brandon confirms "Success".
+- **Radiance (RAD, released Oct 23, 2026) comes from TCGplayer for now**: Riftcodex hadn't added it at release, so its
+  234 printings are rows in `build/tcg/extras.txt` (7th field = TCGplayer card type, so new cards get the right type and
+  Champion/Signature flags), prices appended to `prices.txt`, photos in `tcg_photos.txt`, and `cards.js` was made with
+  `build.py --extras-only build/tcg cards.js cards.js` (adds extras to an existing cards.js; no raw rows needed). `text.js`
+  takes text from TCGplayer for any set Riftcodex doesn't list (`tcg_fallback` in `fetch_text.py`; plain words, no icons).
+  **The weekly task uses the Project copies of `build.py`, `extras.txt` and `tcg_photos.txt`: they must get these changes
+  (RAD in `SETS`, the 7th-field code, the RAD rows), or the Monday refresh drops Radiance.** Once Riftcodex has RAD, its
+  rows win (extras with a known product id are skipped). 10 Signature printings have no picture anywhere yet.
 - 26 printings have no text in `text.js` (Kennen – Heart of the Tempest, double-sided tokens like "Bird // Buff").
 - The site is tested with a fake Supabase; real-database behaviour should be checked after SQL changes
   (share a deck, open its link in a private window).

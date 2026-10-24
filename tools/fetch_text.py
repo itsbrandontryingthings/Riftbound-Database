@@ -58,6 +58,30 @@ def plain(rich):
     t = re.sub(r"[ \t]{2,}", " ", t)
     return "" if t == "[NO TEXT]" else t
 
+TCG = "https://tcgcsv.com/tcgplayer/89/"
+SUP = {"Champion Unit": "Champion", "Legend": "Champion", "Signature Unit": "Signature", "Signature Spell": "Signature",
+       "Signature Gear": "Signature", "Rune": "Basic"}
+
+def tcg_fallback(names):
+    """A set Riftcodex hasn't added yet (Radiance, at release): take text and stats from TCGplayer (via tcgcsv.com)
+    for card names Riftcodex doesn't have. Plain words, no :rb_…: icons. Riftcodex wins as soon as it has the card."""
+    have = {s["set_id"] for s in get("https://api.riftcodex.com/sets").get("items", [])}
+    num = lambda v: int(v) if str(v or "").isdigit() else None
+    added = 0
+    for g in get(TCG + "groups").get("results", []):
+        if g.get("abbreviation") in have: continue
+        for p in get(TCG + f"{g['groupId']}/products").get("results", []):
+            ed = {e["name"]: e["value"] for e in p.get("extendedData") or []}
+            if not ed.get("Number") or not ed.get("Card Type"): continue
+            key = norm(re.sub(r"\s*\([^()]+\)\s*$", "", p["name"]))
+            if key in names: continue
+            names[key] = [num(ed.get("Energy Cost")), num(ed.get("Might")), num(ed.get("Power Cost")),
+                          plain(ed.get("Description")), clean_flavour(ed.get("Flavor Text")),
+                          ",".join(t for t in (ed.get("Tag") or "").split(";") if t), SUP.get(ed["Card Type"], "")]
+            added += 1
+        time.sleep(0.3)
+    print(f"{added} card names from TCGplayer (sets Riftcodex doesn't have yet)")
+
 def main(out):
     items, page, pages = {}, 1, 1
     while page <= pages:
@@ -77,6 +101,7 @@ def main(out):
         if art:
             if c.get("riftbound_id"): artists[c["riftbound_id"]] = art
             if c.get("tcgplayer_id"): artists["tcg:" + str(c["tcgplayer_id"])] = art
+    tcg_fallback(names)
     data = {"updated": datetime.date.today().isoformat(), "n": names, "a": artists}
     with open(out, "w", encoding="utf-8") as f:
         f.write("window.RB_TEXT=" + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n")

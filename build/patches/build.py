@@ -15,6 +15,7 @@ Bans (tcg/bans.txt): ban = "std" (banned in Standard and 2v2) or "2v2" (2v2 only
 import json, re, sys, glob, os, datetime
 
 SETS = [  # code, name, release
+    ("RAD", "Radiance", "2026-10-23"),
     ("VEN", "Vendetta", "2026-07-31"),
     ("UNL", "Unleashed", "2026-05-08"),
     ("SFD", "Spiritforged", "2026-02-13"),
@@ -158,28 +159,39 @@ def main(raw_dir, out):
             pid, num = line.strip().split("|")
             if num.lower() in by_num: by_num[num.lower()]["tcg"] = pid
 
-    # TCGplayer-only printings: borrow type/champion flags from the regular printing
+    add_extras(cards, tcg_dir)
+    finish(cards, tcg_dir, out)
+
+def add_extras(cards, tcg_dir):
+    """TCGplayer-only printings (tcg/extras.txt): borrow type/champion flags from the regular printing.
+    A 7th field, TCGplayer's card type ("Champion Unit", "Signature Spell", "Legend"…), is used for cards with no
+    regular printing yet (a new set Riftcodex hasn't added). Rows whose product id is already known are skipped."""
     by_name = {}
     for c in cards.values(): by_name.setdefault(c["name"].lower(), c)
     known_tcg = {c["tcg"] for c in cards.values() if c["tcg"]}
     ext = os.path.join(tcg_dir, "extras.txt")
-    if os.path.exists(ext):
-        for line in open(ext, encoding="utf-8"):
-            if not line.strip() or line.startswith("#"): continue
-            setc, pid, name, num, rar, doms = line.rstrip("\n").split("|")
-            if pid in known_tcg: continue
-            m = re.search(r"\s*\(([^()]+)\)\s*$", name)
-            tag = m.group(1) if m else ("Promo" if setc in ("OPP", "PR", "JDG") else "")
-            base = name[:m.start()] if m else name
-            ref = by_name.get(base.lower()) or by_name.get(base.replace(", ", " - ", 1).lower())
-            if ref: base = ref["name"]
-            typ = ref["type"] if ref else ("Rune" if base.endswith(" Rune") else "Battlefield" if tag == "Oversized" else "Unit")
-            c = dict(id="tcg-" + pid, set=setc, num=int(re.sub(r"\D", "", num) or 0), name=base, variant=tag,
-                     type=typ, champ=bool(ref and ref["champ"]), sig=bool(ref and ref["sig"]),
-                     token=" // " in base, rarity=rar if rar in ("Common","Uncommon","Rare","Epic","Showcase","Promo") else "Promo",
-                     domains=[d for d in doms.split(";") if d and d != "None"], tcg=pid)
-            cards[c["id"]] = c
+    if not os.path.exists(ext): return
+    for line in open(ext, encoding="utf-8"):
+        if not line.strip() or line.startswith("#"): continue
+        p = line.rstrip("\n").split("|") + [""]
+        setc, pid, name, num, rar, doms, ttype = p[:7]
+        if pid in known_tcg: continue
+        m = re.search(r"\s*\(([^()]+)\)\s*$", name)
+        tag = m.group(1) if m else ("Promo" if setc in ("OPP", "PR", "JDG") else "")
+        base = name[:m.start()] if m else name
+        ref = by_name.get(base.lower()) or by_name.get(base.replace(", ", " - ", 1).lower())
+        if ref: base = ref["name"]
+        if ref: typ = ref["type"]
+        elif ttype: typ = ttype.replace("Champion ", "").replace("Signature ", "")
+        else: typ = "Rune" if base.endswith(" Rune") else "Battlefield" if tag == "Oversized" else "Unit"
+        c = dict(id="tcg-" + pid, set=setc, num=int(re.sub(r"\D", "", num) or 0), name=base, variant=tag,
+                 type=typ, champ=bool(ref["champ"]) if ref else ttype == "Champion Unit",
+                 sig=bool(ref["sig"]) if ref else ttype.startswith("Signature "),
+                 token=" // " in base, rarity=rar if rar in ("Common","Uncommon","Rare","Epic","Showcase","Promo") else "Promo",
+                 domains=[d for d in doms.split(";") if d and d != "None"], tcg=pid)
+        cards[c["id"]] = c
 
+def finish(cards, tcg_dir, out):
     # Prices: "productId:price" (suffix f = only a foil printing exists, price is the foil price)
     prices = {}
     pf = os.path.join(tcg_dir, "prices.txt")
@@ -190,6 +202,7 @@ def main(raw_dir, out):
             prices[pid] = (float(p.rstrip("f")), p.endswith("f"))
     priced = 0
     for c in cards.values():
+        c.pop("price", None); c.pop("foil", None)
         if c["tcg"] in prices:
             c["price"], foil = prices[c["tcg"]]; priced += 1
             if foil: c["foil"] = True
@@ -231,8 +244,20 @@ def images_only(tcg_dir, src, out):
     meta["banned"] = attach_bans(cards, tcg_dir)
     write_out(out, meta, cards)
 
+def extras_only(tcg_dir, src, out):
+    """Add new extras.txt rows to an existing cards.js and redo prices, images, bans and meta (no raw rows needed)."""
+    s = open(src, encoding="utf-8").read()
+    cards = {c["id"]: c for c in json.loads(re.search(r"window\.RB_CARDS=(.*);\s*$", s, re.S).group(1))}
+    for c in cards.values():
+        for k in ("champ", "sig", "token"): c.setdefault(k, False)
+        c.setdefault("variant", ""); c.setdefault("tcg", "")
+    add_extras(cards, tcg_dir)
+    finish(cards, tcg_dir, out)
+
 if __name__ == "__main__":
     if sys.argv[1] == "--images-only":
         images_only(sys.argv[2], sys.argv[3], sys.argv[4])
+    elif sys.argv[1] == "--extras-only":
+        extras_only(sys.argv[2], sys.argv[3], sys.argv[4])
     else:
         main(sys.argv[1], sys.argv[2])
