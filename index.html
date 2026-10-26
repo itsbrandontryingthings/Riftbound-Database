@@ -1227,7 +1227,10 @@ function shopBtn(c, over){ const n = shopN(c.id);
   return `<span class="shopq${over ? " over" : ""}${n ? " on" : ""}" data-sq="${esc(c.id)}"><button class="wishbtn shopbtn${over ? " over" : ""}" data-shopadd="${esc(c.id)}" aria-pressed="${n > 0}" title="${shopTip(n)}" aria-label="Add one ${esc(c.name)} to your shopping list${n ? ` (${n} on it now)` : ""}">${shopLbl(n, over)}</button></span>`; }
 function wishBtn(c, over){ return wishBtn0(c, over) + shopBtn(c, over); }
 function wishBtn0(c, over){ const on = !!wish[c.id]; return `<button class="wishbtn${over ? " over" : ""}" data-wish="${esc(c.id)}" aria-pressed="${on}" aria-haspopup="dialog" title="${on ? "On your wish list (tap to change lists or remove)" : "Add to a wish list"}" aria-label="${on ? "Change wish lists for " + esc(c.name) : "Add " + esc(c.name) + " to a wish list"}">${on ? "♥" : "♡"}${over ? "" : (on ? " Wanted" : " Want")}</button>`; }
-const savedF = LS.get("rb-filters"); if (savedF) { Object.assign(st, savedF, {doms:new Set(savedF.doms||[]), limit:PAGE}); }
+const savedF = LS.get("rb-filters");
+let rbFresh = true; try { rbFresh = !sessionStorage.getItem("rb-visit"); sessionStorage.setItem("rb-visit", "1"); } catch(e){}
+if (savedF && rbFresh) for (const k of ["q","set","doms","banned","type","rarity","kw","tg","show","variants","only","page","tab","wfold"]) delete savedF[k];
+if (savedF) { Object.assign(st, savedF, {doms:new Set(savedF.doms||[]), limit:PAGE}); }
 const PHONE = () => matchMedia("(max-width:640px)").matches;
 if (st.view !== "grid" && st.view !== "list") st.view = PHONE() ? "grid" : "list";
 
