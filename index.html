@@ -2803,7 +2803,7 @@ function audioCtx(){
 // switching apps), so every tap wakes it up. The chime plays as a little WAV in an <audio> element (iPhones play those
 // even on silent); Web Audio is the fallback.
 // Every play is the same recording at the same level (chimeBuf, normalized once), and a chime never stacks on another.
-let chimeEl = null, chimeBuf = null, chimeBusy = null, chimeOK = false, chimeWarned = false, chimeAt = 0, chimeWaking = false;
+let chimeSrc = "", chimeSil = "", chimeEl = null, chimeBuf = null, chimeBusy = null, chimeOK = false, chimeWarned = false, chimeAt = 0, chimeWaking = false;
 const CHIME_LEN = 1.8;
 function wavBlob(buf){
   const d = buf.getChannelData(0), n = d.length, v = new DataView(new ArrayBuffer(44 + n * 2)), sr = buf.sampleRate;
@@ -2823,7 +2823,9 @@ function chimeReady(){
     const d = buf.getChannelData(0); let peak = 0; for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
     const gain = peak > 0 ? Math.min(5, 0.1225 / peak) : 1; for (let i = 0; i < d.length; i++) d[i] *= gain;
     chimeBuf = buf;
-    const el = new Audio(URL.createObjectURL(wavBlob(buf))); el.preload = "auto"; el.setAttribute("playsinline", ""); el.volume = 1;
+    chimeSrc = URL.createObjectURL(wavBlob(buf));
+    chimeSil = URL.createObjectURL(wavBlob({ sampleRate: sr, getChannelData: () => new Float32Array(Math.round(sr * 0.05)) }));
+    const el = new Audio(chimeSrc); el.preload = "auto"; el.setAttribute("playsinline", ""); el.volume = 1;
     return chimeEl = el;
   })().catch(() => null);
 }
@@ -2832,8 +2834,8 @@ function soundWake(){
   if (!chimeOK) audioCtx(); else if (Date.now() - chimeAt > CHIME_LEN * 1000) audioRest();
   const el = chimeEl; if (!el || chimeOK || chimeWaking || Date.now() - chimeAt < CHIME_LEN * 1000) return;
   // play it silently once inside the tap, so later plays (with no tap) are allowed; a real chime started meanwhile wins
-  chimeWaking = true; el.muted = true; const p = el.play();
-  const done = ok => { if (!chimeWaking) return; chimeWaking = false; if (ok){ el.pause(); el.currentTime = 0; chimeOK = true; audioRest(); } el.muted = false; };
+  chimeWaking = true; el.muted = true; el.src = chimeSil; const p = el.play();
+  const done = ok => { if (!chimeWaking) return; chimeWaking = false; if (ok){ el.pause(); chimeOK = true; audioRest(); } el.src = chimeSrc; el.muted = false; };
   if (p && p.then) p.then(() => done(true), () => done(false)); else done(true);
 }
 ["pointerdown", "touchend", "click", "keydown"].forEach(ev => addEventListener(ev, soundWake, { capture: true, passive: true }));
@@ -2841,7 +2843,7 @@ async function coinChime(){
   if (Date.now() - chimeAt < CHIME_LEN * 1000) return true;   // one is already playing: don't stack a second on top
   chimeAt = Date.now();
   const el = chimeEl || await chimeReady();
-  if (el){ chimeWaking = false; try { el.pause(); el.muted = false; el.volume = 1; el.currentTime = 0; await el.play(); chimeOK = true; return true; } catch(e){} }
+  if (el){ chimeWaking = false; try { el.pause(); if (el.src !== chimeSrc) el.src = chimeSrc; el.muted = false; el.volume = 1; el.currentTime = 0; await el.play(); chimeOK = true; return true; } catch(e){} }
   // fallback: the same recording through Web Audio, at the same level
   const a = audioCtx();
   if (a && a.state !== "running"){ try { await a.resume(); } catch(e){} }
