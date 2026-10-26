@@ -218,6 +218,7 @@ select{background:var(--panel);border:1px solid var(--line);border-radius:8px;pa
 .pager .btn:disabled{opacity:.35;cursor:default}
 .filters #count{display:none}
 .ftoggle{display:none}
+.fquick{display:none}
 .fpanel{display:grid;gap:8px}
 .fcount{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--accent);color:var(--bg);font-size:12px;font-weight:700}
 .fcount:empty{display:none}
@@ -258,6 +259,8 @@ a.tname:hover,a.tname:focus-visible{text-decoration:underline;text-decoration-co
 .totop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:7;border-radius:999px;padding:10px 16px;background:var(--panel);border:1px solid var(--muted);box-shadow:0 6px 18px rgb(0 0 0 / .35)}
 @media (max-width:640px){
   .ftoggle{display:inline-flex;align-items:center}
+  .fquick{display:inline-flex;align-items:center;flex:none;white-space:nowrap}
+  .fquick[hidden], .filters.open .fquick{display:none}
   .filters .frow:first-child .search{flex:1 1 0}
   .filters:not(.open) .showseg, .filters:not(.open) .fpanel{display:none}
   .filters.open{max-height:75vh;overflow:auto}
@@ -923,6 +926,7 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
     <div class="frow">
       <input class="search" id="q" type="search" placeholder="Search name, keyword or ability, e.g. Jinx, Deathknell, draw" aria-label="Search cards" autocomplete="off">
       <button class="btn ftoggle" id="ftoggle" aria-expanded="false" aria-controls="fpanel">Filters<span class="fcount" id="fcount"></span></button>
+      <button class="btn fquick" id="fquick" type="button" hidden aria-label="Reset filters">✕ Reset</button>
       <div class="seg showseg" role="group" aria-label="Which cards to show">
         <button id="s-all" aria-pressed="true">All</button>
         <button id="s-have" aria-pressed="false">I have</button>
@@ -1754,7 +1758,8 @@ $("doms").addEventListener("click", e => { const b = e.target.closest("button");
 
 // ---- reset filters: search, set, domains, banned, type, rarity, keyword, tag, All/I have/Missing, alt arts
 function activeFilters(){ return (st.q ? 1 : 0) + (st.set ? 1 : 0) + st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + (st.only ? 1 : 0) + rngCount("c"); }
-function syncReset(){ const n = activeFilters(), b = $("freset"); if (!b) return; b.disabled = !n; b.textContent = n ? `Reset filters (${n})` : "Reset filters"; }
+function syncReset(){ const n = activeFilters(), b = $("freset"); if (!b) return; b.disabled = !n; b.textContent = n ? `Reset filters (${n})` : "Reset filters"; const q = $("fquick"); if (q) q.hidden = !n; }
+$("fquick").addEventListener("click", () => $("freset").click());
 $("freset").addEventListener("click", () => {
   Object.assign(st, {q:"", set:"", doms:new Set(), banned:false, type:"", rarity:"", kw:"", tg:"", show:"all", variants:true, only:false, limit:PAGE, page:0});
   rngReset("c"); syncControls(); render();
