@@ -1983,7 +1983,8 @@ const scKey = w => w.replace(/'/g, "");
 let scNames = null;
 // names whose words were read (80% of their letters); the tallest text wins, as the name is the biggest text on a card
 function scRead(words){
-  if (!scNames) scNames = Object.keys(groups).map(k => ({k, ws: k.split(" ").map(scKey).filter(Boolean)}));
+  // runes are left to scRune: "Mind Rune" would otherwise match "kind … 1 rune" in rules text
+  if (!scNames) scNames = Object.keys(groups).filter(k => groups[k][0].type !== "Rune").map(k => ({k, ws: k.split(" ").map(scKey).filter(Boolean)}));
   const memo = new Map();
   const hit = nw => {             // [height of the tallest matching word, was it spelled exactly]
     if (memo.has(nw)) return memo.get(nw);
@@ -2036,16 +2037,19 @@ function scMatch(d){
   return scRune(d);
 }
 // runes: only six names, often read with a letter off ("ury Rune"), and a collector line with no set size
-// ("VEN • R02", where 0/5/1 are often read as O/S/L). A domain word right before "rune" names it, in any confidence.
+// ("VEN • R02", where 0/5/1 are often read as O/S/L). A domain word right before "rune" names it, in any confidence,
+// but only printed big like a name: rules text says "a Calm rune" too.
 const SC_DOMS = ["fury", "calm", "mind", "body", "chaos", "order"];
 function scRune(d){
-  const t = (d.words || []).map(x => scKey(norm(x.text).replace(/[^a-z0-9' ]/g, "")));
+  const W = d.words || [], t = W.map(x => scKey(norm(x.text).replace(/[^a-z0-9' ]/g, ""))), H = x => x.bbox.y1 - x.bbox.y0;
+  const hs = W.filter((x, i) => x.confidence >= 25 && t[i].length >= 2).map(H).sort((a, b) => a - b), med = hs[hs.length >> 1] || 1;
   let dom = "";
-  for (let i = 1; i < t.length && !dom; i++) if (t[i] === "rune" || t[i] === "rue") dom = SC_DOMS.find(x => t[i-1] === x) || SC_DOMS.find(x => scLev(x, t[i-1], 1) <= 1) || "";
+  for (let i = 1; i < t.length && !dom; i++) if ((t[i] === "rune" || t[i] === "rue") && Math.min(H(W[i]), H(W[i-1])) >= 1.3 * med)
+    dom = SC_DOMS.find(x => t[i-1] === x) || SC_DOMS.find(x => scLev(x, t[i-1], 1) <= 1) || "";
   const key = c => c.type === "Rune" && (!dom || norm(c.name) === dom + " rune");
   for (const m of (d.text || "").matchAll(/\b([A-Za-z]{3})\b[^A-Za-z0-9\n]{0,4}R ?([0-9OoSsLlIiZz]{2})\b/g)){
     const set = m[1].toUpperCase(), n = +m[2].replace(/[Oo]/g, "0").replace(/[Ss]/g, "5").replace(/[LlIi]/g, "1").replace(/[Zz]/g, "2");
-    if (!SC_SETS.has(set) || !n) continue;
+    if (!SC_SETS.has(set) || !n || n > 12) continue;
     const c = scPrint(CARDS.filter(c => key(c) && c.set === set && c.num === n));
     if (c) return {c, sure: true};
   }
@@ -2142,23 +2146,33 @@ function scOpen(){
 // view changes nothing; it counts as new again once it has left the frame (2 empty looks). "Not This Card" ignores
 // that name until something else shows.
 function scSaw(c){
-  const k = c ? norm(c.name) : "";
+  const k = c ? norm(c.name) : "", now = Date.now();
   if (!c){
-    if (++sc.empty >= 2){ sc.inView = ""; sc.skip = ""; }
+    sc.run = null;
+    // a few blurry looks don't mean the card left: it has to be gone for 3 looks and 2.5 seconds
+    if (++sc.empty >= 3 && now - (sc.seenAt || 0) > 2500){ sc.inView = ""; sc.skip = ""; }
     if (!sc.card) scMsg(scLooking());
     return;
   }
   sc.empty = 0;
-  if (k === sc.skip || k === sc.inView) return;
-  sc.skip = ""; sc.inView = k; scShow(c);
-  if (sc.auto){ scPut(sc.card); scDone(true); }
+  if (k === sc.skip) return;
+  if (k === sc.inView){ sc.seenAt = now; return; }
+  // a new card must be read twice in a row, so one misread look can't add or replace anything
+  if (!sc.run || sc.run.k !== k){ sc.run = {k}; return; }
+  sc.run = null; sc.skip = ""; sc.inView = k; sc.seenAt = now;
+  // Auto-add never adds the same card twice in a row: a card that stays unreadable for a few seconds (glare,
+  // refocusing) looks like it left and came back. A real second copy is one tap on Add Another Copy.
+  const again = sc.auto && k === sc.lastAuto;
+  scShow(c, again);
+  if (sc.auto && !again){ sc.lastAuto = k; scPut(sc.card); scDone(true); }
 }
-function scShow(c){
+function scShow(c, again){
   sc.card = c; sc.addN = 0;
   const f = $("sc-frame"); f.classList.add("hit"); clearTimeout(sc.hitT); sc.hitT = setTimeout(() => f.classList.remove("hit"), 900);
   try { navigator.vibrate && navigator.vibrate(30); } catch(e){}
-  scMsg(sc.auto ? `Added ${c.name}. Show the next card…` : `Found ${c.name}. Tap Add (again for more copies), or show the next card.`);
+  scMsg(again ? `${c.name} again: tap Add Another Copy if it's a second copy.` : sc.auto ? `Added ${c.name}. Show the next card…` : `Found ${c.name}. Tap Add (again for more copies), or show the next card.`);
   scDraw(); $("sc-res").hidden = false;
+  if (again){ sc.addN = 1; $("sc-add").textContent = "＋ Add Another Copy"; }
 }
 function scDraw(){
   const c = sc.card, list = c.token ? [c] : [...(groups[norm(c.name)] || [c])].sort((a, b) => scRank(a) - scRank(b)), u = imgURL(c, 200);
@@ -2177,7 +2191,7 @@ function scDone(auto){
 // takes back the last card the scanner added (from the collection and This Pack)
 function scUndo(){
   const c = sc.last, i = c ? pack.lastIndexOf(c.id) : -1; if (i < 0) return;
-  pack.splice(i, 1); LS.set("rb-pack", pack); adjust(c.id, -1); renderPack(); sc.n--; sc.addN = Math.max(0, sc.addN - 1);
+  pack.splice(i, 1); LS.set("rb-pack", pack); adjust(c.id, -1); renderPack(); sc.n--; sc.addN = Math.max(0, sc.addN - 1); sc.lastAuto = "";
   if (!sc.addN || sc.card !== c){ sc.last = null; $("sc-done").innerHTML = `<span>Took back <b>${esc(c.name)}</b> · you have ${counts[c.id] || 0}</span>`; $("sc-add").textContent = "＋ Add to Collection"; }
   else scDone();
   if (sc.card) scDraw();
@@ -2199,7 +2213,7 @@ $("sc-skip").addEventListener("click", () => {
 });
 $("sc-done").addEventListener("click", e => { if (e.target.id === "sc-undo") scUndo(); });
 $("sc-auto").checked = sc.auto = !!LS.get("rb-scan-auto");
-$("sc-auto").addEventListener("change", e => { sc.auto = e.target.checked; LS.set("rb-scan-auto", sc.auto); if (!sc.card) scMsg(scLooking()); });
+$("sc-auto").addEventListener("change", e => { sc.auto = e.target.checked; sc.lastAuto = ""; LS.set("rb-scan-auto", sc.auto); if (!sc.card) scMsg(scLooking()); });
 addEventListener("resize", () => { if ($("sc-dlg").open) scSize(); });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden || !$("sc-dlg").open) return;
@@ -2216,7 +2230,7 @@ $("sc-file").addEventListener("change", async e => {
     scCan.width = Math.round(img.naturalWidth * s); scCan.height = Math.round(img.naturalHeight * s);
     scCan.getContext("2d").drawImage(img, 0, 0, scCan.width, scCan.height); URL.revokeObjectURL(url);
     const c = await scLook(await scLoad()); sc.photo = false; sc.paused = false;
-    if (c){ sc.skip = ""; sc.inView = ""; scSaw(c); }
+    if (c){ sc.skip = ""; sc.inView = ""; sc.run = {k: norm(c.name)}; scSaw(c); }   // a photo is read once
     else scMsg("Couldn't read that card. Take the photo closer, with the card filling the picture, in good light.");
     sc.t = setTimeout(scTick, 2500);
   } catch(err){ sc.photo = false; sc.paused = false; scMsg("Couldn't read that photo. Try again, or type the card's name in the box under the scanner."); sc.t = setTimeout(scTick, 2500); }

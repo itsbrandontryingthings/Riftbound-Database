@@ -10,6 +10,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.abspath(os.pat
 N = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 16
 NB = 8                                            # battlefields, read with the sideways frame
 NR = 8                                            # runes ("VEN • R02", no set size)
+NM = 10                                           # cards that mention runes in their rules text
 RC = "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/"
 
 def cards():
@@ -33,12 +34,17 @@ async def main():
     rnd = random.Random(7); ALL = cards(); C = [c for c in ALL if c.get("img") and not c.get("token")]
     pick = rnd.sample([c for c in C if c["type"] not in ("Battlefield", "Rune")], N) + rnd.sample([c for c in C if c["type"] == "Battlefield"], NB)
     pick += random.Random(3).sample([c for c in C if c["type"] == "Rune"], NR)
+    # cards whose rules text mentions runes ("channel 1 rune"): must never come up as a rune card
+    t = open(os.path.join(ROOT, "text.js"), encoding="utf-8").read(); TX = json.loads(re.search(r"RB_TEXT\s*=\s*(\{.*\})", t, re.S).group(1).rstrip(";"))["n"]
+    nk = lambda s: re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
+    ment = [c for c in C if c["type"] != "Rune" and re.search(r"\brunes?\b", (TX.get(nk(c["name"])) or [""] * 4)[3] or "", re.I)]
+    ment = random.Random(5).sample(ment, NM); MENT = {c["id"] for c in ment}; pick += ment
     tmp = tempfile.mkdtemp(); files = []
     for c in pick:
         raw = urllib.request.urlopen(f"{RC}{c['img']}?accountingTag=RB&fm=png&w=744", timeout=30).read()
         p = os.path.join(tmp, c["id"].replace("*", "s") + ".jpg"); open(p, "wb").write(photo(Image.open(io.BytesIO(raw)), rnd)); files.append((c, p))
     srv = subprocess.Popen([sys.executable, "-m", "http.server", "8766"], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(1)
-    name_ok = print_ok = bf_ok = ru_ok = ru_pr = 0
+    name_ok = print_ok = bf_ok = ru_ok = ru_pr = phantom = 0
     try:
         async with async_playwright() as pw:
             b = await pw.chromium.launch(); pg = await b.new_page(viewport={"width": 390, "height": 844}); errs = []
@@ -59,7 +65,8 @@ async def main():
                 ms = await pg.evaluate("() => Math.round(performance.now() - window.__t0)")
                 got = await pg.evaluate("() => document.getElementById('sc-res').hidden ? '' : document.querySelector('.sc-p[aria-pressed=true]')?.dataset.id || document.getElementById('sc-name').textContent")
                 gc = next((x for x in ALL if x["id"] == got), None); nm = gc and gc["name"] == c["name"]; pr = got == c["id"]
-                if c["type"] == "Battlefield": bf_ok += bool(nm)
+                if c["id"] in MENT: phantom += bool(gc and gc["type"] == "Rune")
+                elif c["type"] == "Battlefield": bf_ok += bool(nm)
                 elif c["type"] == "Rune": ru_ok += bool(nm); ru_pr += bool(pr)
                 else: name_ok += bool(nm); print_ok += bool(pr)
                 print(f"{'OK ' if pr else 'name' if nm else 'MISS'}  {c['id']:<16} {c['name'][:34]:<34} -> {got or '(nothing)'}  {ms} ms")
@@ -79,8 +86,10 @@ async def main():
             # live camera: Chromium's fake camera plays a phone-like photo; a card, then a battlefield with ▭ Battlefield on
             async def live(c, path, wide, auto=False):
                 mj = os.path.join(tmp, "camera.mjpeg"); im = Image.open(path).resize((720, 960))
+                # with Auto-add, the picture keeps going blurry for a moment (like a phone refocusing), the card never leaves
+                frames = [im] * 10 if not auto else ([im] * 45 + [im.filter(ImageFilter.GaussianBlur(14))] * 150) * 2
                 with open(mj, "wb") as f:
-                    for _ in range(10): b2 = io.BytesIO(); im.save(b2, "JPEG", quality=85); f.write(b2.getvalue())
+                    for fr in frames: b2 = io.BytesIO(); fr.save(b2, "JPEG", quality=85); f.write(b2.getvalue())
                 b = await pw.chromium.launch(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", f"--use-file-for-fake-video-capture={mj}"])
                 ctx = await b.new_context(viewport={"width": 390, "height": 844}, permissions=["camera"]); pg = await ctx.new_page()
                 pg.on("pageerror", lambda e: errs.append(str(e))); await pg.route("**/*", h)
@@ -93,8 +102,8 @@ async def main():
                     cam = await pg.text_content("#sc-name")
                     if auto:                           # added once, and not again while the card stays in view
                         await pg.wait_for_timeout(500); n1 = await pg.evaluate("() => JSON.parse(localStorage.getItem('rb-pack') || '[]').length")
-                        await pg.wait_for_timeout(8000); n2 = await pg.evaluate("() => JSON.parse(localStorage.getItem('rb-pack') || '[]').length")
-                        print(f"auto-add: {n1} added, {n2} after 8 more seconds in view")
+                        await pg.wait_for_timeout(20000); n2 = await pg.evaluate("() => JSON.parse(localStorage.getItem('rb-pack') || '[]').length")
+                        print(f"auto-add: {n1} added, {n2} after 20 more seconds in view (going blurry now and then)")
                         if not (n1 == 1 and n2 == 1): cam = f"auto-add added {n2}"
                 except Exception: cam = "(nothing found)"
                 await pg.screenshot(path=os.path.join(tmp, f"scanner_camera{'_wide' if wide else ''}.png"))
@@ -104,8 +113,8 @@ async def main():
                 await b.close(); return ok and off
             cam_ok = await live(*files[1], False, auto=True) and spam_ok
             bfs = [f for f in files if f[0]["type"] == "Battlefield"]; cam_ok = await live(*bfs[0], True) and cam_ok
-            print(f"\nright card {name_ok}/{N}, right printing {print_ok}/{N}, battlefields {bf_ok}/{NB}, runes {ru_ok}/{NR} (right printing {ru_pr}/{NR}); errors: {errs or 'none'}; photos + screenshots in {tmp}")
-            return 1 if errs or name_ok < N * 0.75 or bf_ok < NB * 0.75 or ru_ok < NR * 0.75 or not cam_ok else 0
+            print(f"\nright card {name_ok}/{N}, right printing {print_ok}/{N}, battlefields {bf_ok}/{NB}, runes {ru_ok}/{NR} (right printing {ru_pr}/{NR}), phantom runes {phantom}/{NM}; errors: {errs or 'none'}; photos + screenshots in {tmp}")
+            return 1 if errs or name_ok < N * 0.75 or bf_ok < NB * 0.75 or ru_ok < NR * 0.75 or phantom or not cam_ok else 0
     finally:
         srv.terminate()
 if __name__ == "__main__": sys.exit(asyncio.run(main()))
