@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 build/out/
 build/tests/ph.png
+build/tests/live_*.png
