@@ -8,9 +8,11 @@ jsdelivr the first time the scanner opens, about 7 MB, then cached; no picture l
 - its collector line ("VEN • 039/166 • EN"): set code + number (+ a/* for alt art/signature) + set size (`scCol`).
 The name picks the card; the collector line picks the printing when it was read, otherwise the printing comes from the
 "Which set are you opening?" menu, then the regular printing of the newest set (`scPrint`). The match shows with its
-picture, price and "you have N"; other printings of it are chips to switch to. "＋ Add to Collection" adds it to the
-collection and This Pack (the same as typing it in); "Not This Card" goes back to scanning. After adding, the same card
-is ignored until another card (or two empty frames) shows, and "+1 Another Copy" adds a duplicate. "▭ Battlefield"
+picture, price and "you have N"; other printings of it are chips to switch to. Scanning never stops: each card that comes into view replaces
+the shown one; the same card staying in view changes nothing, and counts as new once it has left the frame (2 empty
+looks). "＋ Add to Collection" adds it to the collection and This Pack (the same as typing it in), and every further tap
+adds another copy; "Undo" takes back the last one. "Not This Card" hides it and ignores that name until something
+else shows. Auto-add (`#sc-auto`, remembered in rb-scan-auto) adds each new card as soon as it's found. "▭ Battlefield"
 switches to a sideways frame for battlefields (and hints at it after a few empty looks). "Take a Photo Instead" reads a photo (for browsers without live camera access). Closing the scanner turns the camera off.
 Usage: patch_scan.py in.html out.html"""
 import sys
@@ -55,6 +57,8 @@ CSS = r"""
 .sc-btns .btn{padding:11px 14px;font-size:15px}
 .sc-done{margin:0;font-size:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .sc-done:empty{display:none}
+.sc-auto{color:var(--fg)}
+.sc-auto input{width:18px;height:18px}
 .sc-foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .sc-file{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 @media (max-width:640px){
@@ -81,7 +85,8 @@ rep('''          <ul class="sug" id="qa-sug" role="listbox" aria-label="Matching
           <div class="sc-btns"><button class="btn primary" id="sc-add" type="button">＋ Add to Collection</button><button class="btn" id="sc-skip" type="button">Not This Card</button></div>
         </div>
         <p class="sc-done" id="sc-done" aria-live="polite"></p>
-        <div class="sc-foot"><label class="btn" for="sc-file">Take a Photo Instead</label><input class="sc-file" type="file" id="sc-file" accept="image/*" capture="environment" tabindex="-1"><span class="meta">Hold one card flat inside the frame, in good light. Cards you add also show under This Pack.</span></div>
+        <label class="chk sc-auto"><input type="checkbox" id="sc-auto"> Auto-add: add each new card as soon as it's found</label>
+        <div class="sc-foot"><label class="btn" for="sc-file">Take a Photo Instead</label><input class="sc-file" type="file" id="sc-file" accept="image/*" capture="environment" tabindex="-1"><span class="meta">Hold one card flat inside the frame, in good light, then swap in the next; scanning never stops. Cards you add also show under This Pack.</span></div>
       </div></dialog>
 ''')
 
@@ -166,7 +171,23 @@ function scMatch(d){
   if (strong) return {c: strong.cards[0], sure: true};
   if (best && (best.solid || big)) return {c: scPrint(groups[best.k]), sure: best.solid && big};
   for (const cl of col){ const c = cl.cards.find(c => R.of(norm(c.name)) >= 0.34); if (c) return {c, sure: false}; }
-  return null;
+  return scRune(d);
+}
+// runes: only six names, often read with a letter off ("ury Rune"), and a collector line with no set size
+// ("VEN • R02", where 0/5/1 are often read as O/S/L). A domain word right before "rune" names it, in any confidence.
+const SC_DOMS = ["fury", "calm", "mind", "body", "chaos", "order"];
+function scRune(d){
+  const t = (d.words || []).map(x => scKey(norm(x.text).replace(/[^a-z0-9' ]/g, "")));
+  let dom = "";
+  for (let i = 1; i < t.length && !dom; i++) if (t[i] === "rune" || t[i] === "rue") dom = SC_DOMS.find(x => t[i-1] === x) || SC_DOMS.find(x => scLev(x, t[i-1], 1) <= 1) || "";
+  const key = c => c.type === "Rune" && (!dom || norm(c.name) === dom + " rune");
+  for (const m of (d.text || "").matchAll(/\b([A-Za-z]{3})\b[^A-Za-z0-9\n]{0,4}R ?([0-9OoSsLlIiZz]{2})\b/g)){
+    const set = m[1].toUpperCase(), n = +m[2].replace(/[Oo]/g, "0").replace(/[Ss]/g, "5").replace(/[LlIi]/g, "1").replace(/[Zz]/g, "2");
+    if (!SC_SETS.has(set) || !n) continue;
+    const c = scPrint(CARDS.filter(c => key(c) && c.set === set && c.num === n));
+    if (c) return {c, sure: true};
+  }
+  return dom && groups[dom + " rune"] ? {c: scPrint(groups[dom + " rune"]), sure: true} : null;
 }
 sc.fn = {scRead, scCol, scMatch};
 // white names on coloured banners read badly: a copy where white turns black and colours turn light
@@ -227,11 +248,9 @@ async function scTick(){
     const w = await scLoad();
     if (sc.paused || !sc.stream) return;
     scGrab(v);
-    const c = await scLook(w), k = c ? norm(c.name) : "";
+    const c = await scLook(w);
     if (sc.paused || !$("sc-dlg").open) return;
-    if (c && k === sc.skip){ sc.miss = 0; sc.empty = 0; }
-    else if (c){ sc.skip = ""; sc.empty = 0; scShow(c); return; }
-    else { if (sc.skip && ++sc.miss >= 2) sc.skip = ""; sc.empty = (sc.empty || 0) + 1; scMsg(scLooking()); }
+    scSaw(c);
   } catch(e){ scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."); return; }
   finally { sc.busy = false; }
   sc.t = setTimeout(scTick, 150);
@@ -252,15 +271,31 @@ function scStop(){
 }
 function scOpen(){
   const d = $("sc-dlg"); if (!d.open){ try { d.showModal(); } catch(e){ d.setAttribute("open", ""); } }
-  sc.paused = false; sc.skip = ""; sc.card = null; sc.empty = 0; $("sc-res").hidden = true; $("sc-frame").classList.remove("hit"); scSize();
+  sc.paused = false; sc.skip = ""; sc.inView = ""; sc.card = null; sc.empty = 0; sc.addN = 0; $("sc-res").hidden = true; $("sc-add").textContent = "＋ Add to Collection"; $("sc-frame").classList.remove("hit"); scSize();
   scMsg("Getting the card reader ready… (the first time downloads about 7 MB)");
   scLoad().then(() => { if (!sc.paused && !sc.card && sc.stream) scMsg(scLooking()); }).catch(() => scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."));
   scCamera();
 }
+// scanning never stops: a card that comes into view is shown (and added, with Auto-add on); the same card staying in
+// view changes nothing; it counts as new again once it has left the frame (2 empty looks). "Not This Card" ignores
+// that name until something else shows.
+function scSaw(c){
+  const k = c ? norm(c.name) : "";
+  if (!c){
+    if (++sc.empty >= 2){ sc.inView = ""; sc.skip = ""; }
+    if (!sc.card) scMsg(scLooking());
+    return;
+  }
+  sc.empty = 0;
+  if (k === sc.skip || k === sc.inView) return;
+  sc.skip = ""; sc.inView = k; scShow(c);
+  if (sc.auto){ scPut(sc.card); scDone(true); }
+}
 function scShow(c){
-  sc.paused = true; sc.card = c; clearTimeout(sc.t);
-  $("sc-frame").classList.add("hit"); try { navigator.vibrate && navigator.vibrate(30); } catch(e){}
-  scMsg("Found it! Check it's the right printing, then add it.");
+  sc.card = c; sc.addN = 0;
+  const f = $("sc-frame"); f.classList.add("hit"); clearTimeout(sc.hitT); sc.hitT = setTimeout(() => f.classList.remove("hit"), 900);
+  try { navigator.vibrate && navigator.vibrate(30); } catch(e){}
+  scMsg(sc.auto ? `Added ${c.name}. Show the next card…` : `Found ${c.name}. Tap Add (again for more copies), or show the next card.`);
   scDraw(); $("sc-res").hidden = false;
 }
 function scDraw(){
@@ -271,12 +306,20 @@ function scDraw(){
   $("sc-pick").hidden = list.length < 2;
   $("sc-pr").innerHTML = list.map(p => `<button type="button" class="sc-p" data-id="${esc(p.id)}" aria-pressed="${p.id === c.id}">${esc(scLabel(p))}${p.variant ? ` <small>${esc(p.variant)}</small>` : ""}</button>`).join("");
 }
-function scResume(){
-  sc.card = null; sc.paused = false; $("sc-res").hidden = true; $("sc-frame").classList.remove("hit");
-  scMsg(scLooking()); scTick();
+function scPut(c){ adjust(c.id, 1); pack.push(c.id); LS.set("rb-pack", pack); renderPack(); sc.n++; sc.addN++; sc.last = c; }
+function scDone(auto){
+  const c = sc.last; if (!c){ $("sc-done").innerHTML = ""; return; }
+  $("sc-done").innerHTML = `<span>✓ ${auto ? "Auto-added" : "Added"} <b>${esc(c.name)}</b> (${esc(scLabel(c))}${c.variant ? `, ${esc(c.variant)}` : ""})${sc.addN > 1 ? ` ×${sc.addN}` : ""} · you have ${counts[c.id] || 0} · ${sc.n} added</span><button class="btn" id="sc-undo" type="button">Undo</button>`;
+  $("sc-add").textContent = sc.addN ? "＋ Add Another Copy" : "＋ Add to Collection";
 }
-function scPut(c){ adjust(c.id, 1); pack.push(c.id); LS.set("rb-pack", pack); renderPack(); sc.n++; sc.last = c; }
-function scDone(){ const c = sc.last; $("sc-done").innerHTML = `<span>✓ Added <b>${esc(c.name)}</b> (${esc(scLabel(c))}${c.variant ? `, ${esc(c.variant)}` : ""}) · you have ${counts[c.id] || 0} · ${sc.n} added</span><button class="btn" id="sc-again" type="button">+1 Another Copy</button>`; }
+// takes back the last card the scanner added (from the collection and This Pack)
+function scUndo(){
+  const c = sc.last, i = c ? pack.lastIndexOf(c.id) : -1; if (i < 0) return;
+  pack.splice(i, 1); LS.set("rb-pack", pack); adjust(c.id, -1); renderPack(); sc.n--; sc.addN = Math.max(0, sc.addN - 1);
+  if (!sc.addN || sc.card !== c){ sc.last = null; $("sc-done").innerHTML = `<span>Took back <b>${esc(c.name)}</b> · you have ${counts[c.id] || 0}</span>`; $("sc-add").textContent = "＋ Add to Collection"; }
+  else scDone();
+  if (sc.card) scDraw();
+}
 $("sc-open").addEventListener("click", scOpen);
 $("sc-wide").addEventListener("click", () => {
   sc.wide = !sc.wide; sc.empty = 0; $("sc-wide").setAttribute("aria-pressed", sc.wide); scSize();
@@ -285,14 +328,21 @@ $("sc-wide").addEventListener("click", () => {
 $("sc-close").addEventListener("click", () => $("sc-dlg").close());
 $("sc-dlg").addEventListener("close", scStop);
 $("sc-pr").addEventListener("click", e => { const b = e.target.closest(".sc-p"); if (b && byId[b.dataset.id]){ sc.card = byId[b.dataset.id]; scDraw(); } });
-$("sc-add").addEventListener("click", () => { const c = sc.card; if (!c) return; scPut(c); scDone(); sc.skip = norm(c.name); sc.miss = 0; scResume(); });
-$("sc-skip").addEventListener("click", () => { if (sc.card) sc.skip = norm(sc.card.name); sc.miss = 0; scResume(); scMsg("Move the card a little, or type its name in the box under the scanner."); });
-$("sc-done").addEventListener("click", e => { if (e.target.id === "sc-again" && sc.last){ scPut(sc.last); scDone(); } });
+// every tap adds one more copy; scanning carries on meanwhile
+$("sc-add").addEventListener("click", () => { const c = sc.card; if (!c) return; if (sc.last !== c) sc.addN = 0; scPut(c); scDone(); scDraw(); });
+$("sc-skip").addEventListener("click", () => {
+  if (sc.card) sc.skip = norm(sc.card.name);
+  sc.card = null; sc.inView = ""; $("sc-res").hidden = true; $("sc-add").textContent = "＋ Add to Collection";
+  scMsg("Move the card a little, or type its name in the box under the scanner.");
+});
+$("sc-done").addEventListener("click", e => { if (e.target.id === "sc-undo") scUndo(); });
+$("sc-auto").checked = sc.auto = !!LS.get("rb-scan-auto");
+$("sc-auto").addEventListener("change", e => { sc.auto = e.target.checked; LS.set("rb-scan-auto", sc.auto); if (!sc.card) scMsg(scLooking()); });
 addEventListener("resize", () => { if ($("sc-dlg").open) scSize(); });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden || !$("sc-dlg").open) return;
   const t = sc.stream && sc.stream.getVideoTracks()[0];
-  if (sc.stream && (!t || t.readyState === "ended")){ scStop(); sc.paused = !!sc.card; scCamera(); } else scTick();
+  if (sc.stream && (!t || t.readyState === "ended")){ scStop(); sc.paused = false; scCamera(); } else scTick();
 });
 $("sc-file").addEventListener("change", async e => {
   const f = e.target.files[0]; e.target.value = ""; if (!f) return;
@@ -303,10 +353,11 @@ $("sc-file").addEventListener("change", async e => {
     const s = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
     scCan.width = Math.round(img.naturalWidth * s); scCan.height = Math.round(img.naturalHeight * s);
     scCan.getContext("2d").drawImage(img, 0, 0, scCan.width, scCan.height); URL.revokeObjectURL(url);
-    const c = await scLook(await scLoad()); sc.photo = false;
-    if (c){ sc.skip = ""; scShow(c); }
-    else { scMsg("Couldn't read that card. Take the photo closer, with the card filling the picture, in good light."); if (!sc.card){ sc.paused = false; setTimeout(scTick, 2500); } }
-  } catch(err){ sc.photo = false; scMsg("Couldn't read that photo. Try again, or type the card's name in the box under the scanner."); if (!sc.card){ sc.paused = false; scTick(); } }
+    const c = await scLook(await scLoad()); sc.photo = false; sc.paused = false;
+    if (c){ sc.skip = ""; sc.inView = ""; scSaw(c); }
+    else scMsg("Couldn't read that card. Take the photo closer, with the card filling the picture, in good light.");
+    sc.t = setTimeout(scTick, 2500);
+  } catch(err){ sc.photo = false; sc.paused = false; scMsg("Couldn't read that photo. Try again, or type the card's name in the box under the scanner."); sc.t = setTimeout(scTick, 2500); }
 });
 
 // ---- deck checker"""
