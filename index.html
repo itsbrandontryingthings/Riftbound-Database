@@ -68,6 +68,8 @@ h1{font-family:var(--display);font-size:26px;margin:0;text-wrap:balance}
 .scd{display:grid;gap:10px}
 .sc-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .sc-top h2{font-family:var(--display);font-size:18px;margin:0}
+.sc-tb{display:flex;gap:8px}
+#sc-wide[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
 .sc-cam{position:relative;background:#000;border-radius:10px;overflow:hidden;height:min(56vh,520px)}
 .sc-cam video{width:100%;height:100%;object-fit:cover;display:block}
 .sc-frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:2px solid var(--accent);border-radius:12px;box-shadow:0 0 0 2000px rgb(0 0 0 / .42);transition:border-color .2s}
@@ -1016,7 +1018,7 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
       </div>
       <div class="scan-row"><button class="btn primary" id="sc-open" type="button">📷 Scan Cards</button><span class="meta">Or point your phone's camera at each card and tap to add it.</span></div>
       <dialog id="sc-dlg" aria-labelledby="sc-title"><div class="scd">
-        <div class="sc-top"><h2 id="sc-title">Scan Cards</h2><button class="btn" id="sc-close" type="button">Done</button></div>
+        <div class="sc-top"><h2 id="sc-title">Scan Cards</h2><span class="sc-tb"><button class="btn" id="sc-wide" type="button" aria-pressed="false">▭ Battlefield</button><button class="btn" id="sc-close" type="button">Done</button></span></div>
         <div class="sc-cam" id="sc-cam"><video id="sc-video" playsinline muted autoplay></video><div class="sc-frame" id="sc-frame" aria-hidden="true"></div><p class="sc-msg" id="sc-msg" aria-live="polite"></p></div>
         <div class="sc-res" id="sc-res" hidden>
           <img id="sc-img" alt="" referrerpolicy="no-referrer">
@@ -1992,13 +1994,13 @@ function scRead(words){
   return {list, of: k => score({k, ws: k.split(" ").map(scKey).filter(Boolean)}).score};
 }
 // collector lines like "VEN • 039/166 • EN" or "OGN 030a/298" (the slash is often missed): the printings they point
-// to; strong = the set code or the set size was read too. The signature "*" is often read as "%".
+// to; strong = the set code or the set size was read too. The signature "*" is often read as "%", the slash as f/l/I.
 function scCol(txt){
   const out = [];
-  for (const m of txt.matchAll(/(?:\b([A-Za-z]{2,4})\b[^A-Za-z0-9\n]{0,4})?\b(\d{1,3}) ?([a-z*%#]?) ?([\/|]| ) ?(\d{2,3})\b/g)){
+  for (const m of txt.matchAll(/(?:\b([A-Za-z]{2,4})\b[^A-Za-z0-9\n]{0,4})?\b(\d{1,3}) ?([ab*%#]?) ?([\/|fIlj]| ) ?(\d{2,3})\b/g)){
     const set = (m[1] || "").toUpperCase(), sure = SC_SETS.has(set), num = +m[2], suf = (m[3] || "").replace(/[%#]/, "*"), tot = m[5];
     if (m[4] === " " && !sure) continue;         // "115 221" counts only right after a set code
-    if (num === 0) continue;
+    if (num === 0 || m[2].length < 3) continue;  // numbers are printed with 3 digits ("039"); fewer = one was lost
     const cards = CARDS.filter(c => {
       if (c.num !== num || (sure && c.set !== set)) return false;
       const p = c.id.replace(/~.*$/, "").match(/^[a-z]+-(\d+[a-z*]*)-(\d+)$/);
@@ -2031,8 +2033,8 @@ function scMatch(d){
   return null;
 }
 sc.fn = {scRead, scCol, scMatch};
-// white names on coloured banners read badly, so when the first look isn't sure, a second look at a copy where
-// white turns black and colours turn light (255 minus the darkest channel)
+// white names on coloured banners read badly: a copy where white turns black and colours turn light
+// (255 minus the darkest channel)
 const scFlip = document.createElement("canvas");
 function scFlipped(){
   scFlip.width = scCan.width; scFlip.height = scCan.height;
@@ -2041,13 +2043,21 @@ function scFlipped(){
   for (let i = 0; i < p.length; i += 4){ const v = 255 - Math.min(p[i], p[i+1], p[i+2]); p[i] = p[i+1] = p[i+2] = v; }
   x.putImageData(im, 0, 0); return scFlip;
 }
+// up to three looks, until one is sure: as is; with light/dark judged area by area instead of over the whole picture
+// (catches names on grey banners and small collector lines, e.g. battlefields); the colour-flipped copy.
+// Each look adds its words to the earlier ones.
+const SC_LOOKS = [["0", false], ["1", false], ["0", true]];
 async function scLook(w){
-  const a = (await w.recognize(scCan)).data, m = scMatch(a);
-  sc.how = m ? (m.sure ? "first look" : "first look, not sure") : "";
-  if (m && m.sure) return m.c;
-  if (sc.paused && !sc.photo) return null;
-  const b = (await w.recognize(scFlipped())).data, m2 = scMatch({text: a.text + "\n" + b.text, words: [...(a.words || []), ...(b.words || [])]});
-  return m2 ? m2.c : null;
+  let all = {text: "", words: []}, m = null;
+  for (const [i, [tm, flip]] of SC_LOOKS.entries()){
+    if (i && sc.paused && !sc.photo) return null;
+    if (sc.tm !== tm){ await w.setParameters({thresholding_method: tm}); sc.tm = tm; }
+    const d = (await w.recognize(flip ? scFlipped() : scCan)).data;
+    all = {text: all.text + "\n" + d.text, words: [...all.words, ...(d.words || [])]}; m = scMatch(all);
+    sc.how = m ? `look ${i + 1}${m.sure ? "" : ", not sure"}` : "";
+    if (m && m.sure) return m.c;
+  }
+  return m ? m.c : null;
 }
 // the camera picture inside the frame (plus a little around it), the size the reader likes
 function scGrab(v){
@@ -2057,14 +2067,20 @@ function scGrab(v){
   let w = f.width / s * 1.12, hh = f.height / s * 1.12;
   let x = (f.left - box.left - ox) / s - f.width / s * 0.06, y = (f.top - box.top - oy) / s - f.height / s * 0.06;
   x = Math.max(0, x); y = Math.max(0, y); w = Math.min(vw - x, w); hh = Math.min(vh - y, hh);
-  scCan.width = 900; scCan.height = Math.round(hh * 900 / w);
+  const W = sc.wide ? 1250 : 900;
+  scCan.width = W; scCan.height = Math.round(hh * W / w);
   scCan.getContext("2d").drawImage(v, x, y, w, hh, 0, 0, scCan.width, scCan.height);
 }
+// a card-shaped frame, or a sideways one for battlefields (▭ Battlefield)
 function scSize(){
-  const b = $("sc-cam"), f = $("sc-frame"); let hh = b.clientHeight * 0.88, w = hh * 744 / 1039;
-  if (w > b.clientWidth * 0.8){ w = b.clientWidth * 0.8; hh = w * 1039 / 744; }
+  const b = $("sc-cam"), f = $("sc-frame"), r = sc.wide ? 1039 / 744 : 744 / 1039;
+  let hh = b.clientHeight * 0.88, w = hh * r;
+  if (w > b.clientWidth * (sc.wide ? 0.94 : 0.8)){ w = b.clientWidth * (sc.wide ? 0.94 : 0.8); hh = w / r; }
   f.style.width = w + "px"; f.style.height = hh + "px";
 }
+const scLooking = () => sc.wide ? "Looking for a battlefield… hold it sideways, filling the frame."
+  : sc.empty >= 4 ? "Scanning a battlefield? Tap ▭ Battlefield at the top."
+  : sc.n ? "Show the next card…" : "Looking for a card… hold it flat inside the frame, in good light.";
 async function scTick(){
   clearTimeout(sc.t);
   const v = $("sc-video");
@@ -2077,9 +2093,9 @@ async function scTick(){
     scGrab(v);
     const c = await scLook(w), k = c ? norm(c.name) : "";
     if (sc.paused || !$("sc-dlg").open) return;
-    if (c && k === sc.skip){ sc.miss = 0; }
-    else if (c){ sc.skip = ""; scShow(c); return; }
-    else { if (sc.skip && ++sc.miss >= 2) sc.skip = ""; scMsg(sc.n ? "Show the next card…" : "Looking for a card… hold it flat inside the frame, in good light."); }
+    if (c && k === sc.skip){ sc.miss = 0; sc.empty = 0; }
+    else if (c){ sc.skip = ""; sc.empty = 0; scShow(c); return; }
+    else { if (sc.skip && ++sc.miss >= 2) sc.skip = ""; sc.empty = (sc.empty || 0) + 1; scMsg(scLooking()); }
   } catch(e){ scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."); return; }
   finally { sc.busy = false; }
   sc.t = setTimeout(scTick, 150);
@@ -2100,9 +2116,9 @@ function scStop(){
 }
 function scOpen(){
   const d = $("sc-dlg"); if (!d.open){ try { d.showModal(); } catch(e){ d.setAttribute("open", ""); } }
-  sc.paused = false; sc.skip = ""; sc.card = null; $("sc-res").hidden = true; $("sc-frame").classList.remove("hit"); scSize();
+  sc.paused = false; sc.skip = ""; sc.card = null; sc.empty = 0; $("sc-res").hidden = true; $("sc-frame").classList.remove("hit"); scSize();
   scMsg("Getting the card reader ready… (the first time downloads about 7 MB)");
-  scLoad().then(() => { if (!sc.paused && !sc.card && sc.stream) scMsg("Looking for a card… hold it flat inside the frame, in good light."); }).catch(() => scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."));
+  scLoad().then(() => { if (!sc.paused && !sc.card && sc.stream) scMsg(scLooking()); }).catch(() => scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."));
   scCamera();
 }
 function scShow(c){
@@ -2121,11 +2137,15 @@ function scDraw(){
 }
 function scResume(){
   sc.card = null; sc.paused = false; $("sc-res").hidden = true; $("sc-frame").classList.remove("hit");
-  scMsg("Show the next card…"); scTick();
+  scMsg(scLooking()); scTick();
 }
 function scPut(c){ adjust(c.id, 1); pack.push(c.id); LS.set("rb-pack", pack); renderPack(); sc.n++; sc.last = c; }
 function scDone(){ const c = sc.last; $("sc-done").innerHTML = `<span>✓ Added <b>${esc(c.name)}</b> (${esc(scLabel(c))}${c.variant ? `, ${esc(c.variant)}` : ""}) · you have ${counts[c.id] || 0} · ${sc.n} added</span><button class="btn" id="sc-again" type="button">+1 Another Copy</button>`; }
 $("sc-open").addEventListener("click", scOpen);
+$("sc-wide").addEventListener("click", () => {
+  sc.wide = !sc.wide; sc.empty = 0; $("sc-wide").setAttribute("aria-pressed", sc.wide); scSize();
+  if (!sc.card) scMsg(scLooking());
+});
 $("sc-close").addEventListener("click", () => $("sc-dlg").close());
 $("sc-dlg").addEventListener("close", scStop);
 $("sc-pr").addEventListener("click", e => { const b = e.target.closest(".sc-p"); if (b && byId[b.dataset.id]){ sc.card = byId[b.dataset.id]; scDraw(); } });
