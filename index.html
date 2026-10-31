@@ -145,6 +145,10 @@ textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;pad
 a.view{color:var(--accent);text-decoration:none;font-size:12.5px;font-weight:600;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:4px;padding:0 7px;line-height:20px;white-space:nowrap}
 a.view:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .price .na{color:var(--muted);font-size:13px}
+.price small.pchg{font-weight:600;white-space:nowrap}
+.price small.pchg.up{color:var(--ok)}
+.price small.pchg.dn{color:#ef6b6b}
+#pchg-note:empty{display:none}
 .card.got .price b{color:var(--ok)}
 .bar{height:8px;background:var(--bg);border-radius:999px;border:1px solid var(--line);overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--ok);border-radius:999px}
@@ -985,13 +989,15 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
     <div class="frow">
       <div class="dom" id="doms" role="group" aria-label="Filter by domain"></div>
       <select id="cset" aria-label="Set"><option value="">All sets</option></select>
+      <select id="pchg" aria-label="Price change"><option value="">Any price change</option><option value="up7">Price going up · 7 days</option><option value="dn7">Price going down · 7 days</option><option value="up30">Price going up · 30 days</option><option value="dn30">Price going down · 30 days</option></select>
       <select id="type" aria-label="Card type"><option value="">All types</option></select>
       <select id="rarity" aria-label="Rarity"><option value="">All rarities</option></select>
       <select id="kw" aria-label="Keyword"><option value="">All keywords</option></select>
       <select id="tg" aria-label="Champion or region tag"><option value="">All tags</option></select>
-      <select id="sort" aria-label="Sort cards"><option value="set">Sort: set order</option><option value="price">Sort: price, high to low</option><option value="value">Sort: my value, high to low</option><option value="name">Sort: name</option></select>
+      <select id="sort" aria-label="Sort cards"><option value="set">Sort: set order</option><option value="price">Sort: price, high to low</option><option value="value">Sort: my value, high to low</option><option value="name">Sort: name</option><option value="gain7">Sort: biggest gains · 7 days</option><option value="drop7">Sort: biggest drops · 7 days</option><option value="gain30">Sort: biggest gains · 30 days</option><option value="drop30">Sort: biggest drops · 30 days</option></select>
       <label class="chk"><input type="checkbox" id="variants" checked> Show alt arts, overnumbered and promos</label>
       <label class="chk"><input type="checkbox" id="only"> Only alt arts, overnumbered and promos</label>
+      <span class="meta" id="pchg-note" aria-live="polite"></span>
       <button class="btn reset" id="freset" type="button" disabled>Reset filters</button>
     </div>
     <div class="frow rng-row"><div class="rng" data-g="c" data-k="e"><span class="rng-l">Energy <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest energy"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest energy"></div></div><div class="rng" data-g="c" data-k="m"><span class="rng-l">Might <b>Any</b></span><div class="rng-t"><i class="rng-fill"></i><input type="range" min="0" max="12" step="1" value="0" data-end="0" aria-label="Lowest might"><input type="range" min="0" max="12" step="1" value="12" data-end="1" aria-label="Highest might"></div></div></div>
@@ -1246,7 +1252,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 let counts = {};             // id -> copies owned
-let st = {set:"", q:"", show:"all", doms:new Set(), type:"", rarity:"", variants:true, only:false, sort:"set", cur:"both", limit:PAGE, view:"", page:0};
+let st = {set:"", q:"", show:"all", doms:new Set(), type:"", rarity:"", variants:true, only:false, pchg:"", sort:"set", cur:"both", limit:PAGE, view:"", page:0};
 const FX = (META.fx && META.fx.usdcad) || 0;
 const fUSD = new Intl.NumberFormat("en-US", {style:"currency", currency:"USD", currencyDisplay:"narrowSymbol"});
 const fCAD = new Intl.NumberFormat("en-CA", {style:"currency", currency:"CAD", currencyDisplay:"narrowSymbol"});
@@ -1424,7 +1430,7 @@ if (META.updated){
 if (META.updated) $("c-updated").textContent = `Card list updated ${longDate(META.updated)} · ${CARDS.length.toLocaleString()} printings across ${META.sets.length} sets` + (META.pricesUpdated ? ` · Prices are TCGplayer market prices (USD), updated ${longDate(META.pricesUpdated)}` : "") + (FX ? ` · CAD at the Bank of Canada rate of ${FX.toFixed(4)} (${longDate(META.fx.date)})` : "");
 
 function syncControls(){
-  $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("kw").value = st.kw || ""; $("tg").value = st.tg || ""; $("variants").checked = st.variants; $("only").checked = !!st.only; $("sort").value = st.sort || "set";
+  $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("kw").value = st.kw || ""; $("tg").value = st.tg || ""; $("variants").checked = st.variants; $("only").checked = !!st.only; $("pchg").value = st.pchg || ""; $("sort").value = st.sort || "set"; $("pchg-note").textContent = st.pchg ? "Cards worth US $0.50 or more, biggest change first." : "";
   ["all","have","need"].forEach(k => $("s-"+k).setAttribute("aria-pressed", st.show===k));
   ["both","cad","usd"].forEach(k => $("c-"+k).setAttribute("aria-pressed", st.cur===k));
   document.querySelectorAll("#doms button").forEach(b => b.setAttribute("aria-pressed", b.dataset.ban ? !!st.banned : st.doms.has(b.dataset.d)));
@@ -1435,6 +1441,7 @@ function matches(c, ignoreSet){
   if (!ignoreSet && st.set && c.set !== st.set) return false;
   if (!st.variants && isVariant(c)) return false;
   if (st.only && !isVariant(c)) return false;
+  if (st.pchg){ const v = chgOf(c, st.pchg.endsWith("30") ? 30 : 7); if (v == null || (c.price ?? 0) < 0.5 || (st.pchg.startsWith("up") ? v <= 0 : v >= 0)) return false; }
   if (!typeOK(c)) return false;
   if (st.rarity && c.rarity !== st.rarity) return false;
   if (st.kw && !kwOf(c).includes(st.kw)) return false;
@@ -1610,6 +1617,13 @@ function cardHTML(c){
       <button data-a="-1" aria-label="Remove one" ${n?"":"disabled"}>−</button><output>${n}</output><button data-a="1" aria-label="Add one">+</button>
     </div></div></div>`;
 }
+// market price change: 7 days, else 30 days (prices.js)
+const chgOf = (c, days) => c.px ? c.px[days === 30 ? 5 : 4] ?? null : null;
+function chgChip(c){
+  const d7 = chgOf(c, 7), v = d7 ?? chgOf(c, 30); if (v == null) return "";
+  const per = d7 != null ? "7d" : "30d";
+  return `<small class="pchg${v > 0 ? " up" : v < 0 ? " dn" : ""}" title="Market price change over the last ${d7 != null ? "7" : "30"} days">${v > 0 ? "↑" : v < 0 ? "↓" : "→"} ${Math.abs(v)}% · ${per}</small>`;
+}
 function priceHTML(c, n){
   if (c.price == null) return `<span class="price"><span class="na" title="No recent TCGplayer sales">No price</span></span>`;
   const one = FX && st.cur === "both" ? cad(c.price) : money(c.price);
@@ -1617,7 +1631,7 @@ function priceHTML(c, n){
   if (FX && st.cur === "both") lines.push(usd(c.price));
   if (n > 1) lines.push(`${n} × = ${FX && st.cur === "both" ? cad(n*c.price) : money(n*c.price)}`);
   else if (c.foil) lines.push("foil only");
-  return `<span class="price" title="TCGplayer market price${c.foil ? " (this printing only comes in foil)" : ""}"><b>${esc(one)}</b>${lines.map(l => `<small>${esc(l)}</small>`).join("")}</span>`;
+  return `<span class="price" title="TCGplayer market price${c.foil ? " (this printing only comes in foil)" : ""}"><b>${esc(one)}</b>${lines.map(l => `<small>${esc(l)}</small>`).join("")}${chgChip(c)}</span>`;
 }
 
 let gridCols = 0;
@@ -1805,6 +1819,10 @@ function renderList(){
   if (st.sort === "price") shown.sort((a,b) => (b.price ?? -1) - (a.price ?? -1));
   else if (st.sort === "value") shown.sort((a,b) => (counts[b.id]||0)*(b.price||0) - (counts[a.id]||0)*(a.price||0) || (b.price ?? -1) - (a.price ?? -1));
   else if (st.sort === "name") shown.sort((a,b) => a.name.localeCompare(b.name));
+  else if (/^(gain|drop)(7|30)$/.test(st.sort || "")){
+    const days = st.sort.endsWith("30") ? 30 : 7, up = st.sort.startsWith("gain"), key = c => { const v = chgOf(c, days); return v == null ? -Infinity : up ? v : -v; };
+    shown.sort((a,b) => key(b) - key(a) || (b.price ?? -1) - (a.price ?? -1));
+  }
   if (!["s","m","l"].includes(st.size)) st.size = "m";
   $("list").classList.toggle("grid", st.view === "grid"); document.body.classList.toggle("gridview", st.view === "grid");
   ["s","m","l"].forEach(z => { $("list").classList.toggle("sz-" + z, st.view === "grid" && st.size === z && z !== "s"); $("sz-" + z).setAttribute("aria-pressed", st.size === z); });
@@ -1820,7 +1838,7 @@ function renderList(){
     : `<div class="empty">${st.show==="have" && !Object.keys(counts).length ? "You haven't marked any cards yet. Switch to All and tap + on the cards you own." : "No cards match these filters. Try clearing the search or a filter."}</div>`;
   $("more").hidden = true; renderPager(pages);
   $("v-list").setAttribute("aria-pressed", st.view === "list"); $("v-grid").setAttribute("aria-pressed", st.view === "grid");
-  const nf = st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + (st.only ? 1 : 0);
+  const nf = st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + (st.only ? 1 : 0) + (st.pchg ? 1 : 0);
   $("fcount").textContent = nf ? nf : ""; syncReset();
   $("count").textContent = `${shown.length.toLocaleString()} card${shown.length===1?"":"s"}` + (st.set ? ` in ${setName[st.set]}` : "");
 }
@@ -1834,15 +1852,27 @@ $("list").addEventListener("click", e => {
 const setOpts = () => META.sets.filter(s => CARDS.some(c => c.set === s.code)).map(s => `<option value="${esc(s.code)}">${esc(s.name)}</option>`).join("");
 $("cset").insertAdjacentHTML("beforeend", setOpts()); $("cset").value = st.set || "";
 $("cset").addEventListener("change", e => { st.set = e.target.value; st.limit = PAGE; st.page = 0; render(); });
+// picking gains / drops also sorts by the biggest change; a period's options show once prices.js has changes for it
+$("pchg").addEventListener("change", e => {
+  st.pchg = e.target.value;
+  if (st.pchg) st.sort = (st.pchg.startsWith("up") ? "gain" : "drop") + (st.pchg.endsWith("30") ? "30" : "7");
+  else if (/^(gain|drop)/.test(st.sort || "")) st.sort = "set";
+  st.limit = PAGE; st.page = 0; syncControls(); render();
+});
+for (const days of [7, 30]){
+  const has = CARDS.some(c => chgOf(c, days) != null);
+  document.querySelectorAll(`#pchg option[value$="${days}"], #sort option[value$="${days}"]`).forEach(o => o.hidden = !has);
+}
+if (!CARDS.some(c => chgOf(c, 7) != null || chgOf(c, 30) != null)) $("pchg").hidden = true;
 $("sets").addEventListener("click", e => { const b = e.target.closest(".setbtn"); if (!b) return; st.set = b.dataset.set; st.limit = PAGE; st.page = 0; render(); });
 $("doms").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.ban){ st.banned = !st.banned; st.limit = PAGE; st.page = 0; syncControls(); render(); return; } const d = b.dataset.d; st.doms.has(d) ? st.doms.delete(d) : st.doms.add(d); st.limit = PAGE; st.page = 0; syncControls(); render(); });
 
 // ---- reset filters: search, set, domains, banned, type, rarity, keyword, tag, All/I have/Missing, alt arts
-function activeFilters(){ return (st.q ? 1 : 0) + (st.set ? 1 : 0) + st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + (st.only ? 1 : 0) + rngCount("c"); }
+function activeFilters(){ return (st.q ? 1 : 0) + (st.set ? 1 : 0) + st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + (st.only ? 1 : 0) + (st.pchg ? 1 : 0) + rngCount("c"); }
 function syncReset(){ const n = activeFilters(), b = $("freset"); if (!b) return; b.disabled = !n; b.textContent = n ? `Reset filters (${n})` : "Reset filters"; const q = $("fquick"); if (q) q.hidden = !n; }
 $("fquick").addEventListener("click", () => $("freset").click());
 $("freset").addEventListener("click", () => {
-  Object.assign(st, {q:"", set:"", doms:new Set(), banned:false, type:"", rarity:"", kw:"", tg:"", show:"all", variants:true, only:false, limit:PAGE, page:0});
+  Object.assign(st, {q:"", set:"", doms:new Set(), banned:false, type:"", rarity:"", kw:"", tg:"", show:"all", variants:true, only:false, pchg:"", sort: /^(gain|drop)/.test(st.sort || "") ? "set" : st.sort, limit:PAGE, page:0});
   rngReset("c"); syncControls(); render();
 });
 let qT; $("q").addEventListener("input", e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); st.limit = PAGE; st.page = 0; render(); }, 120); });
