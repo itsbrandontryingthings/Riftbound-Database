@@ -53,7 +53,7 @@ rep('''  const priceBox = `<div class="ibox"><div class="ih"><span>Market</span>
   const rows = px ? prow(px[0], px[1], "Regular") + prow(px[2], px[3], "Foil") : "";
   const priceBox = `<div class="ibox iprice"><div class="ih"><span>Market</span><span>TCGplayer</span></div>
       ${c.price != null ? `<div class="ip">${moneyHTML(c.price)}</div>${c.foil ? '<div class="meta">This printing only comes in foil</div>' : ""}` : '<div class="meta">No recent sales yet</div>'}
-      ${px && (px[4] != null || px[5] != null) ? `<div class="chgs">${chg(px[4], "7 days")}${chg(px[5], "30 days")}</div>` : ""}
+      ${px && (px[4] != null || px[5] != null) ? `<div class="chgs">${chg(px[4], `${P.d7 ?? 7} days`)}${chg(px[5], `${P.d30 ?? 30} days`)}</div>` : ""}
       ${rows ? `<div class="iprs"><div class="ipr h"><span></span><span>Market</span><span>Lowest listing</span></div>${rows}</div>` : ""}
       ${P && px ? `<div class="meta">Prices from ${esc(longDate(P.updated))} · updated daily</div>` : ""}
       <a class="ibuy" href="${tcgURL(c)}" target="_blank" rel="noopener">Listings &amp; Recent Sales on TCGplayer ↗</a></div>`;''')

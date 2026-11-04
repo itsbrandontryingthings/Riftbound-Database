@@ -1542,7 +1542,7 @@ function renderInfo(c){
   const rows = px ? prow(px[0], px[1], "Regular") + prow(px[2], px[3], "Foil") : "";
   const priceBox = `<div class="ibox iprice"><div class="ih"><span>Market</span><span>TCGplayer</span></div>
       ${c.price != null ? `<div class="ip">${moneyHTML(c.price)}</div>${c.foil ? '<div class="meta">This printing only comes in foil</div>' : ""}` : '<div class="meta">No recent sales yet</div>'}
-      ${px && (px[4] != null || px[5] != null) ? `<div class="chgs">${chg(px[4], "7 days")}${chg(px[5], "30 days")}</div>` : ""}
+      ${px && (px[4] != null || px[5] != null) ? `<div class="chgs">${chg(px[4], `${P.d7 ?? 7} days`)}${chg(px[5], `${P.d30 ?? 30} days`)}</div>` : ""}
       ${rows ? `<div class="iprs"><div class="ipr h"><span></span><span>Market</span><span>Lowest listing</span></div>${rows}</div>` : ""}
       ${P && px ? `<div class="meta">Prices from ${esc(longDate(P.updated))} · updated daily</div>` : ""}
       <a class="ibuy" href="${tcgURL(c)}" target="_blank" rel="noopener">Listings &amp; Recent Sales on TCGplayer ↗</a></div>`;
@@ -1619,10 +1619,13 @@ function cardHTML(c){
 }
 // market price change: 7 days, else 30 days (prices.js)
 const chgOf = (c, days) => c.px ? c.px[days === 30 ? 5 : 4] ?? null : null;
+// how many days each change really covers (fewer or more than 7 / 30 while the price history has gaps)
+const chgDays = days => (window.RB_PRICES || {})[days === 30 ? "d30" : "d7"] ?? days;
 function chgChip(c){
-  const d7 = chgOf(c, 7), v = d7 ?? chgOf(c, 30); if (v == null) return "";
-  const per = d7 != null ? "7d" : "30d";
-  return `<small class="pchg${v > 0 ? " up" : v < 0 ? " dn" : ""}" title="Market price change over the last ${d7 != null ? "7" : "30"} days">${v > 0 ? "↑" : v < 0 ? "↓" : "→"} ${Math.abs(v)}% · ${per}</small>`;
+  // the period being filtered or sorted by, else the short one
+  const lng = /30$/.test(st.pchg || "") || /30$/.test(st.sort || ""), first = lng ? 30 : 7, a = chgOf(c, first), other = 37 - first, v = a ?? chgOf(c, other); if (v == null) return "";
+  const per = chgDays(a != null ? first : other);
+  return `<small class="pchg${v > 0 ? " up" : v < 0 ? " dn" : ""}" title="Market price change over the last ${per} days">${v > 0 ? "↑" : v < 0 ? "↓" : "→"} ${Math.abs(v)}% · ${per}d</small>`;
 }
 function priceHTML(c, n){
   if (c.price == null) return `<span class="price"><span class="na" title="No recent TCGplayer sales">No price</span></span>`;
@@ -1861,7 +1864,7 @@ $("pchg").addEventListener("change", e => {
 });
 for (const days of [7, 30]){
   const has = CARDS.some(c => chgOf(c, days) != null);
-  document.querySelectorAll(`#pchg option[value$="${days}"], #sort option[value$="${days}"]`).forEach(o => o.hidden = !has);
+  document.querySelectorAll(`#pchg option[value$="${days}"], #sort option[value$="${days}"]`).forEach(o => { o.hidden = !has; o.textContent = o.textContent.replace(/\d+ days$/, chgDays(days) + " days"); });
 }
 if (!CARDS.some(c => chgOf(c, 7) != null || chgOf(c, 30) != null)) $("pchg").hidden = true;
 $("sets").addEventListener("click", e => { const b = e.target.closest(".setbtn"); if (!b) return; st.set = b.dataset.set; st.limit = PAGE; st.page = 0; render(); });

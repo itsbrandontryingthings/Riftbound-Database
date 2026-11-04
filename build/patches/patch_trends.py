@@ -30,10 +30,13 @@ rep('''  return `<span class="price" title="TCGplayer market price${c.foil ? " (
     '''  return `<span class="price" title="TCGplayer market price${c.foil ? " (this printing only comes in foil)" : ""}"><b>${esc(one)}</b>${lines.map(l => `<small>${esc(l)}</small>`).join("")}${chgChip(c)}</span>`;''')
 rep('function priceHTML(c, n){', '''// market price change: 7 days, else 30 days (prices.js)
 const chgOf = (c, days) => c.px ? c.px[days === 30 ? 5 : 4] ?? null : null;
+// how many days each change really covers (fewer or more than 7 / 30 while the price history has gaps)
+const chgDays = days => (window.RB_PRICES || {})[days === 30 ? "d30" : "d7"] ?? days;
 function chgChip(c){
-  const d7 = chgOf(c, 7), v = d7 ?? chgOf(c, 30); if (v == null) return "";
-  const per = d7 != null ? "7d" : "30d";
-  return `<small class="pchg${v > 0 ? " up" : v < 0 ? " dn" : ""}" title="Market price change over the last ${d7 != null ? "7" : "30"} days">${v > 0 ? "↑" : v < 0 ? "↓" : "→"} ${Math.abs(v)}% · ${per}</small>`;
+  // the period being filtered or sorted by, else the short one
+  const lng = /30$/.test(st.pchg || "") || /30$/.test(st.sort || ""), first = lng ? 30 : 7, a = chgOf(c, first), other = 37 - first, v = a ?? chgOf(c, other); if (v == null) return "";
+  const per = chgDays(a != null ? first : other);
+  return `<small class="pchg${v > 0 ? " up" : v < 0 ? " dn" : ""}" title="Market price change over the last ${per} days">${v > 0 ? "↑" : v < 0 ? "↓" : "→"} ${Math.abs(v)}% · ${per}d</small>`;
 }
 function priceHTML(c, n){''')
 
@@ -59,7 +62,7 @@ $("pchg").addEventListener("change", e => {
 });
 for (const days of [7, 30]){
   const has = CARDS.some(c => chgOf(c, days) != null);
-  document.querySelectorAll(`#pchg option[value$="${days}"], #sort option[value$="${days}"]`).forEach(o => o.hidden = !has);
+  document.querySelectorAll(`#pchg option[value$="${days}"], #sort option[value$="${days}"]`).forEach(o => { o.hidden = !has; o.textContent = o.textContent.replace(/\\d+ days$/, chgDays(days) + " days"); });
 }
 if (!CARDS.some(c => chgOf(c, 7) != null || chgOf(c, 30) != null)) $("pchg").hidden = true;''')
 rep('<label class="chk"><input type="checkbox" id="only"> Only alt arts, overnumbered and promos</label>',
