@@ -16,5 +16,5 @@ for today in days:
     age = snapshot(seen, today, *PERIODS[0])[0]
     print(today, "short change covers", age, "days; long", snapshot(seen, today, *PERIODS[1])[0])
     if age is None: bad.append(today)
-print("FAILED on", bad if bad else "no days")
+print("FAILED on " + str(bad) if bad else "OK: a price change to show every day")
 sys.exit(1 if bad else 0)

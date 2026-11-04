@@ -5,6 +5,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "47 15 * * 1"
+  push:
+    branches: [main]
+    paths: [tools/fetch_cards.py, .github/workflows/cards.yml]
 permissions:
   contents: write
 concurrency: { group: prices, cancel-in-progress: false }
