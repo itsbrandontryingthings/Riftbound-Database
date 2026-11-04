@@ -191,7 +191,17 @@ def add_extras(cards, tcg_dir):
                  domains=[d for d in doms.split(";") if d and d != "None"], tcg=pid)
         cards[c["id"]] = c
 
+def load_sets(tcg_dir):
+    """Sets found on Riftcodex after this list was written (tcg/sets.txt: code|name|release, added by tools/fetch_cards.py)"""
+    f = os.path.join(tcg_dir, "sets.txt")
+    if not os.path.exists(f): return
+    for line in open(f, encoding="utf-8"):
+        p = [x.strip() for x in line.split("|")]
+        if len(p) == 3 and p[0] not in SET_ORDER: SETS.insert(0, tuple(p))
+    SET_ORDER.update({c: i for i, (c, _, _) in enumerate(SETS)})
+
 def finish(cards, tcg_dir, out):
+    load_sets(tcg_dir)
     # Prices: "productId:price" (suffix f = only a foil printing exists, price is the foil price)
     prices = {}
     pf = os.path.join(tcg_dir, "prices.txt")

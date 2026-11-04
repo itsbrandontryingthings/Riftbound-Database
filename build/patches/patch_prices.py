@@ -29,7 +29,7 @@ rep('<script src="cards.js"></script>', '''<script src="cards.js"></script>
     const v = c.foil ? (p[2] ?? p[3] ?? p[0] ?? p[1]) : (p[0] ?? p[1] ?? p[2] ?? p[3]);
     if (v != null) c.price = v;
   }
-  if (window.RB_META) window.RB_META.pricesUpdated = P.updated;
+  if (window.RB_META){ window.RB_META.pricesUpdated = P.updated; if (P.fx) window.RB_META.fx = P.fx; }
 })();</script>''')
 
 rep('#lb .ip{font-family:var(--display);font-size:22px;font-weight:700}', '''#lb .ibox.iprice{grid-column:1/-1}

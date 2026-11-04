@@ -10,14 +10,14 @@ and keep the site working on phones.
 | Path | What it is |
 |---|---|
 | `index.html` | The whole website (one file: HTML + CSS + JS). **Generated** — edit the patch scripts, not this file directly (see Build). |
-| `cards.js` | Card data: `window.RB_META` (sets, dates, fx, counts) and `window.RB_CARDS` (one object per printing: id, set, num, name, type, rarity, domains, variant, tcg id, price in USD, foil, img/imgTcg/imgBase, ban/banSince, token…). Refreshed weekly by a scheduled task (see below). |
+| `cards.js` | Card data: `window.RB_META` (sets, dates, fx, counts) and `window.RB_CARDS` (one object per printing: id, set, num, name, type, rarity, domains, variant, tcg id, price in USD, foil, img/imgTcg/imgBase, ban/banSince, token…). Rebuilt every Monday by `tools/fetch_cards.py` (see below). |
 | `text.js` | Rules text, stats, flavour and tags: `window.RB_TEXT = {updated, n: {normalized name: [energy, might, power, text, flavour, tags, supertype]}, a: {riftbound_id or "tcg:<id>": artist}}`. Built by `tools/fetch_text.py` in GitHub Actions (`.github/workflows/card-text.yml`, Mondays + on change), which commits it. Flavour is cleaned there (Riftcodex drops opening quotes, leaves `<em?` junk); a speaker is stored as `"\n— Name"`. |
-| `prices.js` | Daily prices: `window.RB_PRICES = {updated, d7, d30, p: {tcg productId: [market, lowest, foil market, foil lowest, 7-day %, 30-day %]}}` (USD, trailing nulls left off). Made by `tools/fetch_prices.py` in GitHub Actions (`.github/workflows/prices.yml`, every day 21:40 UTC after tcgcsv.com updates, or by hand), which commits it with `build/prices/history.json` (~40 days of each card's main price). The history was seeded from the Oct 12 prices in cards.js (+ Radiance's Oct 23 release prices), because tcgcsv's archive downloads are refused (403). Changes compare with the saved day closest to 7 / 30 days ago (`PERIODS`), and `d7` / `d30` say how many days that really was; the site shows that number, so "4d" is right while the history is short. Never narrow those windows: on Nov 2-3, 2026 a +-2 day window hit a gap in the history and blanked every chip and the Price change filter. `build/tests/prices_test.py` checks this. |
+| `prices.js` | Daily prices: `window.RB_PRICES = {updated, d7, d30, fx, p: {tcg productId: [market, lowest, foil market, foil lowest, 7-day %, 30-day %]}}` (USD, trailing nulls left off). Made by `tools/fetch_prices.py` in GitHub Actions (`.github/workflows/prices.yml`, every day 21:40 UTC after tcgcsv.com updates, or by hand), which commits it with `build/prices/history.json` (~40 days of each card's main price). The history was seeded from the Oct 12 prices in cards.js (+ Radiance's Oct 23 release prices), because tcgcsv's archive downloads are refused (403). Changes compare with the saved day closest to 7 / 30 days ago (`PERIODS`), and `d7` / `d30` say how many days that really was; the site shows that number, so "4d" is right while the history is short. Never narrow those windows: on Nov 2-3, 2026 a +-2 day window hit a gap in the history and blanked every chip and the Price change filter. `build/tests/prices_test.py` checks this. |
 | `404.html` | Hand-written "Page Not Found" page (not generated). With it, Cloudflare Pages answers unknown paths with a real 404 instead of serving `index.html` (its default when no 404.html exists), so bot/scanner probes (`/.env`, `/info.php`…) show up as 404s in analytics, separate from real visits. |
 | `functions/api/import.js` | Cloudflare Pages Function `GET /api/import?url=` — pulls a decklist from a deck page link (textarea/pre, embedded JSON like Piltover Archive, or "3 Card Name" lines). RiftDecks blocks servers (403), so the client tells people to use Export TXT instead. |
 | `build/patches/` | The build: `patch_*.py` scripts, each a string-replace transform that **asserts its anchor text exists** (fails loudly if an earlier change moved it). `build.py` makes `cards.js` from raw Riftcodex rows + `build/tcg/*`. |
 | `build/base/shared.html` | The original base page every website build starts from. |
-| `build/tcg/` | Inputs for `build.py`: `prices.txt` (`productId:price[f]`, f = foil-only), `fx.txt` (USD→CAD `rate|date`, Bank of Canada), `extras.txt` (TCGplayer-only printings), `ven_map.txt`, `images.txt` (Riftcodex image file per card), `tcg_photos.txt`, `bans.txt` (`name|std or 2v2|since`). The weekly task's working copies live in Brandon's claude.ai Project "Personal" under `claude/riftbound-collection/`; keep them in sync if you change one. |
+| `build/tcg/` | Inputs for `build.py`: `prices.txt` (`productId:price[f]`, f = foil-only), `fx.txt` (USD→CAD `rate|date`, Bank of Canada), `extras.txt` (TCGplayer-only printings), `ven_map.txt`, `images.txt` (Riftcodex image file per card), `tcg_photos.txt`, `bans.txt` (`name|std or 2v2|since`, edited by hand when the ban list changes). `sets.txt` (optional): sets found on Riftcodex that aren't in build.py's `SETS` yet. These repo copies are the only ones used now; the old copies in the claude.ai Project are out of date. |
 | `build/sql/` | Supabase SQL, run by Brandon in Supabase → SQL Editor: `supabase_setup.sql` (collections table), `supabase_sharing.sql` (shared_decks), `supabase_wishlist.sql` (wish column), `supabase_links.sql` (private share links), `supabase_offers.sql` (offers on shopping lists), `supabase_offer_threads.sql` (counter offers, trade cards, bad-word filter — see "Pending"), `supabase_offer_revise.sql` (revising an offer you made), `supabase_bad_words.sql` (stricter bad-word check). |
 | `build/tests/` | `smoke.py` (loads the built site with stand-in images + fake Supabase; checks no JS errors, filters, info sheet), `links_test.py` (end-to-end private links), `offers_withdraw_test.py` (make an offer, withdraw it, check it's gone for both people), `offers_live_test.py` (a new offer and a counter offer show up with the sound without a refresh, and the "tap to turn on sounds" note; ~1 min), `prices_test.py` (walks the real history dates forward: there must always be a price change to show), `scan_test.py` (card scanner: turns real card pictures into phone-like photos, checks the card it finds, then a live run with Chromium's fake camera; needs internet and Pillow; ~1 min; plus 8 battlefields, 8 runes, tapping Add 3 times + Undo, cards whose rules text mentions runes (must never come up as a rune), a live Auto-add run whose picture goes blurry for 5 s at a time (added once; the old version added 4) and a live battlefield run with ▭ Battlefield on; about 26 of 30 right cards and 7 of 8 battlefields and runes is normal (rune printings across sets look alike, so the printing is often another set's): full-art signatures and runes are the usual misses, and promo reprints (OPP/OGS) often come up as the other printing), `fake_supabase.js` (in-browser stand-in that enforces the same rules as the real database). |
 | `build/make.sh` | Rebuilds `index.html`; `--local` also builds the local Desktop copy. |
@@ -59,18 +59,22 @@ Brandon also keeps an accounts-free copy on his home PC: `C:\Users\brand\Desktop
 local pipeline: `patch_local → patch_bans → patch_mobile → patch_wish → patch_polish → patch_foil → patch_info → patch_filters → patch_special`) and copy the three
 files from `build/out/` into that folder. Personal decks are never part of this repo or the build.
 
-## Weekly refresh (already scheduled)
+## Weekly refresh
 
-The site header says so ("updated every Monday", last and next update, `#c-sched` in patch_marketplace); if the
-schedule changes, change that wording too.
-Since Oct 31, 2026 prices also come daily from prices.js (see the table above), which the site prefers; the header
-says "Prices are updated every day, the card list every Monday" (patch_prices). Note: the Monday Oct 26 run didn't update
-cards.js (still Oct 23 on Oct 31); check the scheduled task if the card list stays stale.
+The site header says so ("every day" for prices, "every Monday" for the card list, `#c-sched`); if the schedule changes,
+change that wording too.
 
-A Claude scheduled task, "Riftbound card list and prices refresh", runs Mondays 8:47am Pacific. It re-fetches the
-card list/images (Riftcodex), prices (tcgcsv.com, TCGplayer category 89) and the exchange rate, rebuilds `cards.js`
-with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` here. It uses the Project copies of
-`build.py` and `tcg/*`. The GitHub Action separately refreshes `text.js` every Monday.
+- **Card list:** `.github/workflows/cards.yml` runs `tools/fetch_cards.py` Mondays 15:47 UTC (or by hand in GitHub Actions). It reads
+  Riftcodex directly, adds new pictures and sets, and rebuilds `cards.js` with `build/patches/build.py` + `build/tcg/*`, then commits
+  `cards.js` and `build/tcg`. It refuses to publish (the run fails, GitHub emails the owner) if printings, prices or pictures drop by more
+  than 20 or any card id would vanish, because collections are saved by id. Printings keep their id: when Riftcodex lists a
+  card that has a temporary `tcg-<product>` id, `keep_ids` keeps the old id. `python tools/fetch_cards.py --dry-run` shows what would change.
+- **Prices and the USD to CAD rate:** daily, see `prices.js` above. `prices.js` wins over the prices and rate in `cards.js`.
+- **Card text:** `.github/workflows/card-text.yml`, Mondays.
+- **The old Claude routine** "Riftbound card list and prices refresh" (trig_01Kdi3c65gYb2ujeG5NVAYMi) was turned off on Nov 3, 2026.
+  It stalled on every run at a permission prompt no one could answer, never updated the website, and used Project copies of the
+  data without Radiance. It was also the only thing refreshing the claude.ai pages (main https://claude.ai/artifact/6R52TAZtJ26rkoqUJUXuJV,
+  shared https://claude.ai/artifact/P9zixAP5qzBUF4oFEkJ7iY), so those stay as they are.
 
 ## Pending / known gaps
 
@@ -84,9 +88,8 @@ with `build.py`, publishes two claude.ai artifacts and pushes only `cards.js` he
   Champion/Signature flags), prices appended to `prices.txt`, photos in `tcg_photos.txt`, and `cards.js` was made with
   `build.py --extras-only build/tcg cards.js cards.js` (adds extras to an existing cards.js; no raw rows needed). `text.js`
   takes text from TCGplayer for any set Riftcodex doesn't list (`tcg_fallback` in `fetch_text.py`; plain words, no icons).
-  **The weekly task uses the Project copies of `build.py`, `extras.txt` and `tcg_photos.txt`: they must get these changes
-  (RAD in `SETS`, the 7th-field code, the RAD rows), or the Monday refresh drops Radiance.** Once Riftcodex has RAD, its
-  rows win (extras with a known product id are skipped). 10 Signature printings have no picture anywhere yet.
+  Once Riftcodex has RAD, its
+  rows win (extras with a known product id are skipped) and the printings keep their `tcg-` ids. 10 Signature printings have no picture anywhere yet.
 - 26 printings have no text in `text.js` (Kennen – Heart of the Tempest, double-sided tokens like "Bird // Buff").
 - The site is tested with a fake Supabase; real-database behaviour should be checked after SQL changes
   (share a deck, open its link in a private window).

@@ -3,3 +3,5 @@ __pycache__/
 build/out/
 build/tests/ph.png
 build/tests/live_*.png
+build/raw/
+build/cards.new.js

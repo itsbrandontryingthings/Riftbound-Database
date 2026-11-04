@@ -1,5 +1,5 @@
 name: Daily prices
-# Refreshes prices.js (TCGplayer market + lowest prices, regular and foil, and 7/30-day changes) from tcgcsv.com every
+# Refreshes prices.js (TCGplayer market + lowest prices, regular and foil, 7/30-day changes, USD->CAD rate) from tcgcsv.com every
 # day after it updates (~20:00 UTC), or when run by hand. Keeps the price history in build/prices/history.json.
 on:
   workflow_dispatch:
@@ -23,5 +23,5 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add prices.js build/prices/history.json
+          git add prices.js build/prices/history.json build/tcg/fx.txt
           git diff --cached --quiet || (git commit -m "Daily prices from TCGplayer (tcgcsv)" && git pull --rebase -q origin main && git push)

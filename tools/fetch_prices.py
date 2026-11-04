@@ -3,12 +3,13 @@
 
 Fetches every Riftbound product's TCGplayer prices from tcgcsv.com (category 89), keeps the main price of each card
 for the last ~40 days in build/prices/history.json, and writes prices.js:
-  window.RB_PRICES = {updated, d7, d30, p: {productId: [market, lowest, foilMarket, foilLowest, change7, change30]}}
+  window.RB_PRICES = {updated, d7, d30, fx: {usdcad, date}, p: {productId: [market, lowest, foilMarket, foilLowest, change7, change30]}}
 Prices are USD; a missing value is null (trailing nulls are left off). The main price is the regular printing's market
 price, or the foil one when only foil exists (the same as `price` in cards.js). change7 / change30 = % change of the
 main price since the saved day closest to 7 / 30 days ago; d7 / d30 say how many days ago that day really was, and the
 site shows that number. PERIODS sets how far off it may be, so a gap in the history (a missed run) shortens or lengthens
 a change instead of blanking it: a narrow window once blanked every change while the days around it were missing.
+fx is the Bank of Canada USD->CAD rate, also saved in build/tcg/fx.txt (kept as it was if the bank can't be reached).
 Only products in cards.js are written. tcgcsv's own daily archive isn't downloadable, so the history was seeded from
 earlier cards.js versions (Oct 13 and Oct 23, 2026) and grows by one day per run.
 Usage: python3 tools/fetch_prices.py [repo root]"""
@@ -43,18 +44,36 @@ def snapshot(hist, today, days, lo, hi):
         if lo <= age <= hi and (best[0] is None or abs(age - days) < abs(best[0] - days)): best = (age, prices)
     return best
 
-def main():
-    ids = card_ids()
-    updated = get("https://tcgcsv.com/last-updated.txt").strip()[:10]
-    today = datetime.date.fromisoformat(updated)
-    rows = {}
+def fetch_rows(ids=None):
+    """{productId: [market, lowest, foil market, foil lowest]} for every product (or only `ids`), and the ids with a regular printing"""
+    rows, normal = {}, set()
     for g in json.loads(get(f"{API}/groups"))["results"]:
         for p in json.loads(get(f"{API}/{g['groupId']}/prices"))["results"]:
             pid = str(p["productId"])
-            if pid not in ids: continue
+            if ids is not None and pid not in ids: continue
             r = rows.setdefault(pid, [None, None, None, None])
             foil = (p.get("subTypeName") or "").lower().startswith("foil")
             r[2 if foil else 0] = p.get("marketPrice"); r[3 if foil else 1] = p.get("lowPrice")
+            if not foil: normal.add(pid)
+    return rows, normal
+
+def fetch_fx():
+    """the Bank of Canada's latest USD->CAD rate, saved to fx.txt; if it can't be reached, the saved one"""
+    f = os.path.join(ROOT, "build", "tcg", "fx.txt")
+    try:
+        o = json.loads(get("https://www.bankofcanada.ca/valet/observations/FXUSDCAD/json?recent=1"))["observations"][-1]
+        rate, date = float(o["FXUSDCAD"]["v"]), o["d"]
+        with open(f, "w", encoding="utf-8") as h: h.write(f"{rate}|{date}\n")
+    except Exception as e:
+        print("exchange rate kept:", e, file=sys.stderr)
+        rate, date = open(f, encoding="utf-8").read().strip().split("|"); rate = float(rate)
+    return {"usdcad": rate, "date": date}
+
+def main():
+    updated = get("https://tcgcsv.com/last-updated.txt").strip()[:10]
+    today = datetime.date.fromisoformat(updated)
+    rows = fetch_rows(card_ids())[0]
+    fx = fetch_fx()
     hist = json.load(open(HIST, encoding="utf-8")) if os.path.exists(HIST) else {}
     hist[updated] = {pid: main_price(r) for pid, r in rows.items() if main_price(r) is not None}
     hist = {d: v for d, v in sorted(hist.items()) if (today - datetime.date.fromisoformat(d)).days <= KEEP_DAYS}
@@ -70,7 +89,7 @@ def main():
     os.makedirs(os.path.dirname(HIST), exist_ok=True)
     with open(HIST, "w", encoding="utf-8") as f: json.dump(hist, f, separators=(",", ":"), sort_keys=True)
     with open(os.path.join(ROOT, "prices.js"), "w", encoding="utf-8") as f:
-        f.write("window.RB_PRICES = " + json.dumps({"updated": updated, "d7": snaps[0][0], "d30": snaps[1][0], "p": out}, separators=(",", ":")) + ";\n")
+        f.write("window.RB_PRICES = " + json.dumps({"updated": updated, "d7": snaps[0][0], "d30": snaps[1][0], "fx": fx, "p": out}, separators=(",", ":")) + ";\n")
     print(f"prices {updated}: {len(out)} products, history {len(hist)} days ({min(hist)} to {max(hist)}), changes over {snaps[0][0]} and {snaps[1][0]} days")
 
 if __name__ == "__main__":

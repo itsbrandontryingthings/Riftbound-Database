@@ -1238,7 +1238,7 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
     const v = c.foil ? (p[2] ?? p[3] ?? p[0] ?? p[1]) : (p[0] ?? p[1] ?? p[2] ?? p[3]);
     if (v != null) c.price = v;
   }
-  if (window.RB_META) window.RB_META.pricesUpdated = P.updated;
+  if (window.RB_META){ window.RB_META.pricesUpdated = P.updated; if (P.fx) window.RB_META.fx = P.fx; }
 })();</script>
 <script src="text.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
