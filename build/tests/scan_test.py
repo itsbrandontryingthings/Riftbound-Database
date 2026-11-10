@@ -10,6 +10,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.abspath(os.pat
 N = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 16
 NB = 8                                            # battlefields, read with the sideways frame
 NR = 8                                            # runes ("VEN • R02", no set size)
+NE = 6                                            # photos of a table with no card on it
 NM = 10                                           # cards that mention runes in their rules text
 RC = "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/"
 
@@ -44,7 +45,7 @@ async def main():
         raw = urllib.request.urlopen(f"{RC}{c['img']}?accountingTag=RB&fm=png&w=744", timeout=30).read()
         p = os.path.join(tmp, c["id"].replace("*", "s") + ".jpg"); open(p, "wb").write(photo(Image.open(io.BytesIO(raw)), rnd)); files.append((c, p))
     srv = subprocess.Popen([sys.executable, "-m", "http.server", "8766"], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(1)
-    name_ok = print_ok = bf_ok = ru_ok = ru_pr = phantom = 0
+    name_ok = print_ok = bf_ok = ru_ok = ru_pr = phantom = 0; sims = []
     try:
         async with async_playwright() as pw:
             b = await pw.chromium.launch(); pg = await b.new_page(viewport={"width": 390, "height": 844}); errs = []
@@ -69,8 +70,26 @@ async def main():
                 elif c["type"] == "Battlefield": bf_ok += bool(nm)
                 elif c["type"] == "Rune": ru_ok += bool(nm); ru_pr += bool(pr)
                 else: name_ok += bool(nm); print_ok += bool(pr)
-                print(f"{'OK ' if pr else 'name' if nm else 'MISS'}  {c['id']:<16} {c['name'][:34]:<34} -> {got or '(nothing)'}  {ms} ms")
+                ai = await pg.evaluate("() => rbScan.ai ? [rbScan.ai.sim, rbScan.ai.gap] : null"); sims.append((bool(nm), ai[0] if ai else None))
+                print(f"{'OK ' if pr else 'name' if nm else 'MISS'}  {c['id']:<16} {c['name'][:34]:<34} -> {got or '(nothing)'}  {ms} ms" + (f"  match {ai[0]:.2f}" if ai else ""))
                 if gc and await pg.is_visible("#sc-skip"): await pg.click("#sc-skip")
+            # photos with no card in them must find nothing
+            empty_ok = 0
+            for i in range(NE):
+                bg = Image.new("RGB", (1200, 1600), (rnd.randint(30, 200),) * 3); d = ImageDraw.Draw(bg)
+                for _ in range(60):
+                    x, y = rnd.randint(0, 1200), rnd.randint(0, 1600)
+                    d.rectangle([x, y, x + rnd.randint(20, 400), y + rnd.randint(20, 400)], fill=tuple(rnd.randint(0, 255) for _ in range(3)))
+                ep = os.path.join(tmp, f"empty{i}.jpg"); bg.save(ep, "JPEG", quality=70)
+                await pg.evaluate("() => { document.getElementById('sc-res').hidden = true; rbScan.ai = null; }")
+                await pg.set_input_files("#sc-file", ep)
+                await pg.wait_for_function("() => !document.getElementById('sc-res').hidden || /Couldn't/.test(document.getElementById('sc-msg').textContent)", timeout=90000)
+                hid = await pg.evaluate("() => document.getElementById('sc-res').hidden"); empty_ok += hid
+                ai = await pg.evaluate("() => rbScan.ai && rbScan.ai.sim"); sims.append((None, ai))
+                print(f"empty photo {i}: {'nothing found (right)' if hid else 'FOUND A CARD (wrong)'}  best match {ai if ai is None else round(ai, 2)}")
+                if not hid: await pg.click("#sc-skip")
+            ok_s = sorted(s for n, s in sims if n and s is not None); no_s = sorted(s for n, s in sims if n is None and s is not None)
+            if ok_s: print(f"match strength: right cards {ok_s[0]:.2f} to {ok_s[-1]:.2f}; empty photos up to {max(no_s) if no_s else 0:.2f}")
             # add the last match and check it's in This Pack
             await pg.set_input_files("#sc-file", files[0][1])
             await pg.wait_for_function("() => !document.getElementById('sc-res').hidden", timeout=60000)
@@ -113,8 +132,8 @@ async def main():
                 await b.close(); return ok and off
             cam_ok = await live(*files[1], False, auto=True) and spam_ok
             bfs = [f for f in files if f[0]["type"] == "Battlefield"]; cam_ok = await live(*bfs[0], True) and cam_ok
-            print(f"\nright card {name_ok}/{N}, right printing {print_ok}/{N}, battlefields {bf_ok}/{NB}, runes {ru_ok}/{NR} (right printing {ru_pr}/{NR}), phantom runes {phantom}/{NM}; errors: {errs or 'none'}; photos + screenshots in {tmp}")
-            return 1 if errs or name_ok < N * 0.75 or bf_ok < NB * 0.75 or ru_ok < NR * 0.75 or phantom or not cam_ok else 0
+            print(f"\nright card {name_ok}/{N}, right printing {print_ok}/{N}, battlefields {bf_ok}/{NB}, runes {ru_ok}/{NR} (right printing {ru_pr}/{NR}), phantom runes {phantom}/{NM}, empty photos right {empty_ok}/{NE}; errors: {errs or 'none'}; photos + screenshots in {tmp}")
+            return 1 if errs or name_ok < N * 0.75 or bf_ok < NB * 0.75 or ru_ok < NR * 0.75 or phantom or empty_ok < NE or not cam_ok else 0
     finally:
         srv.terminate()
 if __name__ == "__main__": sys.exit(asyncio.run(main()))

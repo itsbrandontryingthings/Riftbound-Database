@@ -5,3 +5,4 @@ build/tests/ph.png
 build/tests/live_*.png
 build/raw/
 build/cards.new.js
+build/refs/

@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8"><title>Card fingerprints</title>
+<!-- Used by tools/embed_cards.py: fingerprints card pictures with the site's own scan-ai.js. -->
+<script type="module">
+import { load, vector } from "../scan-ai.js";
+const img = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error(src)); i.src = src; });
+window.ready = load().then(() => true);
+window.vectors = async srcs => { const out = []; for (const s of srcs) out.push(Array.from(await vector(await img(s)))); return out; };
+</script>

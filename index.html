@@ -70,6 +70,8 @@ h1{font-family:var(--display);font-size:26px;margin:0;text-wrap:balance}
 .sc-top h2{font-family:var(--display);font-size:18px;margin:0}
 .sc-tb{display:flex;gap:8px}
 #sc-wide[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+#sc-torch[aria-pressed="true"]{border-color:var(--warn);color:var(--warn)}
+.sc-snap{width:100%;font-size:17px;padding:12px}
 .sc-cam{position:relative;background:#000;border-radius:10px;overflow:hidden;height:min(56vh,520px)}
 .sc-cam video{width:100%;height:100%;object-fit:cover;display:block}
 .sc-frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:2px solid var(--accent);border-radius:12px;box-shadow:0 0 0 2000px rgb(0 0 0 / .42);transition:border-color .2s}
@@ -1035,8 +1037,9 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
       </div>
       <div class="scan-row"><button class="btn primary" id="sc-open" type="button">📷 Scan Cards</button><span class="meta">Or point your phone's camera at each card and tap to add it.</span></div>
       <dialog id="sc-dlg" aria-labelledby="sc-title"><div class="scd">
-        <div class="sc-top"><h2 id="sc-title">Scan Cards</h2><span class="sc-tb"><button class="btn" id="sc-wide" type="button" aria-pressed="false">▭ Battlefield</button><button class="btn" id="sc-close" type="button">Done</button></span></div>
+        <div class="sc-top"><h2 id="sc-title">Scan Cards</h2><span class="sc-tb"><button class="btn" id="sc-torch" type="button" aria-pressed="false" hidden>🔦 Flash</button><button class="btn" id="sc-wide" type="button" aria-pressed="false">▭ Battlefield</button><button class="btn" id="sc-close" type="button">Done</button></span></div>
         <div class="sc-cam" id="sc-cam"><video id="sc-video" playsinline muted autoplay></video><div class="sc-frame" id="sc-frame" aria-hidden="true"></div><p class="sc-msg" id="sc-msg" aria-live="polite"></p></div>
+        <button class="btn primary sc-snap" id="sc-snap" type="button">📸 Scan Now</button>
         <div class="sc-res" id="sc-res" hidden>
           <img id="sc-img" alt="" referrerpolicy="no-referrer">
           <div class="sc-info"><b id="sc-name"></b><span class="meta" id="sc-sub"></span></div>
@@ -1045,7 +1048,7 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
         </div>
         <p class="sc-done" id="sc-done" aria-live="polite"></p>
         <label class="chk sc-auto"><input type="checkbox" id="sc-auto"> Auto-add: add each new card as soon as it's found</label>
-        <div class="sc-foot"><label class="btn" for="sc-file">Take a Photo Instead</label><input class="sc-file" type="file" id="sc-file" accept="image/*" capture="environment" tabindex="-1"><span class="meta">Hold one card flat inside the frame, in good light, then swap in the next; scanning never stops. Cards you add also show under This Pack.</span></div>
+        <div class="sc-foot"><label class="btn" for="sc-file">Take a Photo Instead</label><input class="sc-file" type="file" id="sc-file" accept="image/*" capture="environment" tabindex="-1"><span class="meta">Hold one card flat inside the frame, then swap in the next; scanning never stops. Tap 📸 Scan Now to read it straight away. Cards you add also show under This Pack.</span></div>
       </div></dialog>
     </div>
     <div class="panel">
@@ -2029,6 +2032,53 @@ const scCan = document.createElement("canvas");
 window.rbScan = sc;                // for tests: sc.data = what was read last, sc.fn = the matching steps
 const scMsg = t => { $("sc-msg").textContent = t; };
 const scLabel = c => `${c.set} ${String(c.num ?? "").padStart(3, "0")}`;
+// ---- recognition by picture (scan-ai.js + cardvecs.bin): the on-device model's numbers for the photo are compared
+// with every card picture's; the Tesseract text reading below is only the fallback when the model can't load
+// a best match under SC_MIN is no card (an empty table scores ~0.38); SC_SURE and up is taken at once; in between, the
+// card's text is read as well and wins when it's sure (battlefields look alike: grey banners, landscape art).
+// Pictures within SC_SAME of the best are the same art (reprints).
+const SC_MIN = 0.42, SC_SURE = 0.6, SC_SAME = 0.02;
+const scKeyOf = c => c.img ? c.img.replace(/\.png$/, "") : c.imgTcg && c.tcg ? "tcg-" + c.tcg : "";
+const scAI = {ready: null};
+function scAILoad(){
+  if (scAI.ready) return scAI.ready;
+  scAI.ready = Promise.all([import("./scan-ai.js").then(m => m.load().then(() => m)), fetch("cardvecs.json").then(r => r.json()), fetch("cardvecs.bin").then(r => r.arrayBuffer())])
+    .then(([m, meta, buf]) => {
+      const by = {}; for (const c of CARDS){ const k = scKeyOf(c); if (k) (by[k] ||= []).push(c); }
+      return Object.assign(scAI, {m, by, keys: meta.keys, dim: meta.dim, mean: Float32Array.from(meta.mean), vecs: new Int8Array(buf)});
+    })
+    .catch(e => { scAI.ready = null; throw e; });
+  return scAI.ready;
+}
+async function scAIMatch(src){
+  const a = await scAILoad(), v = await a.m.vector(src), d = a.dim;
+  let n = 0; for (let j = 0; j < d; j++){ v[j] -= a.mean[j]; n += v[j] * v[j]; } n = (Math.sqrt(n) || 1) * 127;
+  const sims = new Float32Array(a.keys.length); let best = -2, bi = -1, second = -2;
+  for (let i = 0, o = 0; i < a.keys.length; i++, o += d){
+    let s = 0; for (let j = 0; j < d; j++) s += a.vecs[o + j] * v[j];
+    sims[i] = s /= n;
+    if (s > best){ second = best; best = s; bi = i; } else if (s > second) second = s;
+  }
+  sc.ai = {key: a.keys[bi], sim: best, gap: best - second};
+  if (best < SC_MIN) return null;
+  const pool = [];
+  sims.forEach((s, i) => { if (s >= best - SC_SAME) pool.push(...(a.by[a.keys[i]] || [])); });
+  const same = pool.filter(c => norm(c.name) === norm((a.by[a.keys[bi]] || pool)[0].name));
+  return same.length ? scPrint(same) : null;
+}
+async function scFind(){
+  if (!sc.noAI){
+    let c;
+    try { c = await scAIMatch(scCan); }
+    catch(e){ sc.noAI = true; console.warn("Picture recognition isn't available here; reading the card's text instead.", e); }
+    if (!sc.noAI){
+      if (sc.ai.sim >= SC_SURE || sc.ai.sim < 0.4) return c;
+      try { const t = await scLook(await scLoad()); if (t && /^look \d+$/.test(sc.how || "")) return t; } catch(e){}
+      return c;
+    }
+  }
+  return scLook(await scLoad());
+}
 function scLoad(){
   if (sc.ready) return sc.ready;
   sc.ready = new Promise((ok, no) => { if (window.Tesseract) return ok(); const s = document.createElement("script"); s.src = SC_LIB; s.onload = ok; s.onerror = () => no(new Error("load")); document.head.appendChild(s); })
@@ -2180,10 +2230,8 @@ async function scTick(){
   if (!v.videoWidth){ sc.t = setTimeout(scTick, 300); return; }
   sc.busy = true;
   try {
-    const w = await scLoad();
-    if (sc.paused || !sc.stream) return;
     scGrab(v);
-    const c = await scLook(w);
+    const c = await scFind();
     if (sc.paused || !$("sc-dlg").open) return;
     scSaw(c);
   } catch(e){ scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."); return; }
@@ -2197,6 +2245,7 @@ async function scCamera(){
   if (!$("sc-dlg").open){ scStop(); return; }
   const v = $("sc-video"); v.srcObject = sc.stream; try { await v.play(); } catch(e){}
   try { const t = sc.stream.getVideoTracks()[0], cap = t.getCapabilities ? t.getCapabilities() : {}; if ((cap.focusMode || []).includes("continuous")) await t.applyConstraints({advanced: [{focusMode: "continuous"}]}); } catch(e){}
+  try { const cap = sc.stream.getVideoTracks()[0].getCapabilities(); sc.torch = false; $("sc-torch").setAttribute("aria-pressed", "false"); $("sc-torch").hidden = !cap.torch; } catch(e){ $("sc-torch").hidden = true; }
   scTick();
 }
 function scStop(){
@@ -2207,8 +2256,8 @@ function scStop(){
 function scOpen(){
   const d = $("sc-dlg"); if (!d.open){ try { d.showModal(); } catch(e){ d.setAttribute("open", ""); } }
   sc.paused = false; sc.skip = ""; sc.inView = ""; sc.card = null; sc.empty = 0; sc.addN = 0; $("sc-res").hidden = true; $("sc-add").textContent = "＋ Add to Collection"; $("sc-frame").classList.remove("hit"); scSize();
-  scMsg("Getting the card reader ready… (the first time downloads about 7 MB)");
-  scLoad().then(() => { if (!sc.paused && !sc.card && sc.stream) scMsg(scLooking()); }).catch(() => scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."));
+  scMsg("Getting the card reader ready… (the first time downloads about 30 MB, then it's saved on your phone)");
+  scAILoad().catch(() => { sc.noAI = true; return scLoad(); }).then(() => { if (!sc.paused && !sc.card && sc.stream) scMsg(scLooking()); }).catch(() => scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."));
   scCamera();
 }
 // scanning never stops: a card that comes into view is shown (and added, with Auto-add on); the same card staying in
@@ -2289,6 +2338,26 @@ document.addEventListener("visibilitychange", () => {
   const t = sc.stream && sc.stream.getVideoTracks()[0];
   if (sc.stream && (!t || t.readyState === "ended")){ scStop(); sc.paused = false; scCamera(); } else scTick();
 });
+// 🔦 Flash: the phone's light, where the camera allows it
+$("sc-torch").addEventListener("click", async () => {
+  const t = sc.stream && sc.stream.getVideoTracks()[0]; if (!t) return;
+  sc.torch = !sc.torch;
+  try { await t.applyConstraints({advanced: [{torch: sc.torch}]}); } catch(e){ sc.torch = false; scMsg("This phone's browser won't turn on the light."); }
+  $("sc-torch").setAttribute("aria-pressed", String(sc.torch));
+});
+// 📸 Scan Now: one picture of what's in the frame, read at once (no second look needed)
+$("sc-snap").addEventListener("click", async () => {
+  const v = $("sc-video"); if (!sc.stream || !v.videoWidth) return;
+  for (let i = 0; sc.busy && i < 80; i++) await new Promise(r => setTimeout(r, 50));
+  clearTimeout(sc.t); sc.busy = true; scMsg("Scanning…");
+  try {
+    scGrab(v); const c = await scFind();
+    if (c){ sc.skip = ""; sc.inView = ""; sc.run = {k: norm(c.name)}; scSaw(c); }
+    else scMsg("Couldn't recognise that. Hold the card inside the frame and try again.");
+  } catch(e){ scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."); }
+  finally { sc.busy = false; }
+  sc.t = setTimeout(scTick, 1200);
+});
 $("sc-file").addEventListener("change", async e => {
   const f = e.target.files[0]; e.target.value = ""; if (!f) return;
   sc.paused = true; sc.photo = true; clearTimeout(sc.t); scMsg("Reading the photo…");
@@ -2298,7 +2367,7 @@ $("sc-file").addEventListener("change", async e => {
     const s = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
     scCan.width = Math.round(img.naturalWidth * s); scCan.height = Math.round(img.naturalHeight * s);
     scCan.getContext("2d").drawImage(img, 0, 0, scCan.width, scCan.height); URL.revokeObjectURL(url);
-    const c = await scLook(await scLoad()); sc.photo = false; sc.paused = false;
+    const c = await scFind(); sc.photo = false; sc.paused = false;
     if (c){ sc.skip = ""; sc.inView = ""; sc.run = {k: norm(c.name)}; scSaw(c); }   // a photo is read once
     else scMsg("Couldn't read that card. Take the photo closer, with the card filling the picture, in good light.");
     sc.t = setTimeout(scTick, 2500);

@@ -7,7 +7,7 @@ on:
     - cron: "47 15 * * 1"
   push:
     branches: [main]
-    paths: [tools/fetch_cards.py, .github/workflows/cards.yml]
+    paths: [tools/fetch_cards.py, tools/embed_cards.py, scan-ai.js, .github/workflows/cards.yml]
 permissions:
   contents: write
 concurrency: { group: prices, cancel-in-progress: false }
@@ -19,9 +19,12 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: python3 tools/fetch_cards.py
+      # fingerprints for the scanner, for pictures that don't have one yet (tools/embed_cards.py)
+      - run: pip install -q playwright==1.48.0 && python3 -m playwright install --with-deps chromium
+      - run: python3 tools/embed_cards.py
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add cards.js build/tcg
+          git add cards.js build/tcg cardvecs.json cardvecs.bin
           git diff --cached --quiet || (git commit -m "Weekly card list refresh" && git pull --rebase -q origin main && git push)
