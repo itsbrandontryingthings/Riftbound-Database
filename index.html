@@ -1448,7 +1448,7 @@ function matches(c, ignoreSet){
   if (st.tg && !(txOf(c) && txOf(c).tags.includes(st.tg))) return false;
   if (st.doms.size && ![...st.doms].every(d => c.domains.includes(d))) return false;
   if (st.banned && !c.ban) return false;
-  if (st.q){ const q = st.q.toLowerCase(); if (!(c.name.toLowerCase().includes(q) || c.id.includes(q) || findOf(c).includes(q))) return false; }
+  if (st.q && !hasWords(c.name + " " + c.id + " " + findOf(c), st.q)) return false;
   if (!rngOK(c, "c")) return false;
   const n = counts[c.id]||0;
   if (st.show==="have" && !n) return false;
@@ -1930,6 +1930,14 @@ $("copy-need").addEventListener("click", () => { const t = shown.filter(c => !co
 
 // ---- shared helpers
 const norm = s => String(s).toLowerCase().replace(/[’`]/g,"'").replace(/\s*[-,–—]\s*/g," ").replace(/[!.]/g,"").replace(/\s+/g," ").trim();
+// forgiving search: every word typed (or the start of one) appears somewhere, in any order, ignoring capitals, accents,
+// dashes, commas and apostrophes ("azir sov" finds "Azir - Sovereign", "kaisa" finds "Kai'Sa")
+const fz = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/['’`]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+function hasWords(hay, q){
+  const ws = fz(q).split(" ").filter(Boolean); if (!ws.length) return true;
+  const t = fz(hay), joined = t.replace(/ /g, "");
+  return ws.every(w => t.includes(w) || joined.includes(w));
+}
 const byId = Object.fromEntries(CARDS.map(c => [c.id, c]));
 const groups = {};               // normalized card name -> every printing of it (tokens excluded)
 for (const c of CARDS) if (!c.token) (groups[norm(c.name)] ||= []).push(c);
@@ -1972,7 +1980,7 @@ function suggest(){
   const q = norm($("qa-q").value), set = $("qa-set").value;
   if (!q){ sug = []; } else {
     const words = q.split(" ");
-    sug = CARDS.filter(c => (!set || c.set === set) && words.every(w => norm(c.name).includes(w)))
+    sug = CARDS.filter(c => (!set || c.set === set) && hasWords(c.name, words.join(" ")))
       .map(c => ({c, s: (norm(c.name).startsWith(q) ? 0 : 10) + (c.variant ? 3 : 0) + (c.token ? 6 : 0) + (["OPP","PR","JDG"].includes(c.set) ? 2 : 0) + (META.sets.findIndex(x => x.code === c.set) * 0.1)}))
       .sort((a,b) => a.s - b.s || a.c.name.localeCompare(b.c.name)).slice(0, 8).map(x => x.c);
   }
@@ -2372,6 +2380,12 @@ function dkChecks(S){
   return {list: out, mainN};
 }
 // the deck you're looking at, as a deck you can change (a built-in deck is copied into your decks first)
+// the card a typed name means: exact, else the one card whose name has those words (the shortest name when several do)
+function dkFind(name){
+  const key = norm(name); if (groups[key] || !name) return key;
+  const hits = Object.keys(groups).filter(k => hasWords(groups[k][0].name, name)).sort((a, b) => a.length - b.length);
+  return hits.length && (hits.length === 1 || fz(groups[hits[0]][0].name).startsWith(fz(name))) ? hits[0] : key;
+}
 function editableDeck(){
   let d = customDecks.find(x => x.id === curDeck);
   if (!d){ const b = allDecks().find(x => x.id === curDeck); if (!b) return null; d = {...b, sub: b.sub || "Your deck"}; customDecks.push(d); }
@@ -2464,7 +2478,7 @@ function renderDecks(){
       <select id="dk-adds" aria-label="Section"><option value="auto">Best section for the card</option>${secOpts}</select>
       <input id="dk-addq" type="number" min="1" max="12" value="1" inputmode="numeric" aria-label="Copies">
       <button class="btn primary" id="dk-addgo">Add</button><span class="meta" id="dk-addmsg" aria-live="polite"></span></form>`;
-  if (!$("dk-names")) document.body.insertAdjacentHTML("beforeend", `<datalist id="dk-names">${Object.values(groups).map(g => `<option value="${esc(g[0].name)}">`).join("")}</datalist>`);
+  if (!$("dk-names")) document.body.insertAdjacentHTML("beforeend", `<datalist id="dk-names">${Object.values(groups).map(g => `<option value="${esc(g[0].name)}" label="${esc(fz(g[0].name))}">`).join("")}</datalist>`);
 }
 function stopShareOK(what){
   return confirm(`Are you sure you want to stop sharing your ${what}?\n\nThe link will stop working for everyone you sent it to. You can share it again later, but that makes a new link.`);
@@ -2475,7 +2489,7 @@ function wlfOn(){ return !!(wlf.q || wlf.set || wlf.dom || wlf.type || wlf.rar |
 function wlfMatch(id){
   const c = byId[id], n = counts[id] || 0;
   if (!rngOK(c, "w")) return false;
-  if (wlf.q){ const q = wlf.q.toLowerCase(); if (!(c.name.toLowerCase().includes(q) || c.id.includes(q) || findOf(c).includes(q))) return false; }
+  if (wlf.q && !hasWords(c.name + " " + c.id + " " + findOf(c), wlf.q)) return false;
   return (!wlf.set || c.set === wlf.set) && (!wlf.dom || c.domains.includes(wlf.dom)) && (!wlf.type || c.type === wlf.type) && (!wlf.rar || c.rarity === wlf.rar) && (wlf.own !== "have" || n > 0) && (wlf.own !== "need" || !n);
 }
 function wlfSort(ids){
@@ -2514,7 +2528,7 @@ function wlSuggest(){
   if (!q) wlSug = [];
   else {
     const words = q.split(" ");
-    wlSug = CARDS.filter(c => words.every(w => norm(c.name).includes(w)))
+    wlSug = CARDS.filter(c => hasWords(c.name, words.join(" ")))
       .map(c => ({c, s: (norm(c.name) === q ? -5 : 0) + (norm(c.name).startsWith(q) ? 0 : 10) + (c.variant ? 3 : 0) + (c.token ? 6 : 0) + (["OPP","PR","JDG"].includes(c.set) ? 2 : 0) + META.sets.findIndex(x => x.code === c.set) * 0.1}))
       .sort((a, b) => a.s - b.s || a.c.name.localeCompare(b.c.name)).slice(0, 8).map(x => x.c);
   }
@@ -2617,7 +2631,7 @@ function mkGoFriend(){
 function frListen(type, fn, opt){ ["fr-list", "mk-frlist"].forEach(id => $(id).addEventListener(type, fn, opt)); }
 const mkf = {q: "", set: "", dom: "", type: "", rar: ""};
 function mkfOn(){ return !!(mkf.q || mkf.set || mkf.dom || mkf.type || mkf.rar) || rngOn("f"); }
-function mkfMatch(x, nameHit){ const c = frCard(x.key), nm = nameHit || !mkf.q || norm(x.name).includes(norm(mkf.q));
+function mkfMatch(x, nameHit){ const c = frCard(x.key), nm = nameHit || !mkf.q || hasWords(x.name, mkf.q);
   if (!c) return nm && !mkf.set && !mkf.dom && !mkf.type && !mkf.rar && !rngOn("f");
   return nm && rngOK(c, "f") && (!mkf.set || c.set === mkf.set) && (!mkf.dom || (c.domains || []).includes(mkf.dom)) && (!mkf.type || c.type === mkf.type) && (!mkf.rar || c.rarity === mkf.rar); }
 function mkFriendsFill(shops){
@@ -2638,7 +2652,7 @@ $("mkf-sort").addEventListener("change", e => { st.frsort = e.target.value; LS.s
 const shf = {q: "", set: "", dom: "", type: "", rar: ""};
 function shfOn(){ return !!(shf.q || shf.set || shf.dom || shf.type || shf.rar) || rngOn("s"); }
 function shfMatch(x){ const c = x.show;
-  return rngOK(c, "s") && (!shf.set || c.set === shf.set) && (!shf.q || norm(x.name).includes(norm(shf.q))) && (!shf.dom || (c.domains || []).includes(shf.dom)) && (!shf.type || c.type === shf.type) && (!shf.rar || c.rarity === shf.rar); }
+  return rngOK(c, "s") && (!shf.set || c.set === shf.set) && (!shf.q || hasWords(x.name, shf.q)) && (!shf.dom || (c.domains || []).includes(shf.dom)) && (!shf.type || c.type === shf.type) && (!shf.rar || c.rarity === shf.rar); }
 let shfReady = false;
 function shfOpts(){
   if (shfReady) return; shfReady = true;
@@ -3018,7 +3032,7 @@ function tradeSuggest(input){
   if (!q) S.tsug = [];
   else {
     const words = q.split(" ");
-    S.tsug = CARDS.filter(c => !c.token && words.every(w => norm(c.name).includes(w)))
+    S.tsug = CARDS.filter(c => !c.token && hasWords(c.name, words.join(" ")))
       .map(c => ({c, s: (input.dataset.of === "wq" ? (counts[c.id] ? 20 : 0) : (counts[c.id] ? -20 : 0)) + (norm(c.name) === q ? -5 : 0) + (norm(c.name).startsWith(q) ? 0 : 10) + (c.variant ? 3 : 0) + META.sets.findIndex(x => x.code === c.set) * 0.1}))
       .sort((a, b) => a.s - b.s || a.c.name.localeCompare(b.c.name)).slice(0, 8).map(x => x.c);
   }
@@ -3147,7 +3161,7 @@ function shSuggest(){
   if (!q) shSug = [];
   else {
     const words = q.split(" ");
-    shSug = CARDS.filter(c => words.every(w => norm(c.name).includes(w)))
+    shSug = CARDS.filter(c => hasWords(c.name, words.join(" ")))
       .map(c => ({c, s: (norm(c.name) === q ? -5 : 0) + (norm(c.name).startsWith(q) ? 0 : 10) + (c.variant ? 3 : 0) + (c.token ? 6 : 0) + (["OPP","PR","JDG"].includes(c.set) ? 2 : 0) + META.sets.findIndex(x => x.code === c.set) * 0.1}))
       .sort((a, b) => a.s - b.s || a.c.name.localeCompare(b.c.name)).slice(0, 8).map(x => x.c);
   }
@@ -3376,7 +3390,7 @@ $("deck-body").addEventListener("submit", e => {
   if (e.target.id !== "dk-addc") return;
   e.preventDefault();
   const d = editableDeck(); if (!d) return;
-  const name = $("dk-addn").value.trim(), key = norm(name), q = Math.max(1, Math.min(12, Math.floor(+$("dk-addq").value || 1))), msg = $("dk-addmsg");
+  const name = $("dk-addn").value.trim(), key = dkFind(name), q = Math.max(1, Math.min(12, Math.floor(+$("dk-addq").value || 1))), msg = $("dk-addmsg");
   if (!groups[key]){ msg.textContent = name ? "Couldn't find that card. Pick a name from the suggestions." : "Type a card name first."; return; }
   const secs = parseDeck(d.text), kind = deckKind(key), pick = $("dk-adds").value;
   let sec = pick !== "auto" ? secs[+pick] : null;
@@ -3792,8 +3806,8 @@ async function renderFriendsList(){
     const deck = { name: r.name, text: r.list };
     const secs = parseDeck(r.list), rows = secs.flatMap(s => s.rows);
     const hay = norm(r.name + " " + r.owner_name) + " " + rows.map(x => x.key).join(" | ");
-    const hits = words.length ? rows.filter(x => words.every(w => x.key.includes(w))) : [];
-    const ok = !words.length || words.every(w => hay.includes(w));
+    const hits = words.length ? rows.filter(x => hasWords(x.key, q)) : [];
+    const ok = !words.length || hasWords(hay, q);
     return { r, deck, secs, rows, hits, ok };
   }).filter(x => x.ok || x.r.deck_id === "__shop__");
   const dead = frMissing.length ? `<span class="frdead">${frMissing.length} saved link${frMissing.length === 1 ? " no longer works" : "s no longer work"}. The owner stopped sharing ${frMissing.length === 1 ? "it" : "them"}. <button class="btn" id="fr-prune">Remove</button></span>` : "";
@@ -3803,7 +3817,7 @@ async function renderFriendsList(){
   list.innerHTML = items.map(({ r, deck, secs, rows, hits }) => {
     if (r.deck_id === "__wish__" || r.deck_id === "__shop__"){
       const shop = r.deck_id === "__shop__";
-      const nameHit = shop && !!mkf.q && norm(r.name + " " + (r.owner_name || "")).includes(norm(mkf.q));
+      const nameHit = shop && !!mkf.q && hasWords(r.name + " " + (r.owner_name || ""), mkf.q);
       const fRows = shop && mkfOn() ? rows.filter(x => mkfMatch(x, nameHit)) : rows;
       if (shop && mkfOn() && !fRows.length) return "";
       const mine = !!r.is_mine, open = frOpen.has(r.id) || (shop && mkfOn());
