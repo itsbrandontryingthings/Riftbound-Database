@@ -147,6 +147,7 @@ textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;pad
 a.view{color:var(--accent);text-decoration:none;font-size:12.5px;font-weight:600;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:4px;padding:0 7px;line-height:20px;white-space:nowrap}
 a.view:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .price .na{color:var(--muted);font-size:13px}
+#ab, #wlf-ab{flex:1 1 240px;min-width:0}
 .price small.pchg{font-weight:600;white-space:nowrap}
 .price small.pchg.up{color:var(--ok)}
 .price small.pchg.dn{color:#ef6b6b}
@@ -996,6 +997,7 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
       <select id="rarity" aria-label="Rarity"><option value="">All rarities</option></select>
       <select id="kw" aria-label="Keyword"><option value="">All keywords</option></select>
       <select id="tg" aria-label="Champion or region tag"><option value="">All tags</option></select>
+      <input class="search" id="ab" type="search" placeholder="Ability text, e.g. draw 2 or deathknell" aria-label="Ability text: search what cards do" autocomplete="off">
       <select id="sort" aria-label="Sort cards"><option value="set">Sort: set order</option><option value="price">Sort: price, high to low</option><option value="value">Sort: my value, high to low</option><option value="name">Sort: name</option><option value="gain7">Sort: biggest gains · 7 days</option><option value="drop7">Sort: biggest drops · 7 days</option><option value="gain30">Sort: biggest gains · 30 days</option><option value="drop30">Sort: biggest drops · 30 days</option></select>
       <label class="chk"><input type="checkbox" id="variants" checked> Show alt arts, overnumbered and promos</label>
       <label class="chk"><input type="checkbox" id="only"> Only alt arts, overnumbered and promos</label>
@@ -1114,6 +1116,7 @@ html.winter .xm-gifts{display:flex;justify-content:space-around;align-items:flex
     <div class="panel sh-filt" id="wlf-p" role="search" aria-label="Filter your wish list">
       <div class="frow">
         <input class="search" id="wlf-q" type="search" placeholder="Search name, keyword or ability, e.g. Jinx, draw" aria-label="Search your wish list" autocomplete="off">
+        <input class="search" id="wlf-ab" type="search" placeholder="Ability text, e.g. draw 2" aria-label="Ability text: search what cards do" autocomplete="off">
         <select id="wlf-set" aria-label="Set"><option value="">All sets</option></select>
         <select id="wlf-dom" aria-label="Domain"><option value="">All domains</option></select>
         <select id="wlf-type" aria-label="Card type"><option value="">All types</option></select>
@@ -1255,7 +1258,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 let counts = {};             // id -> copies owned
-let st = {set:"", q:"", show:"all", doms:new Set(), type:"", rarity:"", variants:true, only:false, pchg:"", sort:"set", cur:"both", limit:PAGE, view:"", page:0};
+let st = {set:"", q:"", show:"all", doms:new Set(), type:"", rarity:"", variants:true, only:false, pchg:"", ab:"", sort:"set", cur:"both", limit:PAGE, view:"", page:0};
 const FX = (META.fx && META.fx.usdcad) || 0;
 const fUSD = new Intl.NumberFormat("en-US", {style:"currency", currency:"USD", currencyDisplay:"narrowSymbol"});
 const fCAD = new Intl.NumberFormat("en-CA", {style:"currency", currency:"CAD", currencyDisplay:"narrowSymbol"});
@@ -1376,6 +1379,15 @@ function kwOf(c){
   if (t) for (const m of t.text.matchAll(/\[([A-Za-z][A-Za-z' -]*?)(?:\s+\d+)?\]/g)) { const k = m[1].trim(); if (!KW_SKIP.has(k) && !out.includes(k)) out.push(k); }
   return c._kw = out;
 }
+// a card's ability text as plain words, for the Ability text filter (symbols become words: ":rb_energy_2:" -> "2 energy")
+function abOf(c){
+  if (c._ab !== undefined) return c._ab;
+  const t = txOf(c);
+  return c._ab = t ? " " + fz(t.text.replace(/:rb_energy_(\d+):/g, " $1 energy ").replace(/:rb_might:/g, " might ").replace(/:rb_exhaust:/g, " exhaust ")
+    .replace(/:rb_rune_rainbow:/g, " any rune ").replace(/:rb_rune_([a-z]+):/g, " $1 rune ").replace(/:rb_[a-z0-9_]+:/g, " ")) + " " : " ";
+}
+// every comma-separated part is in the ability text, as a phrase starting at a word
+const abOK = (c, q) => !q || q.split(/[,;]+/).every(p => { const f = fz(p); return !f || abOf(c).includes(" " + f); });
 function findOf(c){
   if (c._find !== undefined) return c._find;
   const t = txOf(c);
@@ -1433,7 +1445,7 @@ if (META.updated){
 if (META.updated) $("c-updated").textContent = `Card list updated ${longDate(META.updated)} · ${CARDS.length.toLocaleString()} printings across ${META.sets.length} sets` + (META.pricesUpdated ? ` · Prices are TCGplayer market prices (USD), updated ${longDate(META.pricesUpdated)}` : "") + (FX ? ` · CAD at the Bank of Canada rate of ${FX.toFixed(4)} (${longDate(META.fx.date)})` : "");
 
 function syncControls(){
-  $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("kw").value = st.kw || ""; $("tg").value = st.tg || ""; $("variants").checked = st.variants; $("only").checked = !!st.only; $("pchg").value = st.pchg || ""; $("sort").value = st.sort || "set"; $("pchg-note").textContent = st.pchg ? "Cards worth US $0.50 or more, biggest change first." : "";
+  $("q").value = st.q; $("type").value = st.type; $("rarity").value = st.rarity; $("kw").value = st.kw || ""; $("tg").value = st.tg || ""; $("variants").checked = st.variants; $("only").checked = !!st.only; $("pchg").value = st.pchg || ""; $("ab").value = st.ab || ""; $("sort").value = st.sort || "set"; $("pchg-note").textContent = st.pchg ? "Cards worth US $0.50 or more, biggest change first." : "";
   ["all","have","need"].forEach(k => $("s-"+k).setAttribute("aria-pressed", st.show===k));
   ["both","cad","usd"].forEach(k => $("c-"+k).setAttribute("aria-pressed", st.cur===k));
   document.querySelectorAll("#doms button").forEach(b => b.setAttribute("aria-pressed", b.dataset.ban ? !!st.banned : st.doms.has(b.dataset.d)));
@@ -1448,6 +1460,7 @@ function matches(c, ignoreSet){
   if (!typeOK(c)) return false;
   if (st.rarity && c.rarity !== st.rarity) return false;
   if (st.kw && !kwOf(c).includes(st.kw)) return false;
+  if (st.ab && !abOK(c, st.ab)) return false;
   if (st.tg && !(txOf(c) && txOf(c).tags.includes(st.tg))) return false;
   if (st.doms.size && ![...st.doms].every(d => c.domains.includes(d))) return false;
   if (st.banned && !c.ban) return false;
@@ -1844,7 +1857,7 @@ function renderList(){
     : `<div class="empty">${st.show==="have" && !Object.keys(counts).length ? "You haven't marked any cards yet. Switch to All and tap + on the cards you own." : "No cards match these filters. Try clearing the search or a filter."}</div>`;
   $("more").hidden = true; renderPager(pages);
   $("v-list").setAttribute("aria-pressed", st.view === "list"); $("v-grid").setAttribute("aria-pressed", st.view === "grid");
-  const nf = st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + (st.only ? 1 : 0) + (st.pchg ? 1 : 0);
+  const nf = st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + (st.only ? 1 : 0) + (st.pchg ? 1 : 0) + (st.ab ? 1 : 0);
   $("fcount").textContent = nf ? nf : ""; syncReset();
   $("count").textContent = `${shown.length.toLocaleString()} card${shown.length===1?"":"s"}` + (st.set ? ` in ${setName[st.set]}` : "");
 }
@@ -1874,17 +1887,18 @@ $("sets").addEventListener("click", e => { const b = e.target.closest(".setbtn")
 $("doms").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.ban){ st.banned = !st.banned; st.limit = PAGE; st.page = 0; syncControls(); render(); return; } const d = b.dataset.d; st.doms.has(d) ? st.doms.delete(d) : st.doms.add(d); st.limit = PAGE; st.page = 0; syncControls(); render(); });
 
 // ---- reset filters: search, set, domains, banned, type, rarity, keyword, tag, All/I have/Missing, alt arts
-function activeFilters(){ return (st.q ? 1 : 0) + (st.set ? 1 : 0) + st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + (st.only ? 1 : 0) + (st.pchg ? 1 : 0) + rngCount("c"); }
+function activeFilters(){ return (st.q ? 1 : 0) + (st.set ? 1 : 0) + st.doms.size + (st.banned ? 1 : 0) + (st.type ? 1 : 0) + (st.rarity ? 1 : 0) + (st.kw ? 1 : 0) + (st.tg ? 1 : 0) + (st.show !== "all" ? 1 : 0) + (st.variants ? 0 : 1) + (st.only ? 1 : 0) + (st.pchg ? 1 : 0) + (st.ab ? 1 : 0) + rngCount("c"); }
 function syncReset(){ const n = activeFilters(), b = $("freset"); if (!b) return; b.disabled = !n; b.textContent = n ? `Reset filters (${n})` : "Reset filters"; const q = $("fquick"); if (q) q.hidden = !n; }
 $("fquick").addEventListener("click", () => $("freset").click());
 $("freset").addEventListener("click", () => {
-  Object.assign(st, {q:"", set:"", doms:new Set(), banned:false, type:"", rarity:"", kw:"", tg:"", show:"all", variants:true, only:false, pchg:"", sort: /^(gain|drop)/.test(st.sort || "") ? "set" : st.sort, limit:PAGE, page:0});
+  Object.assign(st, {q:"", set:"", doms:new Set(), banned:false, type:"", rarity:"", kw:"", tg:"", show:"all", variants:true, only:false, pchg:"", ab:"", sort: /^(gain|drop)/.test(st.sort || "") ? "set" : st.sort, limit:PAGE, page:0});
   rngReset("c"); syncControls(); render();
 });
 let qT; $("q").addEventListener("input", e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); st.limit = PAGE; st.page = 0; render(); }, 120); });
 ["all","have","need"].forEach(k => $("s-"+k).addEventListener("click", () => { st.show = k; st.limit = PAGE; st.page = 0; syncControls(); render(); }));
 $("type").addEventListener("change", e => { st.type = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("tg").addEventListener("change", e => { st.tg = e.target.value; st.limit = PAGE; st.page = 0; render(); });
+let abT; $("ab").addEventListener("input", e => { st.ab = e.target.value.trim(); clearTimeout(abT); abT = setTimeout(() => { st.limit = PAGE; st.page = 0; render(); }, 150); });
 $("kw").addEventListener("change", e => { st.kw = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("rarity").addEventListener("change", e => { st.rarity = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("only").addEventListener("change", e => { st.only = e.target.checked; if (st.only) st.variants = true; syncControls(); st.limit = PAGE; st.page = 0; render(); });
@@ -2553,12 +2567,13 @@ function stopShareOK(what){
   return confirm(`Are you sure you want to stop sharing your ${what}?\n\nThe link will stop working for everyone you sent it to. You can share it again later, but that makes a new link.`);
 }
 // ---- Wish List: filters (this visit only) and Add a Card
-const wlf = {q: "", set: "", dom: "", type: "", rar: "", own: "", sort: ""};
-function wlfOn(){ return !!(wlf.q || wlf.set || wlf.dom || wlf.type || wlf.rar || wlf.own) || rngOn("w"); }
+const wlf = {q: "", ab: "", set: "", dom: "", type: "", rar: "", own: "", sort: ""};
+function wlfOn(){ return !!(wlf.q || wlf.ab || wlf.set || wlf.dom || wlf.type || wlf.rar || wlf.own) || rngOn("w"); }
 function wlfMatch(id){
   const c = byId[id], n = counts[id] || 0;
   if (!rngOK(c, "w")) return false;
   if (wlf.q && !hasWords(c.name + " " + c.id + " " + findOf(c), wlf.q)) return false;
+  if (wlf.ab && !abOK(c, wlf.ab)) return false;
   return (!wlf.set || c.set === wlf.set) && (!wlf.dom || c.domains.includes(wlf.dom)) && (!wlf.type || c.type === wlf.type) && (!wlf.rar || c.rarity === wlf.rar) && (wlf.own !== "have" || n > 0) && (wlf.own !== "need" || !n);
 }
 function wlfSort(ids){
@@ -2577,7 +2592,8 @@ function wlfOpts(){
   fill("wlf-dom", uniq(c => c.domains || [])); fill("wlf-type", uniq(c => [c.type])); fill("wlf-rar", RAR.filter(r => CARDS.some(c => c.rarity === r)));
 }
 function wlfSync(){ $("wlf-reset").disabled = !wlfOn(); ["all", "have", "need"].forEach(k => $("wlf-" + k).setAttribute("aria-pressed", (wlf.own || "all") === k)); }
-function wlfReset(){ rngReset("w"); Object.assign(wlf, {q: "", set: "", dom: "", type: "", rar: "", own: ""}); $("wlf-q").value = ""; ["set", "dom", "type", "rar"].forEach(k => $("wlf-" + k).value = ""); wlfSync(); renderWish(); }
+function wlfReset(){ rngReset("w"); Object.assign(wlf, {q: "", ab: "", set: "", dom: "", type: "", rar: "", own: ""}); $("wlf-q").value = ""; $("wlf-ab").value = ""; ["set", "dom", "type", "rar"].forEach(k => $("wlf-" + k).value = ""); wlfSync(); renderWish(); }
+$("wlf-ab").addEventListener("input", e => { wlf.ab = e.target.value.trim(); wlfSync(); clearTimeout(wlfT); wlfT = setTimeout(renderWish, 120); });
 let wlfT; $("wlf-q").addEventListener("input", e => { wlf.q = e.target.value.trim(); wlfSync(); clearTimeout(wlfT); wlfT = setTimeout(renderWish, 120); });
 ["set", "dom", "type", "rar"].forEach(k => $("wlf-" + k).addEventListener("change", e => { wlf[k] = e.target.value; wlfSync(); renderWish(); }));
 $("wlf-sort").addEventListener("change", e => { wlf.sort = e.target.value; renderWish(); });

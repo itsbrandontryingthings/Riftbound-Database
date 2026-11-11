@@ -36,6 +36,29 @@ async def main():
                 if not ok: bad.append(("collection", typed))
             await pg.fill("#q", "deathknell"); await pg.wait_for_timeout(350); print("Collection   rules text 'deathknell' ->", await pg.text_content("#count"))
             await pg.fill("#q", "")
+            # Ability text: only what cards do, as a phrase; commas = several; symbols as words. Counts checked against Python.
+            import json, re, unicodedata
+            T = json.loads(re.search(r"RB_TEXT\s*=\s*(\{.*\})", open(os.path.join(ROOT, "text.js"), encoding="utf-8").read(), re.S).group(1).rstrip(";"))["n"]
+            CARDS = json.loads(re.search(r"RB_CARDS\s*=\s*(\[.*\])", open(os.path.join(ROOT, "cards.js"), encoding="utf-8").read(), re.S).group(1).rstrip(";"))
+            fz = lambda x: re.sub(r"[^a-z0-9]+", " ", re.sub(r"['’`]", "", "".join(ch for ch in unicodedata.normalize("NFD", str(x).lower()) if not unicodedata.combining(ch)))).strip()
+            tn = lambda n: re.sub(r"[^a-z0-9]+", " ", n.lower()).strip()
+            def ab(c):
+                r = T.get(tn(c["name"])) or T.get(tn(c["name"].split(" // ")[0]))
+                t = (r[3] or "") if r else ""
+                t = re.sub(r":rb_energy_(\d+):", r" \1 energy ", t); t = t.replace(":rb_might:", " might ").replace(":rb_exhaust:", " exhaust ").replace(":rb_rune_rainbow:", " any rune ")
+                t = re.sub(r":rb_rune_([a-z]+):", r" \1 rune ", t); t = re.sub(r":rb_[a-z0-9_]+:", " ", t)
+                return " " + fz(t) + " "
+            for typed in ["draw 2", "deathknell, draw", "2 energy", "exhaust", "calm rune", "deathkn", "recall"]:
+                want = sum(all(" " + fz(p) in ab(c) for p in re.split(r"[,;]+", typed) if fz(p)) for c in CARDS)
+                await pg.fill("#ab", typed); await pg.wait_for_timeout(400)
+                got = int(re.sub(r"\D", "", await pg.text_content("#count")) or 0); ok = got == want and got > 0
+                print(f"Ability text {'OK  ' if ok else 'WRONG'} {typed!r:22} -> {got} cards (expected {want})")
+                if not ok: bad.append(("ability", typed))
+            found = await names("#list .card .name, #list .card .tname"); print("  'recall' finds e.g.", found[:3])
+            await pg.click("#freset"); await pg.wait_for_timeout(300)
+            ok = await pg.input_value("#ab") == "" and "1,7" in (await pg.text_content("#count"))
+            print(f"Ability text {'OK  ' if ok else 'WRONG'} Reset filters clears it -> {await pg.text_content('#count')}")
+            if not ok: bad.append(("ability", "reset"))
             await pg.click("#t-packs")
             for typed, want in CASES:
                 await pg.fill("#qa-q", typed); await pg.wait_for_timeout(200)
