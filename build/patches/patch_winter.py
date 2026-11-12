@@ -46,7 +46,64 @@ rep('<div class="art-band art-bottom" aria-hidden="true">', '<div class="art-ban
 rep('  <div class="top">\n', '  <div class="top">\n    <div class="xm-snow" aria-hidden="true"></div><div class="xm-lights" aria-hidden="true">' + LIGHTS + '</div>\n')
 rep('<span class="hw-pk" aria-hidden="true">🎃</span></h1>', '<span class="hw-pk" aria-hidden="true">🎃</span><span class="xm-tree" aria-hidden="true">🎄</span></h1>')
 rep('<div class="hw-hi" aria-hidden="true">', '<div class="xm-hi" aria-hidden="true"><span class="hw-face"><span class="hw-ring"><img src="' + FACE + '" alt="" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span>' + SANTA
-    + '</span><span class="hw-bubble"><b>Happy Holidays from Captain Teemo!</b> Hope you find something shiny in your packs this winter <span class="hw-shroom">✨</span></span></div>\n    <div class="hw-hi" aria-hidden="true">')
+    + '</span><span class="hw-bubble" id="xm-say"><b>Happy Holidays from Captain Teemo!</b> Hope you find something shiny in your packs this winter <span class="hw-shroom">✨</span></span></div>\n    <div class="hw-hi" aria-hidden="true">')
+
+# Teemo says something new every two days (counted from Nov 2), with special lines on Christmas Eve/Day and New Year's
+# Eve/Day. ?tip=N shows line N (0 = first) for previews.
+SAYS = [
+    ("Happy Holidays from Captain Teemo!", "Hope you find something shiny in your packs this winter", "✨"),
+    ("Brrr, it's getting chilly!", "Captain Teemo swapped his mushrooms for snowballs. Mostly.", "⛄"),
+    ("Captain Teemo's wish list:", "a warm scarf, hot cocoa, and that one foil you still haven't pulled.", "🧣"),
+    ("Snow day!", "Perfect weather for sorting your binder by set number.", "📚"),
+    ("Captain Teemo reporting in!", "Snow on the ground, cards on the table. Best season.", "🎴"),
+    ("Hot tip:", "the ♡ Want button is a great way to drop hints before the holidays.", "🎁"),
+    ("Size doesn't mean everything!", "Even the smallest Yordle can build the biggest deck.", "💪"),
+    ("Making a list, checking it twice…", "your Shopping List in Marketplace, that is.", "📝"),
+    ("Fresh snow, fresh prices!", "Card prices get an update every Monday.", "📈"),
+    ("Captain Teemo's favourite carol:", "\"Deck the Halls\". Obviously.", "🎶"),
+    ("Never underestimate the power of the Scout's code!", "Or the power of a well-timed Hidden card.", "🫣"),
+    ("Cozy-up checklist:", "blanket ✓ cocoa ✓ deck tweaks ✓", "☕"),
+    ("Watch your step!", "Some of these snow piles are definitely mushrooms.", "🍄"),
+    ("Sharing is caring!", "Send a friend your wish list link so they know what to get you.", "💌"),
+    ("Captain Teemo built a snowman.", "It has a 2/2 body and no abilities. Still a great snowman.", "⛄"),
+    ("Pack-opening season is here!", "Add every pull to your collection in the Open Packs tab.", "📦"),
+    ("Jingle bells, Bandle smells…", "Captain Teemo is still working on the words.", "🔔"),
+    ("Trade you a candy cane for a rune?", "Make offers on your friends' shopping lists in Marketplace.", "🍬"),
+    ("Captain Teemo on duty!", "Even on holiday, a good scout never stops scouting for deals.", "🔭"),
+    ("Mittens on, sleeves up!", "Time to build that deck you've been thinking about.", "🧤"),
+    ("The best gift?", "Pulling the exact card your deck was missing.", "🌟"),
+    ("Captain Teemo tried ice skating.", "It went about as well as walking into his own mushroom.", "⛸️"),
+    ("Pro tip:", "Collection filters let you pick more than one domain at once.", "🔍"),
+    ("Snowflakes are like cards:", "no two printings are quite the same.", "❄️"),
+    ("Captain Teemo's holiday plan:", "naps, snacks and Riftbound. In that order.", "😴"),
+    ("Gingerbread Yordles taste better than they sound!", "Captain Teemo would know.", "🍪"),
+    ("Almost the end of the year!", "How close is your collection to complete?", "📊"),
+    ("Captain Teemo's new year's resolution:", "fewer mushrooms on the road. Probably.", "🎆"),
+    ("Brand new year, brand new decks!", "Check My Decks to see what you still need.", "🃏"),
+    ("Still snowing out there?", "Good excuse to stay in and play one more game.", "🌨️"),
+    ("Thanks for hanging out with Captain Teemo!", "Stay warm out there, Summoner.", "💙"),
+    ("Holiday hint:", "Copy your missing list and send it to whoever's shopping for you.", "📋"),
+    ("Last few days of the holidays!", "Captain Teemo says: make 'em count.", "🎉"),
+]
+SPECIAL = {"1224": ("It's Christmas Eve!", "Captain Teemo is keeping watch for a certain sleigh tonight.", "🛷"),
+           "1225": ("Merry Christmas from Captain Teemo!", "Hope your stockings are stuffed with booster packs.", "🎄"),
+           "1231": ("Happy New Year's Eve!", "Captain Teemo is saving his best mushroom for the countdown.", "🎆"),
+           "101": ("Happy New Year!", "Here's to a year of great pulls and even better games.", "🥳")}
+import json
+rep('<div class="wrap" id="app">', '''<script>window.XM_SAYS = ''' + json.dumps(SAYS, ensure_ascii=False) + ''';
+window.XM_SPECIAL = ''' + json.dumps(SPECIAL, ensure_ascii=False) + ''';</script>
+<div class="wrap" id="app">''', count=1)
+_j = h.rfind("</body>") if "</body>" in h else len(h)
+h = h[:_j] + '''<script>(() => {
+  const el = document.getElementById("xm-say"); if (!el || !document.documentElement.classList.contains("winter")) return;
+  const esc = s => s.replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
+  const d = new Date(), md = String((d.getMonth() + 1) * 100 + d.getDate()), tip = new URLSearchParams(location.search).get("tip");
+  const start = new Date(d.getMonth() >= 10 ? d.getFullYear() : d.getFullYear() - 1, 10, 2);
+  const day = Math.floor((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - start) / 864e5);
+  const say = tip !== null ? XM_SAYS[Math.abs(+tip || 0) % XM_SAYS.length] : XM_SPECIAL[md] || XM_SAYS[Math.max(0, Math.floor(day / 2)) % XM_SAYS.length];
+  el.innerHTML = `<b>${esc(say[0])}</b> ${esc(say[1])} <span class="hw-shroom">${say[2]}</span>`;
+})();</script>
+''' + h[_j:]
 
 _i = h.rfind("</style>"); h = h[:_i] + """/* winter / Christmas (patch_winter) */
 .xm-snow,.xm-lights,.xm-tree,.xm-hi,.xm-flake,.xm-gifts,.xm-fall{display:none}
