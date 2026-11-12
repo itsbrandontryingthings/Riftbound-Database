@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Winter / Christmas look (website; runs last, after patch_halloween.py). Takes over from autumn on Nov 2 and runs
-to Jan 6 (html.winter); autumn now ends on Nov 1.
+to Dec 31 (html.winter; patch_newyear takes over Jan 1); autumn now ends on Nov 1.
 - Icy blue accent colour and a cool glow over the top art strip and around the header panel.
 - Snow piled along the top of the header panel with a string of twinkling Christmas lights hanging under it, a
   🎄 after the page title, a few twinkling snowflakes over the top art strip, a holiday note from Captain Teemo
@@ -29,11 +29,11 @@ SANTA = ('<svg class="xm-hat" viewBox="0 0 44 36"><path d="M6 27C10 14 18 5 30 4
          '<svg class="xm-beard" viewBox="0 0 60 34"><path d="M3 4c4 3 9 4 14 3 4 5 9 6 13 6s9-1 13-6c5 1 10 0 14-3 1 9-2 16-7 20-3 6-8 9-14 9-3 1-6 1-9 0-6 0-11-3-14-9C5 20 2 13 3 4z" fill="#f4f6fb"/>'
          '<path d="M22 13c3-2 5-2 8 0 3-2 5-2 8 0-2 3-5 4-8 3-3 1-6 0-8-3z" fill="#dfe6f2"/></svg>')
 
-# season switch: autumn ends Nov 1, winter runs Nov 2 - Jan 6
+# season switch: autumn ends Nov 1, winter runs Nov 2 - Dec 31
 rep('''  const fall = q ? q !== "off" : md >= 922 && md <= 1130, spooky = q ? q === "halloween" : md >= 1001 && md <= 1101;
   document.documentElement.classList.toggle("fall", fall); document.documentElement.classList.toggle("spooky", spooky);''',
     '''  const fall = q ? q === "fall" || q === "halloween" : md >= 922 && md <= 1101, spooky = q ? q === "halloween" : md >= 1001 && md <= 1101;
-  const winter = q ? q === "winter" : md >= 1102 || md <= 106;
+  const winter = q ? q === "winter" : md >= 1102;
   document.documentElement.classList.toggle("fall", fall); document.documentElement.classList.toggle("spooky", spooky);
   document.documentElement.classList.toggle("winter", winter);''')
 rep('<div class="art-band art-top" aria-hidden="true">', '<div class="art-band art-top" aria-hidden="true">' + FLAKES)
@@ -87,8 +87,7 @@ SAYS = [
 ]
 SPECIAL = {"1224": ("It's Christmas Eve!", "Captain Teemo is keeping watch for a certain sleigh tonight.", "🛷"),
            "1225": ("Merry Christmas from Captain Teemo!", "Hope your stockings are stuffed with booster packs.", "🎄"),
-           "1231": ("Happy New Year's Eve!", "Captain Teemo is saving his best mushroom for the countdown.", "🎆"),
-           "101": ("Happy New Year!", "Here's to a year of great pulls and even better games.", "🥳")}
+           "1231": ("Happy New Year's Eve!", "Captain Teemo is saving his best mushroom for the countdown.", "🎆")}
 import json
 rep('<div class="wrap" id="app">', '''<script>window.XM_SAYS = ''' + json.dumps(SAYS, ensure_ascii=False) + ''';
 window.XM_SPECIAL = ''' + json.dumps(SPECIAL, ensure_ascii=False) + ''';</script>
