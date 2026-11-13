@@ -197,6 +197,9 @@ select{background:var(--panel);border:1px solid var(--line);border-radius:8px;pa
 .pill.var{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
 .pill.ban{color:var(--fury);border-color:color-mix(in srgb,var(--fury) 55%,var(--line));background:color-mix(in srgb,var(--fury) 12%,transparent);font-weight:600}
 .tag.ban{color:var(--fury)}
+.pill.ban.soon{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 55%,var(--line));background:color-mix(in srgb,var(--warn) 12%,transparent)}
+.tban.soon{background:var(--warn);color:#1a1a1a}
+.tag.bansoon{color:var(--warn)}
 .drow .banwarn{color:var(--fury);font-size:12px}
 .r-Common{color:#a9afbd}.r-Uncommon{color:#6fb7d9}.r-Rare{color:#d58ad8}.r-Epic{color:#e9a948}.r-Showcase{color:#f0d27a}.r-Promo{color:#8fc25a}
 .step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
@@ -413,7 +416,8 @@ html.rb-idle *,html.rb-idle *::before,html.rb-idle *::after{animation-play-state
 #lb .lbinfo{min-width:0;max-height:calc(100dvh - 120px);overflow:auto;padding-right:2px;font-size:14px;line-height:1.45}
 #lb .lgls{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 #lb .lgl{font-size:12px;font-weight:600;padding:2px 8px;border-radius:5px;color:var(--ok);border:1px solid color-mix(in srgb,var(--ok) 55%,var(--line));background:color-mix(in srgb,var(--ok) 12%,transparent)}
-#lb .lgl.no{color:var(--fury);border-color:color-mix(in srgb,var(--fury) 55%,var(--line));background:color-mix(in srgb,var(--fury) 12%,transparent)}
+#lb .lgl.soon{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 55%,var(--line));background:color-mix(in srgb,var(--warn) 12%,transparent)}
+.lgl.no{color:var(--fury);border-color:color-mix(in srgb,var(--fury) 55%,var(--line));background:color-mix(in srgb,var(--fury) 12%,transparent)}
 #lb .iset{color:var(--muted);margin-bottom:10px}#lb .iset b{color:var(--fg)}#lb .iset span:not(.pill){color:var(--body)}
 #lb .istats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1px solid var(--line);padding:10px 0}
 #lb .st{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -1303,7 +1307,7 @@ window.NY_SEASON = (() => {
   </details>
 
   <p class="note">🔒 Your cards, decks and wish list are private. They save to your account when you're signed in, or in this browser when you're not. Decks and wish lists you choose to share can only be seen by people you send the link to.</p>
-  <p class="note">Card list from the Riftcodex card database plus TCGplayer's listings, refreshed weekly so new sets and promos show up on their own. Prices are TCGplayer market prices in US dollars, refreshed daily; for printings that only come in foil, the foil price is used. Your collection's value is copies × price for every card you've marked. Tap <b>+</b> or <b>−</b> to record how many copies you own; your counts save to your account when you're signed in, or in this browser when you're not. Each card name opens its TCGplayer page. Cards tagged <b>Banned</b> can't be played in competitive events (Riot's ban list as of September 18, 2026); <b>Banned in 2v2</b> cards are still legal in 1v1. Card images load from Riot's image server (found through the Riftcodex card database); tap a picture to enlarge it. A few promo printings Riftcodex doesn't list use TCGplayer's photo, or the regular printing's art marked <b>BASE ART</b>.</p>
+  <p class="note">Card list from the Riftcodex card database plus TCGplayer's listings, refreshed weekly so new sets and promos show up on their own. Prices are TCGplayer market prices in US dollars, refreshed daily; for printings that only come in foil, the foil price is used. Your collection's value is copies × price for every card you've marked. Tap <b>+</b> or <b>−</b> to record how many copies you own; your counts save to your account when you're signed in, or in this browser when you're not. Each card name opens its TCGplayer page. Cards tagged <b>Banned</b> can't be played in competitive events (Riot's ban list as of November 13, 2026); <b>Banned in 2v2</b> cards are still legal in 1v1. <b>To Be Banned</b> cards are announced but still legal until the date shown. Card images load from Riot's image server (found through the Riftcodex card database); tap a picture to enlarge it. A few promo printings Riftcodex doesn't list use TCGplayer's photo, or the regular printing's art marked <b>BASE ART</b>.</p>
   <p class="note">Riftbound Database is a free fan project. It isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc. Card data from <a href="https://riftcodex.com" target="_blank" rel="noopener">Riftcodex</a>; prices from TCGplayer.</p>
   <div class="art-band art-bottom hw-teemo" aria-hidden="true"><span class="hw-patch"><span>🎃</span><span>🍄</span><span>🎃</span><span>🍂</span><span>🍄</span><span>🎃</span><span>🍄</span><span>🍁</span><span>🎃</span><span>🍄</span><span>🍂</span><span>🎃</span><span>🍄</span><span>🎃</span><span>🍄</span></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/4fd9e82cbd96010e2556430970d433022b541a51-1488x2078.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/5e31f0ea037604aa531d84c1d56d26f255210b7c-744x1039.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/ca8a2e11dd78dd09ad1c9ad3a23e5699254b947e-744x1039.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/ef5b3125fda91c0d0a02b7e6dfb7d3d5bafa8bd0-744x1039.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/0709ab02b75d9acc8f3c4037ec3a4140323150d8-744x1039.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/e2fbf10efaddbabe9241bd2c7b4d059accd1d5a7-1488x2078.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/404a8aa0061b58611bd913b58dd01d99fdb8087d-744x1039.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/7f0962b840d228ad551fb9334fe9bdf76d209e7d-744x1039.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span></div>
   <div class="art-band art-bottom" aria-hidden="true"><span class="ny-row"><span>🎉</span><span>🥂</span><span>🎆</span><span>🎊</span><span>✨</span><span>🍾</span><span>⭐</span><span>🎉</span><span>🥂</span><span>🎆</span><span>🎊</span><span>✨</span><span>🍾</span><span>⭐</span><span>🎉</span></span><span class="ny-row cn-row"><span>🧧</span><span>🏮</span><span>🍊</span><span>🥟</span><span>🐉</span><span>🧧</span><span>🎆</span><span>🍊</span><span>🏮</span><span>🥟</span><span>🧧</span><span>🐉</span><span>🍊</span><span>🏮</span><span>🧧</span></span><span class="xm-gifts"><span>🎁</span><span>🎄</span><span>⛄</span><span>🎁</span><span>🦌</span><span>🎄</span><span>🎁</span><span>⛄</span><span>🎄</span><span>🎁</span><span>🦌</span><span>🎄</span><span>⛄</span><span>🎁</span><span>🎄</span></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/dc89c6a2415debd5bf504ed46843f5dcc1d9b815-1488x2078.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/f57c14381b126e9f5a7b5bc4913151cb24c14fc3-744x1039.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/2c804ec513085702763a9145fac93a8adb6c4783-1488x2078.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/a576472c7bb00f475882ac814e1d8f9be233b402-744x1040.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/ffe064e002d3b9a366748eb85102a769b2545835-744x1039.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/9723181e3392bb61c2aabc804a44f7b0558cedf1-744x1039.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/913236dabf1e4f71650bbba46870fff8163e2eff-744x1039.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span><span class="art-t"><img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/e7185deb46f17770802d06aeddfe3b929afff880-744x1039.png?accountingTag=RB&w=420&fm=webp&q=85" alt="" width="420" height="586" referrerpolicy="no-referrer" decoding="async" loading="lazy"></span></div>
@@ -1507,7 +1511,7 @@ const typeOK = c => st.type === "__token" ? !!c.token : TYPE_SUB[st.type] ? subO
   ts.forEach(g => $("tg").insertAdjacentHTML("beforeend", `<option value="${esc(g)}">${esc(g)} (${tc[g]})</option>`));
   if (!ts.length) $("tg").hidden = true; }
 RAR.filter(r => CARDS.some(c => c.rarity === r)).forEach(r => $("rarity").insertAdjacentHTML("beforeend", `<option value="${r}">${r}</option>`));
-$("doms").innerHTML = DOMS.map(([d,v]) => `<button data-d="${d}" aria-pressed="false"><span class="dot" style="background:var(${v})"></span>${d}</button>`).join("") + `<button class="banchip" data-ban="1" aria-pressed="false" title="Show only cards banned from competitive play"><span class="dot"></span>Banned</button>`;
+$("doms").innerHTML = DOMS.map(([d,v]) => `<button data-d="${d}" aria-pressed="false"><span class="dot" style="background:var(${v})"></span>${d}</button>`).join("") + `<button class="banchip" data-ban="1" aria-pressed="false" title="Show only cards banned from competitive play (and ones announced to be banned soon)"><span class="dot"></span>Banned</button>`;
 const longDate = d => { try { return new Date(d + "T12:00:00").toLocaleDateString("en-US", {month: "long", day: "numeric", year: "numeric"}); } catch(e){ return d; } };
 if (META.updated){
   // next Monday after the last update; if that has already passed (an update ran late or was missed), the coming Monday
@@ -1620,7 +1624,7 @@ function renderInfo(c){
   lbCard = c;
   const t = txOf(c) || {text:"", fl:"", tags:[], sup:"", art:""}, n = counts[c.id] || 0;
   $("lb-sub").innerHTML = esc(c.type + (t.sup ? " · " + t.sup : "") + (c.token ? " · Token" : ""));
-  const legal = (fmt, banned) => `<span class="lgl${banned ? " no" : ""}">${fmt}: ${banned ? "Banned" : "Legal"}</span>`;
+  const legal = (fmt, banned) => banned && c.banSoon ? `<span class="lgl soon" title="Banned from ${esc(fmtDate(c.banSince))}">${fmt}: Legal until ${banShort(c.banSince)}</span>` : `<span class="lgl${banned ? " no" : ""}">${fmt}: ${banned ? "Banned" : "Legal"}</span>`;
   const legality = c.token || c.type === "Token" ? "" : legal("Standard", c.ban === "std") + legal("2v2", !!c.ban);
   const stat = (k, v, icon) => v == null ? "" : `<div class="st"><span class="k">${k}</span><span class="v">${icon}${esc(String(v))}</span></div>`;
   const dom = c.domains.length ? c.domains.map(d => `<span class="dot" style="background:var(--${d.toLowerCase()})"></span>${esc(d)}`).join(" ") : "Colorless";
@@ -1687,7 +1691,11 @@ document.addEventListener("error", e => {
 }, true);
 // competitive ban list (from cards.js: ban = "std" for Standard + 2v2, "2v2" for 2v2 only)
 const fmtDate = d => { try { return new Date(d + "T12:00:00").toLocaleDateString("en-CA", {year:"numeric", month:"short", day:"numeric"}); } catch(e){ return d; } };
+const BAN_TODAY = (() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); })();
+for (const c of (window.RB_CARDS || [])) if (c.ban && c.banSince && c.banSince > BAN_TODAY) c.banSoon = 1;
+const banShort = d => { try { return new Date(d + "T12:00:00").toLocaleDateString("en-US", {month:"short", day:"numeric"}); } catch(e){ return d; } };
 function banPill(c){
+  if (c && c.banSoon) return `<span class="pill ban soon" title="${esc(`Announced: ${c.ban === "2v2" ? "banned in 2v2" : "banned in competitive play (Standard and 2v2)"} from ${fmtDate(c.banSince)}. Still legal until then.`)}">To Be Banned ${banShort(c.banSince)}</span>`;
   if (!c || !c.ban) return "";
   const what = c.ban === "2v2" ? "Banned in 2v2" : "Banned";
   const tip = (c.ban === "2v2" ? "Banned in 2v2 only; still legal in 1v1 Standard" : "Banned in competitive play (Standard and 2v2)") + (c.banSince ? `, since ${fmtDate(c.banSince)}` : "");
@@ -1734,7 +1742,7 @@ addEventListener("resize", () => { clearTimeout(window.__rsz); window.__rsz = se
 function tileHTML(c){
   const n = counts[c.id]||0;
   return `<div class="card tile${n?" got":""}" data-id="${esc(c.id)}">
-    ${thumbHTML(c, PHONE() && st.size === "s" ? 480 : 744)}${wishBtn(c, true)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
+    ${thumbHTML(c, PHONE() && st.size === "s" ? 480 : 744)}${wishBtn(c, true)}${c.ban ? `${c.banSoon ? `<span class="tban soon">BAN ${banShort(c.banSince).toUpperCase()}</span>` : `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>`}` : ""}
     <a class="tname" href="${tcgURL(c)}" target="_blank" rel="noopener" title="Open ${esc(c.name)} on TCGplayer">${esc(c.name)}</a>
     <div class="tsub"><span class="r-${c.rarity}">${esc(codeOf(c))}</span>${c.variant ? ` · ${esc(c.variant)}` : ""}</div>
     <div class="tfoot">${priceHTML(c, n)}<div class="step" role="group" aria-label="Copies of ${esc(c.name)}">
@@ -1767,7 +1775,7 @@ function renderWish(){
   $("wish-list").className = wv === "grid" ? "list grid" + (st.size && st.size !== "s" ? " sz-" + st.size : "") : "wlist" + (st.size === "m" || st.size === "l" ? " lsz-" + st.size : "");
   $("wish-list").innerHTML = (ids.length && !vis.length ? `<div class="empty">No cards on your wish list match these filters. <button class="btn" id="wlf-clear">Reset filters</button></div>` : "")
     + vis.map(id => { const c = byId[id], q = wq(id), have = counts[id] || 0;
-    if (wv === "grid") return `<div class="card tile" data-id="${esc(id)}">${thumbHTML(c, PHONE() && st.size === "s" ? 480 : 744)}${c.ban ? `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>` : ""}
+    if (wv === "grid") return `<div class="card tile" data-id="${esc(id)}">${thumbHTML(c, PHONE() && st.size === "s" ? 480 : 744)}${c.ban ? `${c.banSoon ? `<span class="tban soon">BAN ${banShort(c.banSince).toUpperCase()}</span>` : `<span class="tban">${c.ban === "2v2" ? "2v2 BAN" : "BANNED"}</span>`}` : ""}
       <a class="tname" href="${tcgURL(c)}" target="_blank" rel="noopener" title="Open ${esc(c.name)} on TCGplayer">${esc(c.name)}</a>
       <div class="tsub"><span class="r-${c.rarity}">${esc(codeOf(c))}</span>${c.variant ? ` · ${esc(c.variant)}` : ""}</div>
       <div class="tsub"><span class="own${have ? " ok" : ""}">${have ? `you own ${have}` : "you don't own it"}</span></div><div class="tsub wftags">${wfTags(id, wsel)}${wfBtn(c)}</div>
@@ -2523,7 +2531,7 @@ function dkChecks(S){
   const over = Object.keys(copies).filter(k => copies[k] > 3).map(k => groups[k][0].name);
   const doms = (groups[legends[0].key][0].domains || []), domSet = new Set(doms);
   const off = new Set(rows.filter(r => r.known && (r.kind === "card" || r.kind === "rune") && (groups[r.key][0].domains || []).some(x => !domSet.has(x))).map(r => r.key)).size;
-  const banned = new Set(rows.filter(r => (groups[r.key] || []).some(c => c.ban === "std")).map(r => r.key)).size;
+  const banned = new Set(rows.filter(r => (groups[r.key] || []).some(c => (c.ban === "std" && !c.banSoon))).map(r => r.key)).size;
   const side = sum(rows.filter(r => r.side)), nLeg = sum(legends);
   const out = [
     {ok: nLeg === 1, t: nLeg === 1 ? "1 Legend" : `${nLeg} Legends (a deck has 1)`},
@@ -2571,7 +2579,7 @@ function dkRowHTML(r, view, size){
   const price = r.cheap ? `<span class="dk-price"><b>${esc(m1(r.q * r.cheap.price))}</b>${FX && st.cur === "both" ? `<small>${esc(usd(r.q * r.cheap.price))}</small>` : ""}<small>${esc(m1(r.cheap.price))} ea</small></span>` : "";
   const ctl = r.known ? `<div class="dk-ctl"><span class="dk-pair">${dkHaveCtl(r, view === "grid")}</span></div>` : "";
   const rm = `<button class="dk-rm" data-act="rm" aria-label="Remove ${esc(r.name)} from this deck" title="Remove from this deck">✕</button>`;
-  if (view === "grid") return `<div class="card tile dk-tile${r.miss ? "" : " done"}" data-s="${r.si}" data-r="${r.ri}" style="${dom}">${thumb}${c && (groups[r.key] || []).some(x => x.ban === "std") ? '<span class="tban">BANNED</span>' : ""}${rm}
+  if (view === "grid") return `<div class="card tile dk-tile${r.miss ? "" : " done"}" data-s="${r.si}" data-r="${r.ri}" style="${dom}">${thumb}${c && (groups[r.key] || []).some(x => (x.ban === "std" && !x.banSoon)) ? '<span class="tban">BANNED</span>' : ""}${rm}
     <span class="tname">${name}</span><div class="tsub"><b class="dk-q">${r.q}×</b> ${set || esc(r.name)}</div><div class="dk-st">${dkStatus(r)}${price}</div>${ctl}</div>`;
   return `<div class="dk-card${r.miss ? "" : " done"}" data-s="${r.si}" data-r="${r.ri}" style="${dom}">${thumb}
     <div class="dk-main"><div class="dk-top"><span class="name">${name}</span>${rm}</div>
@@ -2595,7 +2603,7 @@ function renderDecks(){
   const buyCopies = all.reduce((a, r) => a + (r.known ? r.miss : 0), 0), buyKinds = new Set(all.filter(r => r.miss && r.known).map(r => r.key)).size;
   const top = buys.slice(0, 2), topShare = S.cost ? Math.round(top.reduce((a, r) => a + r.miss * r.cheap.price, 0) / S.cost * 100) : 0;
   const bySet = {}; all.forEach(r => { if (r.show) bySet[r.show.set] = (bySet[r.show.set] || 0) + r.q; });
-  const banned = new Set(all.filter(r => (groups[r.key] || []).some(x => x.ban === "std")).map(r => r.key)).size;
+  const banned = new Set(all.filter(r => (groups[r.key] || []).some(x => (x.ban === "std" && !x.banSoon))).map(r => r.key)).size;
   const legal = checks && checks.list.every(c => c.ok || c.info);
   const mainRows = all.filter(r => r.kind === "card" || r.kind === "unknown"), mainHave = mainRows.reduce((a, r) => a + r.h, 0);
   $("deck-summary").innerHTML = `<div class="eyebrow">Deck Workspace ${S.have === S.need && S.need ? '<span class="tag ok">✓ You own every card</span>' : ""}${checks ? (legal ? '<span class="tag ok">✓ Meets the deck rules</span>' : '<span class="tag warn">Doesn\'t meet the deck rules yet</span>') : ""}${banned ? `<span class="tag ban">⚠ ${banned} banned card${banned===1?"":"s"}: not tournament legal</span>` : ""}</div>
@@ -3994,7 +4002,7 @@ async function renderFriendsList(){
     }
     const s = deckStats(deck), mine = !!r.is_mine;
     const legendSec = secs.find(x => /legend/i.test(x.label)), legend = legendSec && legendSec.rows[0] ? legendSec.rows[0].name : "";
-    const banned = new Set(rows.filter(x => (groups[x.key]||[]).some(c => c.ban === "std")).map(x => x.key)).size;
+    const banned = new Set(rows.filter(x => (groups[x.key]||[]).some(c => (c.ban === "std" && !c.banSoon))).map(x => x.key)).size;
     const open = frOpen.has(r.id);
     const body = open ? `<div class="frbody">${s.secs.map(sec => `<h4>${esc(sec.label)}</h4>${frSortRows(sec.rows).map(x => `<div class="frrow"${frCardAttr(x.key)}>${frThumb(x.key)}<span class="q">${x.q}×</span><span class="frn">${esc(x.name)}</span>${banPill((groups[x.key]||[]).find(c => c.ban))}<span class="${x.miss ? "no" : "ok"}">${x.miss ? `you have ${x.h}` : `✓ you have ${ownedOf(x.key)}`}</span></div>`).join("")}`).join("")}</div>` : "";
     return `<article class="frdeck${r.share_token === frFocus ? " new" : ""}" data-id="${esc(r.id)}">

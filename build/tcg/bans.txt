@@ -1,5 +1,6 @@
 # Riftbound competitive ban list. name|formats|since   (formats: std = banned in Standard and 2v2; 2v2 = banned in 2v2 only)
-# Checked 2026-10-13 against riftbound.zone, riftcompare.com and riftbound.gg (latest change: Sept 18, 2026)
+# Checked 2026-11-13 (latest change: Radiance ban list, announced Nov 13, effective Nov 23, 2026).
+# A future date = announced but not in effect yet: the site shows "To Be Banned <date>" until that day, then "Banned" on its own.
 Called Shot|std|2026-03-31
 Draven, Vanquisher|std|2026-03-31
 Fight or Flight|std|2026-03-31
@@ -13,3 +14,13 @@ Aspirant's Climb|std|2026-07-24
 Master Yi, Wuju Bladesman|2v2|2026-07-24
 Ekko, Recurrent|std|2026-09-18
 Stacked Deck|std|2026-09-18
+Riven, Broken Blade|std|2026-11-23
+Zhonya's Hourglass|std|2026-11-23
+Stellacorn Herder|std|2026-11-23
+Nocturne, Horrifying|std|2026-11-23
+Rhasa the Sunderer|std|2026-11-23
+Brynhir Thundersong|std|2026-11-23
+Dazzling Aurora|std|2026-11-23
+Baited Hook|std|2026-11-23
+Emperor's Dais|std|2026-11-23
+Star Spring|std|2026-11-23
