@@ -252,6 +252,7 @@ def images_only(tcg_dir, src, out):
     cards = json.loads(re.search(r"window\.RB_CARDS=(.*);\s*$", s, re.S).group(1))
     meta["images"] = attach_images(cards, tcg_dir)
     meta["banned"] = attach_bans(cards, tcg_dir)
+    meta["updated"] = datetime.date.today().isoformat()  # a manual update (bans, pictures) counts as a card list update on the site
     write_out(out, meta, cards)
 
 def extras_only(tcg_dir, src, out):
