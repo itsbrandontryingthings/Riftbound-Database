@@ -2195,19 +2195,47 @@ const scLabel = c => `${c.set} ${String(c.num ?? "").padStart(3, "0")}`;
 // Pictures within SC_SAME of the best are the same art (reprints).
 const SC_MIN = 0.42, SC_SURE = 0.6, SC_SAME = 0.02;
 const scKeyOf = c => c.img ? c.img.replace(/\.png$/, "") : c.imgTcg && c.tcg ? "tcg-" + c.tcg : "";
-const scAI = {ready: null};
+const scAI = {ready: null, wk: null};
+const scClosed = () => Object.assign(new Error("scanner closed"), {closed: true});
+// the picture model in its own worker (scan-worker.js), so Done can end it and free all of its memory
+function scWorker(){
+  const w = new Worker("./scan-worker.js", {type: "module"}), q = new Map(); let n = 0;
+  const fail = e => { for (const p of q.values()) p.no(e); q.clear(); };
+  w.onmessage = e => { const p = q.get(e.data.id); if (!p) return; q.delete(e.data.id); e.data.err ? p.no(new Error(e.data.err)) : p.ok(e.data.v); };
+  w.onerror = e => { e.preventDefault && e.preventDefault(); fail(new Error("worker: " + (e.message || "failed to start"))); };
+  const call = d => new Promise((ok, no) => { const id = ++n; q.set(id, {ok, no}); d ? w.postMessage({id, data: d}, [d.data.buffer]) : w.postMessage({id}); });
+  return {call, end(){ w.terminate(); fail(scClosed()); }};
+}
+async function scModel(m){
+  if (typeof Worker === "function"){
+    const wk = scAI.wk = scWorker();
+    try { await wk.call(); return {vec: src => wk.call(m.prep(src)), end: () => wk.end()}; }
+    catch(e){ wk.end(); if (scAI.wk === wk) scAI.wk = null; if (e.closed) throw e; console.warn("The scanner's worker didn't start; running the model on the page.", e); }
+  }
+  await m.load(); return {vec: src => m.vector(src), end: () => m.unload().catch(() => {})};
+}
 function scAILoad(){
   if (scAI.ready) return scAI.ready;
-  scAI.ready = Promise.all([import("./scan-ai.js").then(m => m.load().then(() => m)), fetch("cardvecs.json").then(r => r.json()), fetch("cardvecs.bin").then(r => r.arrayBuffer())])
-    .then(([m, meta, buf]) => {
+  const p = scAI.ready = Promise.all([import("./scan-ai.js").then(m => scModel(m).then(x => ({m, ...x}))), scAI.meta || fetch("cardvecs.json").then(r => r.json()), scAI.buf || fetch("cardvecs.bin").then(r => r.arrayBuffer())])
+    .then(([{m, vec, end}, meta, buf]) => {
+      if (scAI.ready !== p){ end(); throw scClosed(); }      // closed while it was loading
       const by = {}; for (const c of CARDS){ const k = scKeyOf(c); if (k) (by[k] ||= []).push(c); }
-      return Object.assign(scAI, {m, by, keys: meta.keys, dim: meta.dim, mean: Float32Array.from(meta.mean), vecs: new Int8Array(buf)});
+      return Object.assign(scAI, {m, vec, meta, buf, by, keys: meta.keys, dim: meta.dim, mean: Float32Array.from(meta.mean), vecs: new Int8Array(buf)});
     })
-    .catch(e => { scAI.ready = null; throw e; });
-  return scAI.ready;
+    .catch(e => { if (scAI.ready === p) scAI.ready = null; throw e; });
+  return p;
+}
+// Done: end the model's worker and the text reader, so the phone gets their memory back
+function scFree(){
+  sc.gen = (sc.gen || 0) + 1; sc.busy = false;
+  const wk = scAI.wk; scAI.wk = null; scAI.ready = null;
+  if (wk) wk.end(); else if (scAI.m) scAI.m.unload().catch(() => {});
+  scAI.vec = null;
+  const t = sc.worker; sc.worker = null; sc.ready = null; sc.tm = undefined;
+  if (t) try { t.terminate(); } catch(e){}
 }
 async function scAIMatch(src){
-  const a = await scAILoad(), v = await a.m.vector(src), d = a.dim;
+  const a = await scAILoad(), v = await a.vec(src), d = a.dim;
   let n = 0; for (let j = 0; j < d; j++){ v[j] -= a.mean[j]; n += v[j] * v[j]; } n = (Math.sqrt(n) || 1) * 127;
   const sims = new Float32Array(a.keys.length); let best = -2, bi = -1, second = -2;
   for (let i = 0, o = 0; i < a.keys.length; i++, o += d){
@@ -2226,7 +2254,7 @@ async function scFind(){
   if (!sc.noAI){
     let c;
     try { c = await scAIMatch(scCan); }
-    catch(e){ sc.noAI = true; console.warn("Picture recognition isn't available here; reading the card's text instead.", e); }
+    catch(e){ if (e.closed || !$("sc-dlg").open) return null; sc.noAI = true; console.warn("Picture recognition isn't available here; reading the card's text instead.", e); }
     if (!sc.noAI){
       if (sc.ai.sim >= SC_SURE || sc.ai.sim < 0.4) return c;
       try { const t = await scLook(await scLoad()); if (t && /^look \d+$/.test(sc.how || "")) return t; } catch(e){}
@@ -2239,7 +2267,7 @@ function scLoad(){
   if (sc.ready) return sc.ready;
   sc.ready = new Promise((ok, no) => { if (window.Tesseract) return ok(); const s = document.createElement("script"); s.src = SC_LIB; s.onload = ok; s.onerror = () => no(new Error("load")); document.head.appendChild(s); })
     .then(() => Tesseract.createWorker("eng", 1))
-    .then(async w => { await w.setParameters({tessedit_pageseg_mode: "11"}); sc.worker = w; return w; })
+    .then(async w => { await w.setParameters({tessedit_pageseg_mode: "11"}); if (!$("sc-dlg").open){ w.terminate(); sc.ready = null; throw scClosed(); } sc.worker = w; return w; })
     .catch(e => { sc.ready = null; throw e; });
   return sc.ready;
 }
@@ -2366,7 +2394,8 @@ function scGrab(v){
   let x = (f.left - box.left - ox) / s - f.width / s * 0.06, y = (f.top - box.top - oy) / s - f.height / s * 0.06;
   x = Math.max(0, x); y = Math.max(0, y); w = Math.min(vw - x, w); hh = Math.min(vh - y, hh);
   const W = sc.wide ? 1250 : 900;
-  scCan.width = W; scCan.height = Math.round(hh * W / w);
+  const H = Math.round(hh * W / w);
+  if (scCan.width !== W || scCan.height !== H){ scCan.width = W; scCan.height = H; }     // same size: no new memory each look
   scCan.getContext("2d").drawImage(v, x, y, w, hh, 0, 0, scCan.width, scCan.height);
 }
 // a card-shaped frame, or a sideways one for battlefields (▭ Battlefield)
@@ -2384,14 +2413,14 @@ async function scTick(){
   const v = $("sc-video");
   if (!$("sc-dlg").open || sc.paused || sc.busy || !sc.stream || document.hidden) return;
   if (!v.videoWidth){ sc.t = setTimeout(scTick, 300); return; }
-  sc.busy = true;
+  sc.busy = true; const gen = sc.gen;
   try {
     scGrab(v);
     const c = await scFind();
-    if (sc.paused || !$("sc-dlg").open) return;
+    if (gen !== sc.gen || sc.paused || !$("sc-dlg").open) return;
     scSaw(c);
-  } catch(e){ scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."); return; }
-  finally { sc.busy = false; }
+  } catch(e){ if (gen === sc.gen && $("sc-dlg").open) scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."); return; }
+  finally { if (gen === sc.gen) sc.busy = false; }
   sc.t = setTimeout(scTick, 150);
 }
 async function scCamera(){
@@ -2413,7 +2442,7 @@ function scOpen(){
   const d = $("sc-dlg"); if (!d.open){ try { d.showModal(); } catch(e){ d.setAttribute("open", ""); } }
   sc.paused = false; sc.skip = ""; sc.inView = ""; sc.card = null; sc.empty = 0; sc.addN = 0; $("sc-res").hidden = true; $("sc-add").textContent = "＋ Add to Collection"; $("sc-frame").classList.remove("hit"); scSize();
   scMsg("Getting the card reader ready… (the first time downloads about 30 MB, then it's saved on your phone)");
-  scAILoad().catch(() => { sc.noAI = true; return scLoad(); }).then(() => { if (!sc.paused && !sc.card && sc.stream) scMsg(scLooking()); }).catch(() => scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."));
+  scAILoad().catch(e => { if (e.closed || !$("sc-dlg").open) throw e; sc.noAI = true; return scLoad(); }).then(() => { if (!sc.paused && !sc.card && sc.stream) scMsg(scLooking()); }).catch(() => scMsg("The card reader couldn't load. Check your internet connection, then close the scanner and try again."));
   scCamera();
 }
 // scanning never stops: a card that comes into view is shown (and added, with Auto-add on); the same card staying in
@@ -2477,6 +2506,7 @@ $("sc-wide").addEventListener("click", () => {
 });
 $("sc-close").addEventListener("click", () => $("sc-dlg").close());
 $("sc-dlg").addEventListener("close", scStop);
+$("sc-dlg").addEventListener("close", scFree);
 $("sc-pr").addEventListener("click", e => { const b = e.target.closest(".sc-p"); if (b && byId[b.dataset.id]){ sc.card = byId[b.dataset.id]; scDraw(); } });
 // every tap adds one more copy; scanning carries on meanwhile
 $("sc-add").addEventListener("click", () => { const c = sc.card; if (!c) return; if (sc.last !== c) sc.addN = 0; scPut(c); scDone(); scDraw(); });
