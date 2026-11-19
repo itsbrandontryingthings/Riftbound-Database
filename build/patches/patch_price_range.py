@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Price slider beside Energy and Might (website only, last; builds on patch_sliders.py).
 - Every filter area (Collection, Wish List, My Shopping List, Friends' Shopping Lists) gets a third two-handle slider,
-  "Price (US $)", from $0 to $20K+. The steps grow as they go ($0, 25c, 50c, $1, $2 ... $1K ... $20K), because most cards
+  "Price (US $)", from $0 to $20K+. With the CAD currency button picked it becomes "Price (CA $)" and the same steps are
+  Canadian dollars (the card's USD price times the rate, like cad()); US and US + CAD use US dollars. The steps grow as they go ($0, 25c, 50c, $1, $2 ... $1K ... $20K), because most cards
   cost under $5 and only a few cost thousands; a straight 0-20,000 line would put every cheap card on one pixel.
 - Uses the card's market price (c.price, today's from prices.js). The top step means "no upper limit".
   Once narrowed, cards without a price drop out. Counts as a filter; Reset filters clears it; this visit only.
@@ -43,6 +44,7 @@ rep('const RNG_MAX = 12, RNG = {}; for (const g of ["c", "w", "s", "f"]) RNG[g] 
     'const rngNarrow = (g, k) => RNG[g][k][0] > 0 || RNG[g][k][1] < rngTop(k);\n'
     'const rngOn = g => RNG_K.some(k => rngNarrow(g, k));\n'
     'const rngCount = g => RNG_K.filter(k => rngNarrow(g, k)).length;\n'
+    'const rngCad = () => !!FX && st.cur === "cad", rngPx = c => c && typeof c.price === "number" ? c.price * (rngCad() ? FX : 1) : null;\n'
     'const rngUsd = v => v >= 1000 ? `$${v / 1000}K` : v > 0 && v < 1 ? `${Math.round(v * 100)}¢` : `$${v}`;\n'
     'function rngLabel(k, lo, hi){\n'
     '  const T = rngTop(k); if (lo === 0 && hi === T) return "Any";\n'
@@ -59,7 +61,7 @@ rep('''    if (typeof v !== "number" || v < lo || v > hi) return false;
   }
   const [pl, ph] = RNG[g].p, PT = rngTop("p");
   if (pl > 0 || ph < PT){
-    const v = c && c.price;
+    const v = rngPx(c);
     if (typeof v !== "number" || !(v > 0)) return false;
     if (v < RNG_PX[pl] || (ph < PT && v > RNG_PX[ph])) return false;
   }
@@ -72,10 +74,17 @@ rep('''  ins[0].style.zIndex = lo > RNG_MAX / 2 ? 3 : 1;   // keep the low handl
 '''  const k = box.dataset.k, T = rngTop(k);
   ins[0].style.zIndex = lo > T / 2 ? 3 : 1;   // keep the low handle reachable when it's pushed to the right
   box.querySelector("b").textContent = rngLabel(k, lo, hi);
+  if (k === "p") box.querySelector(".rng-l").firstChild.textContent = `Price (${rngCad() ? "CA" : "US"} $) `;
   const f = box.querySelector(".rng-fill"); f.style.left = `calc(9px + (100% - 18px) * ${lo / T})`; f.style.width = `calc((100% - 18px) * ${(hi - lo) / T})`;
   box.classList.toggle("on", !(lo === 0 && hi === T));''')
 rep('function rngReset(g){ RNG[g].e = [0, RNG_MAX]; RNG[g].m = [0, RNG_MAX];',
     'function rngReset(g){ RNG[g].e = [0, RNG_MAX]; RNG[g].m = [0, RNG_MAX]; RNG[g].p = [0, rngTop("p")];')
+
+# ---------- the currency buttons switch the price sliders between US and CA dollars
+rep('["both","cad","usd"].forEach(k => $("c-"+k).addEventListener("click", () => { st.cur = k; syncControls(); render(); }));',
+    '["both","cad","usd"].forEach(k => $("c-"+k).addEventListener("click", () => { st.cur = k; syncControls(); render(); }));\n'
+    'function rngCur(){ document.querySelectorAll(\'.rng[data-k="p"]\').forEach(rngDraw); for (const g of ["w", "s", "f"]) if (rngNarrow(g, "p")) rngApply(g); }\n'
+    '["both","cad","usd"].forEach(k => $("c-"+k).addEventListener("click", rngCur));')
 
 open(out, "w", encoding="utf-8").write(h)
 print("patch_price_range: ok ->", out)

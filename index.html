@@ -1424,6 +1424,7 @@ for (const g of ["c", "w", "s", "f"]) RNG[g] = {e: [0, RNG_MAX], m: [0, RNG_MAX]
 const rngNarrow = (g, k) => RNG[g][k][0] > 0 || RNG[g][k][1] < rngTop(k);
 const rngOn = g => RNG_K.some(k => rngNarrow(g, k));
 const rngCount = g => RNG_K.filter(k => rngNarrow(g, k)).length;
+const rngCad = () => !!FX && st.cur === "cad", rngPx = c => c && typeof c.price === "number" ? c.price * (rngCad() ? FX : 1) : null;
 const rngUsd = v => v >= 1000 ? `$${v / 1000}K` : v > 0 && v < 1 ? `${Math.round(v * 100)}¢` : `$${v}`;
 function rngLabel(k, lo, hi){
   const T = rngTop(k); if (lo === 0 && hi === T) return "Any";
@@ -1441,7 +1442,7 @@ function rngOK(c, g){
   }
   const [pl, ph] = RNG[g].p, PT = rngTop("p");
   if (pl > 0 || ph < PT){
-    const v = c && c.price;
+    const v = rngPx(c);
     if (typeof v !== "number" || !(v > 0)) return false;
     if (v < RNG_PX[pl] || (ph < PT && v > RNG_PX[ph])) return false;
   }
@@ -1453,6 +1454,7 @@ function rngDraw(box){
   const k = box.dataset.k, T = rngTop(k);
   ins[0].style.zIndex = lo > T / 2 ? 3 : 1;   // keep the low handle reachable when it's pushed to the right
   box.querySelector("b").textContent = rngLabel(k, lo, hi);
+  if (k === "p") box.querySelector(".rng-l").firstChild.textContent = `Price (${rngCad() ? "CA" : "US"} $) `;
   const f = box.querySelector(".rng-fill"); f.style.left = `calc(9px + (100% - 18px) * ${lo / T})`; f.style.width = `calc((100% - 18px) * ${(hi - lo) / T})`;
   box.classList.toggle("on", !(lo === 0 && hi === T));
 }
@@ -2065,6 +2067,8 @@ $("rarity").addEventListener("change", e => { st.rarity = e.target.value; st.lim
 $("only").addEventListener("change", e => { st.only = e.target.checked; if (st.only) st.variants = true; syncControls(); st.limit = PAGE; st.page = 0; render(); });
 $("variants").addEventListener("change", e => { st.variants = e.target.checked; if (!st.variants) { st.only = false; $("only").checked = false; } st.limit = PAGE; st.page = 0; render(); });
 ["both","cad","usd"].forEach(k => $("c-"+k).addEventListener("click", () => { st.cur = k; syncControls(); render(); }));
+function rngCur(){ document.querySelectorAll('.rng[data-k="p"]').forEach(rngDraw); for (const g of ["w", "s", "f"]) if (rngNarrow(g, "p")) rngApply(g); }
+["both","cad","usd"].forEach(k => $("c-"+k).addEventListener("click", rngCur));
 $("sort").addEventListener("change", e => { st.sort = e.target.value; st.limit = PAGE; st.page = 0; render(); });
 $("more").addEventListener("click", () => { st.limit += PAGE; renderList(); });
 // count above the list mirrors the filter bar's count
