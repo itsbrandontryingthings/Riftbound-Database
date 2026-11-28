@@ -2305,7 +2305,7 @@ $("qa-copy").addEventListener("click", () => copy(pack.map(id => { const c = byI
 const SC_LIB = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
 const SC_SETS = new Set(CARDS.map(c => c.set));
 const sc = {stream:null, worker:null, ready:null, busy:false, paused:true, card:null, skip:"", miss:0, n:0, t:0, last:null};
-const scCan = document.createElement("canvas");
+const scCan = document.createElement("canvas"), scCx = scCan.getContext("2d", {willReadFrequently: true});
 window.rbScan = sc;                // for tests: sc.data = what was read last, sc.fn = the matching steps
 const scMsg = t => { $("sc-msg").textContent = t; };
 const scLabel = c => `${c.set} ${String(c.num ?? "").padStart(3, "0")}`;
@@ -2466,12 +2466,24 @@ function scFlipped(){
 // (catches names on grey banners and small collector lines, e.g. battlefields); the colour-flipped copy.
 // Each look adds its words to the earlier ones.
 const SC_LOOKS = [["0", false], ["1", false], ["0", true]];
+// Tesseract leaks a little memory on every read: after SC_RECYCLE reads it's swapped for a fresh one (frees it all)
+const SC_RECYCLE = 24;
+function scRecycle(force){
+  if (!sc.worker || sc.reading || (!force && (sc.reads || 0) < SC_RECYCLE)) return;
+  const w = sc.worker; sc.worker = null; sc.ready = null; sc.tm = undefined; sc.reads = 0;
+  try { w.terminate(); } catch(e){}
+}
 async function scLook(w){
+  sc.reading = (sc.reading || 0) + 1;
+  try { return await scLook1(w); }
+  finally { sc.reading--; scRecycle(!$("sc-dlg").open); }
+}
+async function scLook1(w){
   let all = {text: "", words: []}, m = null;
   for (const [i, [tm, flip]] of SC_LOOKS.entries()){
     if (i && sc.paused && !sc.photo) return null;
     if (sc.tm !== tm){ await w.setParameters({thresholding_method: tm}); sc.tm = tm; }
-    const d = (await w.recognize(flip ? scFlipped() : scCan)).data;
+    const d = (await w.recognize(flip ? scFlipped() : scCan)).data; sc.reads = (sc.reads || 0) + 1;
     all = {text: all.text + "\n" + d.text, words: [...all.words, ...(d.words || [])]}; m = scMatch(all);
     sc.how = m ? `look ${i + 1}${m.sure ? "" : ", not sure"}` : "";
     if (m && m.sure) return m.c;
@@ -2487,8 +2499,10 @@ function scGrab(v){
   let x = (f.left - box.left - ox) / s - f.width / s * 0.06, y = (f.top - box.top - oy) / s - f.height / s * 0.06;
   x = Math.max(0, x); y = Math.max(0, y); w = Math.min(vw - x, w); hh = Math.min(vh - y, hh);
   const W = sc.wide ? 1250 : 900;
-  scCan.width = W; scCan.height = Math.round(hh * W / w);
-  scCan.getContext("2d").drawImage(v, x, y, w, hh, 0, 0, scCan.width, scCan.height);
+  const H = Math.round(hh * W / w);
+  if (scCan.width !== W) scCan.width = W;
+  if (scCan.height !== H) scCan.height = H;
+  scCx.drawImage(v, x, y, w, hh, 0, 0, W, H);
 }
 // a card-shaped frame, or a sideways one for battlefields (▭ Battlefield)
 function scSize(){
@@ -2529,6 +2543,7 @@ function scStop(){
   clearTimeout(sc.t); sc.paused = true;
   if (sc.stream) sc.stream.getTracks().forEach(t => t.stop());
   sc.stream = null; $("sc-video").srcObject = null;
+  setTimeout(() => { if (!$("sc-dlg").open) scRecycle(true); }, 0);
 }
 function scOpen(){
   const d = $("sc-dlg"); if (!d.open){ try { d.showModal(); } catch(e){ d.setAttribute("open", ""); } }
