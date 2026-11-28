@@ -2350,6 +2350,7 @@ async function scFind(){
     catch(e){ sc.noAI = true; console.warn("Picture recognition isn't available here; reading the card's text instead.", e); }
     if (!sc.noAI){
       if (sc.ai.sim >= SC_SURE || sc.ai.sim < 0.4) return c;
+      if (!sc.wide && !(c && c.type === "Battlefield")) return c;
       try { const t = await scLook(await scLoad()); if (t && /^look \d+$/.test(sc.how || "")) return t; } catch(e){}
       return c;
     }

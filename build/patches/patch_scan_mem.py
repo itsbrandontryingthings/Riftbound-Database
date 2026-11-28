@@ -6,6 +6,8 @@ without end; the picture model (scan-ai.js) stays flat.
 - The text reader is swapped for a fresh one after SC_RECYCLE reads (`scRecycle`), which frees all of its memory;
   never while a read is under way (`sc.reading`). The next read starts the new one (~1 s, nothing downloaded again).
 - The camera picture's canvas is reused (only resized when its size changes) and kept in ordinary memory.
+- With the picture model working, the text reader only runs for battlefields (▭ Battlefield on, or a battlefield is the
+  best match): both at once crashed iPhones after the first card.
 - Closing the scanner (Done) shuts the text reader down too, so the page doesn't keep it between scans.
 Usage: patch_scan_mem.py in.html out.html"""
 import sys
@@ -49,5 +51,10 @@ rep('''  scCan.width = W; scCan.height = Math.round(hh * W / w);
   if (scCan.width !== W) scCan.width = W;
   if (scCan.height !== H) scCan.height = H;
   scCx.drawImage(v, x, y, w, hh, 0, 0, W, H);''')
+
+# only battlefields need their text read as well (they look alike); for every other card the picture is enough. Running
+# the text reader beside the picture model was too much for iPhones: the scanner found one card, then the page crashed
+rep('''      if (sc.ai.sim >= SC_SURE || sc.ai.sim < 0.4) return c;''', '''      if (sc.ai.sim >= SC_SURE || sc.ai.sim < 0.4) return c;
+      if (!sc.wide && !(c && c.type === "Battlefield")) return c;''')
 
 open(out, "w", encoding="utf-8").write(h)
